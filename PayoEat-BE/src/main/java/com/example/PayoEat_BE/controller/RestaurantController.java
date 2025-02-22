@@ -1,9 +1,11 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.model.Restaurant;
+import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
+import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +25,7 @@ import static org.springframework.http.HttpStatus.*;
 public class RestaurantController {
 
     private final IRestaurantService restaurantService;
+    private final IUserService userService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
@@ -40,7 +43,8 @@ public class RestaurantController {
     @Operation(summary = "Add Restaurant", description = "Add restaurant by request")
     public ResponseEntity<ApiResponse> addRestaurant(@RequestBody AddRestaurantRequest request) {
         try {
-            Restaurant newRestaurant = restaurantService.addRestaurant(request);
+            User user = userService.getAuthenticatedUser();
+            Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId());
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(newRestaurant);
             return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurant));
         } catch (Exception e) {

@@ -1,6 +1,6 @@
-package com.example.PayoEat_Auth.security.user;
+package com.example.PayoEat_BE.security.user;
 
-import com.example.PayoEat_Auth.model.User;
+import com.example.PayoEat_BE.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +23,7 @@ public class AuthUserDetails implements UserDetails {
     private Collection<GrantedAuthority> authorities;
 
     public static AuthUserDetails buildUserDetails(User user) {
-        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRoles().name());
+        GrantedAuthority authority = new SimpleGrantedAuthority(user.getUsername());
 
         return new AuthUserDetails(
                 user.getId(),

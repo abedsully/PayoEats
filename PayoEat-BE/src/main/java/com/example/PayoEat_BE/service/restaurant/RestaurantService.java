@@ -22,12 +22,12 @@ public class RestaurantService implements IRestaurantService {
     private final ModelMapper modelMapper;
 
     @Override
-    public Restaurant addRestaurant(AddRestaurantRequest request) {
+    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId) {
         if (restaurantExists(request.getName())) {
             throw new AlreadyExistException(request.getName() + " already exists");
         }
 
-        return restaurantRepository.save(createRestaurant(request));
+        return restaurantRepository.save(createRestaurant(request, userId));
     }
 
     @Override
@@ -81,13 +81,14 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByName(name);
     }
 
-    private Restaurant createRestaurant(AddRestaurantRequest request) {
+    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId) {
         Restaurant restaurant = new Restaurant(
                 request.getName(),
                 request.getRating(),
                 request.getDescription()
         );
 
+        restaurant.setUserId(userId);
         restaurant.setCreatedAt(LocalDateTime.now());
         restaurant.setUpdatedAt(null);
         restaurant.setIsActive(true);

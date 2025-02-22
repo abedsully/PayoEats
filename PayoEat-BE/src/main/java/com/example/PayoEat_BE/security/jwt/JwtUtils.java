@@ -1,6 +1,6 @@
-package com.example.PayoEat_Auth.security.jwt;
+package com.example.PayoEat_BE.security.jwt;
 
-import com.example.PayoEat_Auth.security.user.AuthUserDetails;
+import com.example.PayoEat_BE.security.user.AuthUserDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

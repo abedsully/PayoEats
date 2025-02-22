@@ -40,6 +40,8 @@ public class Restaurant {
     @Schema(description = "Status of restaurant")
     private Boolean isActive;
 
+    private Long userId;
+
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
     @JsonIgnore

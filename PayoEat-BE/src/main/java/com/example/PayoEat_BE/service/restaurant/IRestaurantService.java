@@ -8,7 +8,7 @@ import com.example.PayoEat_BE.dto.RestaurantDto;
 import java.util.List;
 
 public interface IRestaurantService {
-    Restaurant addRestaurant(AddRestaurantRequest request);
+    Restaurant addRestaurant(AddRestaurantRequest request, Long userId);
     Restaurant updateRestaurant(Long restaurantId, UpdateRestaurantRequest request);
     void deleteRestaurant(Long restaurantId);
     Restaurant getRestaurantById(Long id);

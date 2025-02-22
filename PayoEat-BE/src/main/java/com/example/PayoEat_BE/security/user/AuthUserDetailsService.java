@@ -1,7 +1,8 @@
-package com.example.PayoEat_Auth.security.user;
+package com.example.PayoEat_BE.security.user;
 
-import com.example.PayoEat_Auth.model.User;
-import com.example.PayoEat_Auth.repository.UserRepository;
+
+import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.userdetails.UserDetails;

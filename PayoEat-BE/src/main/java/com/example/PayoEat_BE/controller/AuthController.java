@@ -1,15 +1,14 @@
-package com.example.PayoEat_Auth.controller;
+package com.example.PayoEat_BE.controller;
 
-import com.example.PayoEat_Auth.dto.UserDto;
-import com.example.PayoEat_Auth.model.User;
-import com.example.PayoEat_Auth.request.CreateUserRequest;
-import com.example.PayoEat_Auth.request.LoginRequest;
-import com.example.PayoEat_Auth.response.ApiResponse;
-import com.example.PayoEat_Auth.response.JwtResponse;
-import com.example.PayoEat_Auth.security.jwt.JwtUtils;
-import com.example.PayoEat_Auth.security.user.AuthUserDetails;
-import com.example.PayoEat_Auth.service.UserService;
-import io.jsonwebtoken.JwtException;
+
+import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.request.menu.CreateUserRequest;
+import com.example.PayoEat_BE.request.menu.LoginRequest;
+import com.example.PayoEat_BE.response.ApiResponse;
+import com.example.PayoEat_BE.response.JwtResponse;
+import com.example.PayoEat_BE.security.jwt.JwtUtils;
+import com.example.PayoEat_BE.security.user.AuthUserDetails;
+import com.example.PayoEat_BE.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,7 +19,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +27,7 @@ import static org.springframework.http.HttpStatus.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Restaurant Controller", description = "Endpoint for managing restaurants")
+@Tag(name = "Auth Controller", description = "Endpoint for managing restaurants")
 public class AuthController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;

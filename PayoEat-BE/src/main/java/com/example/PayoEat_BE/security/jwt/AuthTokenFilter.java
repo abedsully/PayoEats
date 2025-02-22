@@ -1,6 +1,6 @@
-package com.example.PayoEat_Auth.security.jwt;
+package com.example.PayoEat_BE.security.jwt;
 
-import com.example.PayoEat_Auth.security.user.AuthUserDetailsService;
+import com.example.PayoEat_BE.security.user.AuthUserDetailsService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
