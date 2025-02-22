@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class RestaurantController {
 
     @PostMapping("/add-restaurant")
     @Operation(summary = "Add Restaurant", description = "Add restaurant by request")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ApiResponse> addRestaurant(@RequestBody AddRestaurantRequest request) {
         try {
             User user = userService.getAuthenticatedUser();

@@ -5,6 +5,7 @@ import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,4 +23,6 @@ public class AuthUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return AuthUserDetails.buildUserDetails(user);
     }
+
+
 }

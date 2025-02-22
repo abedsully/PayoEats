@@ -40,6 +40,7 @@ public class UserService implements IUserService{
                     user.setPassword(passwordEncoder.encode(request.getPassword()));
                     user.setCreatedAt(LocalDateTime.now());
                     user.setUpdatedAt(null);
+                    user.setRoles(request.getRoles());
                     return userRepository.save(user);
                 }) .orElseThrow(() -> new UsernameNotFoundException("Oops!" +request.getEmail() +" already exists!"));
     }

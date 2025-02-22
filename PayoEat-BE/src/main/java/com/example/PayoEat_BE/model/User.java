@@ -1,10 +1,12 @@
 package com.example.PayoEat_BE.model;
 
+import com.example.PayoEat_BE.enums.UserRoles;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Table(name = "users")
 @Entity
@@ -17,6 +19,11 @@ public class User {
 
     private String username;
     private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private UserRoles roles;
+
     private String password;
 
     private LocalDateTime createdAt;
