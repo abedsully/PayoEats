@@ -49,10 +49,13 @@ public class ReviewController {
     public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@PathVariable Long id) {
         try {
             List<Review> reviewList = reviewService.getReviewsByRestaurantId(id);
+            List<ReviewDto> convertedReview = reviewService.getConvertedReviews(reviewList);
+
             if(reviewList.isEmpty()) {
                 return ResponseEntity.ok(new ApiResponse("No reviews yet: ", null));
             }
-            return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
+
+            return ResponseEntity.ok(new ApiResponse("Review lists: ", convertedReview));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -63,10 +66,13 @@ public class ReviewController {
     public ResponseEntity<ApiResponse> getReviewsByUserId(@PathVariable Long userId) {
         try {
             List<Review> reviewList = reviewService.getReviewsByUserId(userId);
+            List<ReviewDto> convertedReview = reviewService.getConvertedReviews(reviewList);
+
             if(reviewList.isEmpty()) {
                 return ResponseEntity.ok(new ApiResponse("No reviews yet: ", null));
             }
-            return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
+
+            return ResponseEntity.ok(new ApiResponse("Review lists: ", convertedReview));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

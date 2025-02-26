@@ -11,4 +11,5 @@ public interface IReviewService {
     List<Review> getReviewsByRestaurantId(Long restaurantId);
     List<Review> getReviewsByUserId(Long userId);
     ReviewDto convertToDto(Review review);
+    List<ReviewDto> getConvertedReviews (List<Review> reviewList);
 }

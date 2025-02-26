@@ -49,6 +49,11 @@ public class ReviewService implements IReviewService{
         return modelMapper.map(review, ReviewDto.class);
     }
 
+    @Override
+    public List<ReviewDto> getConvertedReviews(List<Review> reviewList) {
+        return reviewList.stream().map(this::convertToDto).toList();
+    }
+
     private Review createReview(AddReviewRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));

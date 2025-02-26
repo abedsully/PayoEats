@@ -8,4 +8,6 @@ import java.time.LocalDateTime;
 public class ReviewDto {
     private String reviewContent;
     private LocalDateTime createdAt;
+    private Long restaurantId;
+    private Long userId;
 }
