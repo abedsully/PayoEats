@@ -11,6 +11,7 @@ import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.ReviewRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.review.AddReviewRequest;
+import com.example.PayoEat_BE.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -33,14 +34,14 @@ public class ReviewService implements IReviewService{
 
     @Override
     public List<Review> getReviewsByRestaurantId(Long restaurantId) {
-        List<Review> reviewList = reviewRepository.findByRestaurantId(restaurantId)
+        return reviewRepository.findByRestaurantId(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+    }
 
-        if (reviewList.isEmpty()) {
-            throw new InvalidException("No reviews found!");
-        }
-
-        return reviewList;
+    @Override
+    public List<Review> getReviewsByUserId(Long userId) {
+        return reviewRepository.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
     }
 
     @Override

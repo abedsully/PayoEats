@@ -42,7 +42,7 @@ public class RestaurantController {
 
     @PostMapping("/add-restaurant")
     @Operation(summary = "Add Restaurant", description = "Add restaurant by request")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'RESTAURANT')")
     public ResponseEntity<ApiResponse> addRestaurant(@RequestBody AddRestaurantRequest request) {
         try {
             User user = userService.getAuthenticatedUser();

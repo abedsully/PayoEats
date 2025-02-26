@@ -49,6 +49,23 @@ public class ReviewController {
     public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@PathVariable Long id) {
         try {
             List<Review> reviewList = reviewService.getReviewsByRestaurantId(id);
+            if(reviewList.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse("No reviews yet: ", null));
+            }
+            return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/get-user-review/{userId}")
+    @Operation(summary = "Get reviews by user id", description = "Getting reviews bt user")
+    public ResponseEntity<ApiResponse> getReviewsByUserId(@PathVariable Long userId) {
+        try {
+            List<Review> reviewList = reviewService.getReviewsByUserId(userId);
+            if(reviewList.isEmpty()) {
+                return ResponseEntity.ok(new ApiResponse("No reviews yet: ", null));
+            }
             return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));

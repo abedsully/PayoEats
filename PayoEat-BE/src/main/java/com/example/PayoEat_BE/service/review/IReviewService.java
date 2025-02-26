@@ -9,5 +9,6 @@ import java.util.List;
 public interface IReviewService {
     Review addReview(AddReviewRequest request);
     List<Review> getReviewsByRestaurantId(Long restaurantId);
+    List<Review> getReviewsByUserId(Long userId);
     ReviewDto convertToDto(Review review);
 }
