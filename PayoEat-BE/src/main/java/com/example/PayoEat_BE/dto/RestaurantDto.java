@@ -3,10 +3,11 @@ package com.example.PayoEat_BE.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 public class RestaurantDto {
-    private Long id;
+    private UUID id;
     private String name;
     private Double rating;
     private String description;

@@ -6,12 +6,13 @@ import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface IRestaurantService {
     Restaurant addRestaurant(AddRestaurantRequest request, Long userId);
-    Restaurant updateRestaurant(Long restaurantId, UpdateRestaurantRequest request);
-    void deleteRestaurant(Long restaurantId);
-    Restaurant getRestaurantById(Long id);
+    Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request);
+    void deleteRestaurant(UUID restaurantId);
+    Restaurant getRestaurantById(UUID id);
     List<Restaurant> getAllRestaurants();
     List<Restaurant> findRestaurantByName(String name);
     RestaurantDto convertToDto(Restaurant restaurant);

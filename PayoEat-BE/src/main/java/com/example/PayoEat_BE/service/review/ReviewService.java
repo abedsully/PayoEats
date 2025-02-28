@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,15 +34,21 @@ public class ReviewService implements IReviewService{
     }
 
     @Override
-    public List<Review> getReviewsByRestaurantId(Long restaurantId) {
-        return reviewRepository.findByRestaurantId(restaurantId)
+    public List<Review> getReviewsByRestaurantId(UUID restaurantId) {
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaruant not found with id: " + restaurantId));
+
+        return reviewRepository.findByRestaurantId(restaurant.getId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
     }
 
     @Override
     public List<Review> getReviewsByUserId(Long userId) {
-        return reviewRepository.findByUserId(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        return reviewRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new NotFoundException("Review not found with user id: " + userId));
     }
 
     @Override

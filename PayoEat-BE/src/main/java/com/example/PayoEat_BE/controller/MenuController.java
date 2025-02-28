@@ -37,7 +37,7 @@ public class MenuController {
             @RequestParam("menuName") String menuName,
             @RequestParam("menuDetail") String menuDetail,
             @RequestParam("menuPrice") double menuPrice,
-            @RequestParam("restaurantId") Long restaurantId,
+            @RequestParam("restaurantId") UUID restaurantId,
             @RequestParam("menuImage") MultipartFile menuImage) {
         try {
             AddMenuRequest request = new AddMenuRequest(menuName, menuDetail, menuPrice, restaurantId);
@@ -66,7 +66,7 @@ public class MenuController {
 
     @GetMapping("/get-menus/{restaurantId}")
     @Operation(summary = "Show Menus by Restaurant ID", description = "API to display menus by providing restaurant ID")
-    public ResponseEntity<ApiResponse> getMenusByRestaurantId(@PathVariable Long restaurantId) {
+    public ResponseEntity<ApiResponse> getMenusByRestaurantId(@PathVariable UUID restaurantId) {
         try {
             List<Menu> menus = menuService.getMenusByRestaurantId(restaurantId);
             List<MenuDto> convertedMenus = menuService.getConvertedMenus(menus);

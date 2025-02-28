@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -30,7 +31,7 @@ public class RestaurantController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
-    public ResponseEntity<ApiResponse> getRestaurantById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getRestaurantById(@PathVariable UUID id) {
         try {
             Restaurant restaurant = restaurantService.getRestaurantById(id);
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
@@ -86,7 +87,7 @@ public class RestaurantController {
 
     @PutMapping("/update-restaurant/{id}")
     @Operation(summary = "Updating restaurant by id", description = "API for updating restaurant")
-    public ResponseEntity<ApiResponse> updateRestaurant(@PathVariable Long id, @RequestBody UpdateRestaurantRequest request) {
+    public ResponseEntity<ApiResponse> updateRestaurant(@PathVariable UUID id, @RequestBody UpdateRestaurantRequest request) {
         try {
             Restaurant updatedRestaurant = restaurantService.updateRestaurant(id, request);
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(updatedRestaurant);
@@ -98,7 +99,7 @@ public class RestaurantController {
 
     @DeleteMapping("/delete-restaurant/{id}")
     @Operation(summary = "Deleting restaurant by id", description = "API for deleting restaurant")
-    public ResponseEntity<ApiResponse> deleteRestaurant(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> deleteRestaurant(@PathVariable UUID id) {
         try {
             restaurantService.deleteRestaurant(id);
             return ResponseEntity.ok(new ApiResponse("Restaurant deleted successfully", null));

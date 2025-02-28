@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -23,5 +24,5 @@ public class Order {
     private LocalDateTime createdAt;
     private Boolean isActive;
     private Long userId;
-    private Long restaurantId;
+    private UUID restaurantId;
 }

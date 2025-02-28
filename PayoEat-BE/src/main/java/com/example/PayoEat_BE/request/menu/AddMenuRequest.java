@@ -6,6 +6,8 @@ import lombok.Data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.UUID;
+
 @Data
 @AllArgsConstructor
 public class AddMenuRequest {
@@ -19,5 +21,5 @@ public class AddMenuRequest {
     private Double menuPrice;
 
     @JsonProperty("restaurantId")
-    private Long restaurantId;
+    private UUID restaurantId;
 }

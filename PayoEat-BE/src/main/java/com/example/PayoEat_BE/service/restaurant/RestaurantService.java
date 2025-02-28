@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -31,7 +32,7 @@ public class RestaurantService implements IRestaurantService {
     }
 
     @Override
-    public Restaurant updateRestaurant(Long restaurantId, UpdateRestaurantRequest request) {
+    public Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request) {
         return restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .map(existingRestaurant -> updateExistingRestaurant(existingRestaurant, request))
                 .map(restaurantRepository::save)
@@ -63,7 +64,7 @@ public class RestaurantService implements IRestaurantService {
     }
 
     @Override
-    public void deleteRestaurant(Long restaurantId) {
+    public void deleteRestaurant(UUID restaurantId) {
         restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .map(currentRestaurant -> {
                     deleteExistingRestaurant(currentRestaurant);
@@ -97,7 +98,7 @@ public class RestaurantService implements IRestaurantService {
     }
 
     @Override
-    public Restaurant getRestaurantById(Long id) {
+    public Restaurant getRestaurantById(UUID id) {
         return restaurantRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }

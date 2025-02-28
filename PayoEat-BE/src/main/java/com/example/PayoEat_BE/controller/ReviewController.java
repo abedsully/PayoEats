@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -46,7 +47,7 @@ public class ReviewController {
 
     @GetMapping("/get/{id}")
     @Operation(summary = "Get Reviews by Restaurant Id", description = "Getting reviews with restaurant id")
-    public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@PathVariable UUID id) {
         try {
             List<Review> reviewList = reviewService.getReviewsByRestaurantId(id);
             List<ReviewDto> convertedReview = reviewService.getConvertedReviews(reviewList);

@@ -14,7 +14,7 @@ public interface IMenuService {
     Menu addMenu(AddMenuRequest request, MultipartFile menuImage);
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);
-    List<Menu> getMenusByRestaurantId(Long restaurantId);
+    List<Menu> getMenusByRestaurantId(UUID restaurantId);
     void deleteMenu(String menuCode);
     Menu updateMenu(String menuCode, UpdateMenuRequest request, MultipartFile menuImage);
 }

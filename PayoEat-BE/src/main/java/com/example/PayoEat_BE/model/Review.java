@@ -24,5 +24,5 @@ public class Review {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isActive;
-    private Long restaurantId;
+    private UUID restaurantId;
 }

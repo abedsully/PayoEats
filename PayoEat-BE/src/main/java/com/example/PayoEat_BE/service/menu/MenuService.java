@@ -50,7 +50,7 @@ public class MenuService implements IMenuService{
     }
 
     @Override
-    public List<Menu> getMenusByRestaurantId(Long restaurantId) {
+    public List<Menu> getMenusByRestaurantId(UUID restaurantId) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 

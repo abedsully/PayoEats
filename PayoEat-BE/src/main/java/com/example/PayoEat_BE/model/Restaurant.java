@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -18,9 +19,9 @@ import java.util.List;
 @NoArgsConstructor
 public class Restaurant {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Schema(description = "Unique identifier of the restaurant")
-    private Long id;
+    private UUID id;
 
     @Schema(description = "Name of the restaurant")
     private String name;
