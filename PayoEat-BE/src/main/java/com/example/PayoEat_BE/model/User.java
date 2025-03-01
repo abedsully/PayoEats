@@ -24,6 +24,7 @@ public class User {
     @Column(name = "role")
     private UserRoles roles;
 
+    @Column(name = "password", length = 256)
     private String password;
 
     private LocalDateTime createdAt;

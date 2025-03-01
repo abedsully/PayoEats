@@ -118,7 +118,7 @@ public class MenuService implements IMenuService{
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
 
         String randomSuffix = UUID.randomUUID().toString().substring(0, 5);
-        String menuCode = restaurant.getId() + "_" + request.getMenuName().toUpperCase().replace(" ", "_") + "_" + randomSuffix;
+        String menuCode = restaurant.getId() + restaurant.getName();
 
         Menu menu = new Menu(
                 request.getMenuName(),

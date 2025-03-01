@@ -33,6 +33,7 @@ public class RestaurantController {
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
     public ResponseEntity<ApiResponse> getRestaurantById(@PathVariable UUID id) {
         try {
+            User user = userService.getAuthenticatedUser();
             Restaurant restaurant = restaurantService.getRestaurantById(id);
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
             return ResponseEntity.ok(new ApiResponse("Restaurant found", convertedRestaurant));
