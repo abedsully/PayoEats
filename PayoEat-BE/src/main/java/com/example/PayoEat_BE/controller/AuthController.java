@@ -26,17 +26,16 @@ import static org.springframework.http.HttpStatus.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 @Tag(name = "Auth Controller", description = "Endpoint for managing restaurants")
 public class AuthController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
-    @PostMapping("/add")
-    @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
-
-    public ResponseEntity<ApiResponse> createUser(@RequestBody CreateUserRequest request) {
+    @PostMapping("/register")
+    @Operation(summary = "User registration", description = "Registers a new user and returns a UserDto")
+    public ResponseEntity<ApiResponse> register(@RequestBody CreateUserRequest request) {
         try {
             User user = userService.createUser(request);
             return ResponseEntity.ok(new ApiResponse("Create User Success!", user));
@@ -45,19 +44,8 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/add/test")
-    @Operation(summary = "Test endpoint", description = "This endpoint requires a valid JWT token")
-    @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<ApiResponse> createUsers(@RequestBody CreateUserRequest request) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            return ResponseEntity.ok(new ApiResponse("Nice", user));
-        } catch (Exception e) {
-            return ResponseEntity.status(CONFLICT).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
     @PostMapping("/login")
+    @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token")
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
