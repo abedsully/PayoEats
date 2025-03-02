@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.model;
 
 import com.example.PayoEat_BE.enums.UserRoles;
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.Setter;
 

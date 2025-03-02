@@ -2,14 +2,14 @@ package com.example.PayoEat_BE.response;
 
 public class ApiResponse {
     private String message;
-    private Object data;
+    private Object result;
 
     public ApiResponse() {
     }
 
     public ApiResponse(String message, Object data) {
         this.message = message;
-        this.data = data;
+        this.result = data;
     }
 
     public String getMessage() {
@@ -20,11 +20,11 @@ public class ApiResponse {
         this.message = message;
     }
 
-    public Object getData() {
-        return data;
+    public Object getResult() {
+        return result;
     }
 
-    public void setData(Object data) {
-        this.data = data;
+    public void setResult(Object result) {
+        this.result = result;
     }
 }
