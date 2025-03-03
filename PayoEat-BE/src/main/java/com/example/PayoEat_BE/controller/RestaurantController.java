@@ -1,10 +1,13 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.model.Restaurant;
+import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
+import com.example.PayoEat_BE.service.admin.IAdminService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
 import com.example.PayoEat_BE.dto.RestaurantDto;
@@ -15,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +32,7 @@ public class RestaurantController {
 
     private final IRestaurantService restaurantService;
     private final IUserService userService;
+    private final IAdminService adminService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
@@ -49,6 +54,9 @@ public class RestaurantController {
         try {
             User user = userService.getAuthenticatedUser();
             Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId());
+            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant, user.getId(), LocalDateTime.now());
+            RestaurantApproval restaurantApproval = adminService.reviewRestaurant(requestApproval);
+
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(newRestaurant);
             return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurant));
         } catch (Exception e) {

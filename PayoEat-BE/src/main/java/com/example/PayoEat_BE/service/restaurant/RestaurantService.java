@@ -92,7 +92,7 @@ public class RestaurantService implements IRestaurantService {
         restaurant.setUserId(userId);
         restaurant.setCreatedAt(LocalDateTime.now());
         restaurant.setUpdatedAt(null);
-        restaurant.setIsActive(true);
+        restaurant.setIsActive(false);
 
         return restaurant;
     }
