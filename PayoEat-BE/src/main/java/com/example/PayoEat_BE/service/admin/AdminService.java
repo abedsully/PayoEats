@@ -3,6 +3,7 @@ package com.example.PayoEat_BE.service.admin;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
+import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @Service
 public class AdminService implements IAdminService{
     private final RestaurantRepository restaurantRepository;
+    private final RestaurantApprovalRepository restaurantApprovalRepository;
 
     @Override
     public RestaurantApproval reviewRestaurant(ReviewRestaurantRequest request) {
@@ -28,21 +30,29 @@ public class AdminService implements IAdminService{
     }
 
     @Override
-    public void approveRestaurant(RestaurantApproval approvalRequest) {
-        UUID restaurantId = approvalRequest.getRestaurant().getId();
+    public void approveRestaurant(UUID id) {
+        RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Restaurant Approval not found with id: " + id));
+
+
+        UUID restaurantId = restaurantApproval.getRestaurant().getId();
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveFalse(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
         restaurant.setIsActive(true);
-        approvalRequest.setIsApproved(true);
-        approvalRequest.setIsActive(false);
+        restaurantApproval.setIsApproved(true);
+        restaurantApproval.setIsActive(false);
     }
 
     @Override
-    public void rejectRestaurant(RestaurantApproval approvalRequest, String rejectionMessage) {
-        approvalRequest.setIsApproved(false);
-        approvalRequest.setReason(rejectionMessage);
+    public void rejectRestaurant(UUID id, String rejectionMessage) {
+
+        RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Restaurant Approval not found with id: " + id));
+
+        restaurantApproval.setIsApproved(false);
+        restaurantApproval.setReason(rejectionMessage);
     }
 
 }
