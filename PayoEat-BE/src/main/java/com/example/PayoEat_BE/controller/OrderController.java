@@ -1,6 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
-import com.example.PayoEat_BE.model.Order;
+import com.example.PayoEat_BE.model.RestaurantOrder;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
@@ -32,8 +32,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse> getOrders(UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
-            List<Order> orderList = orderService.getOrderByRestaurantId(restaurantId, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Order list: ", orderList));
+            List<RestaurantOrder> restaurantOrderList = orderService.getOrderByRestaurantId(restaurantId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order list: ", restaurantOrderList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -45,8 +45,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
         try {
             User user = userService.getAuthenticatedUser();
-            Order newOrder = orderService.addOrder(request, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder));
+            RestaurantOrder newRestaurantOrder = orderService.addOrder(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order received: ", newRestaurantOrder));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
