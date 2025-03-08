@@ -3,8 +3,11 @@ package com.example.PayoEat_BE.service.restaurant;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
+import com.example.PayoEat_BE.model.RestaurantApproval;
+import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.UUID;
 public class RestaurantService implements IRestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final ModelMapper modelMapper;
+    private final RestaurantApprovalRepository restaurantApprovalRepository;
 
     @Override
     public Restaurant addRestaurant(AddRestaurantRequest request, Long userId) {
@@ -122,4 +126,20 @@ public class RestaurantService implements IRestaurantService {
     public List<RestaurantDto> getConvertedRestaurants(List<Restaurant> restaurants) {
         return restaurants.stream().map(this::convertToDto).toList();
     }
+
+    @Override
+    public RestaurantApproval addRestaurantApproval(ReviewRestaurantRequest request) {
+        RestaurantApproval restaurantApproval = new RestaurantApproval();
+        restaurantApproval.setRestaurantId(request.getRestaurantId());
+        restaurantApproval.setUserId(request.getUserId());
+        restaurantApproval.setRequestedAt(LocalDateTime.now());
+        restaurantApproval.setIsApproved(false);
+        restaurantApproval.setIsActive(true);
+
+        restaurantApprovalRepository.save(restaurantApproval);
+
+        return restaurantApproval;
+    }
+
+
 }

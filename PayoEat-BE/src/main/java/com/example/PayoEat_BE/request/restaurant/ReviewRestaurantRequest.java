@@ -5,11 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class ReviewRestaurantRequest {
-    private Restaurant restaurant;
+    private UUID restaurantId;
     private Long userId;
-    private LocalDateTime requestedAt;
 }

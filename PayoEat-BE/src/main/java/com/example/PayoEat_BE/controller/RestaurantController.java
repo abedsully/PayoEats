@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.model.User;
@@ -54,11 +55,11 @@ public class RestaurantController {
         try {
             User user = userService.getAuthenticatedUser();
             Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId());
-            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant, user.getId(), LocalDateTime.now());
-            RestaurantApproval restaurantApproval = adminService.reviewRestaurant(requestApproval);
+            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), user.getId());
+            RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
+            RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
 
-            RestaurantDto convertedRestaurant = restaurantService.convertToDto(newRestaurant);
-            return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurant));
+            return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurantApproval));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
         }

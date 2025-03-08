@@ -2,9 +2,7 @@ package com.example.PayoEat_BE.service.image;
 
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Image;
-import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.repository.ImageRepository;
-import com.example.PayoEat_BE.service.menu.IMenuService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

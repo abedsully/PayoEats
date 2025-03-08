@@ -1,10 +1,10 @@
 package com.example.PayoEat_BE.controller;
 
-import com.example.PayoEat_BE.model.RestaurantOrder;
+import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
-import com.example.PayoEat_BE.service.order.IOrderService;
+import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,12 +28,11 @@ public class OrderController {
 
     @GetMapping("/get")
     @Operation(summary = "Getting orders of a restaurant", description = "Returning list of orders of a restaurant")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'RESTAURANT')")
     public ResponseEntity<ApiResponse> getOrders(UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
-            List<RestaurantOrder> restaurantOrderList = orderService.getOrderByRestaurantId(restaurantId, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Order list: ", restaurantOrderList));
+            List<Order> restaurantOrderList = orderService.getOrderByRestaurantId(restaurantId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order lists: ", restaurantOrderList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -45,8 +44,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
         try {
             User user = userService.getAuthenticatedUser();
-            RestaurantOrder newRestaurantOrder = orderService.addOrder(request, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Order received: ", newRestaurantOrder));
+            Order newOrder = orderService.addOrder(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

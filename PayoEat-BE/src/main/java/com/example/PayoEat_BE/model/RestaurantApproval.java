@@ -21,7 +21,7 @@ public class RestaurantApproval {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    private Restaurant restaurant;
+    private UUID restaurantId;
     private Long userId;
     private String reason;
     private LocalDateTime requestedAt;
