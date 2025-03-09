@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
-    List<Notification> findByRestaurantId(UUID restaurantId);
+    List<Notification> findByRestaurantIdAndIsActiveTrue(UUID restaurantId);
     List<Notification> findByUserId(Long userId);
 }

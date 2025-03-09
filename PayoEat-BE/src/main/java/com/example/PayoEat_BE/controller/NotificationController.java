@@ -32,7 +32,7 @@ public class NotificationController {
     private final IRestaurantService restaurantService;
 
     @GetMapping("/get-notifications/{restaurantId}")
-    @Operation(summary = "Getting notifications for restaurant", description = "Returning list of notifications for restaurant")
+    @Operation(summary = "Getting order notifications for restaurant", description = "Returning list of notifications for restaurant")
     public ResponseEntity<ApiResponse> getRestaurantNotification(@PathVariable UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -46,6 +46,20 @@ public class NotificationController {
 
             return ResponseEntity.ok(new ApiResponse("Notification lists: ", notificationList));
 
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/get-user-notifications")
+    @Operation(summary = "Getting user notifications", description = "Returning list of notifications for user")
+    public ResponseEntity<ApiResponse> getUserNotification(@PathVariable Long userId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+
+            List<Notification> notificationList = notificationService.getUserNotification(user.getId());
+
+            return ResponseEntity.ok(new ApiResponse("Notification lists: ", notificationList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

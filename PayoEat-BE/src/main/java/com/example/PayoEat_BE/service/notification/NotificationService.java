@@ -82,7 +82,7 @@ public class NotificationService implements INotificationService {
             throw new InvalidException("User does not have access this restaurant's notification");
         }
 
-        return notificationRepository.findByRestaurantId(restaurant.getId());
+        return notificationRepository.findByRestaurantIdAndIsActiveTrue(restaurant.getId());
     }
 
     @Override

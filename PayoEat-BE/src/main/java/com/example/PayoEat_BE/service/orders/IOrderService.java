@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface IOrderService {
     Order addOrder(AddOrderRequest request, Long userId);
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);
+    void finishOrder(UUID orderId, Long userId);
 }
