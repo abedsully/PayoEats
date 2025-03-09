@@ -5,6 +5,6 @@ import com.example.PayoEat_BE.model.Notification;
 import java.util.UUID;
 
 public interface INotificationService {
-    Notification addOrderNotification(UUID orderId, String message);
-//    Notification addRestaurantApprovalNotification()
+    Notification addOrderNotification(UUID orderId);
+    Notification addRestaurantApprovalNotification(UUID approvalId);
 }

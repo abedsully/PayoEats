@@ -17,7 +17,8 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID orderId;
-    private String orderMessage;
-    private LocalTime orderTime;
-    private LocalDate orderDate;
+    private UUID approvalId;
+    private String message;
+    private LocalTime requestTime;
+    private LocalDate requestDate;
 }

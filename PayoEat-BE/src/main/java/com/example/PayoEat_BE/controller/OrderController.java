@@ -1,9 +1,11 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.model.Notification;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
+import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +27,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 public class OrderController {
     private final IOrderService orderService;
     private final IUserService userService;
+    private final INotificationService notificationService;
 
     @GetMapping("/get")
     @Operation(summary = "Getting orders of a restaurant", description = "Returning list of orders of a restaurant")
@@ -45,6 +48,7 @@ public class OrderController {
         try {
             User user = userService.getAuthenticatedUser();
             Order newOrder = orderService.addOrder(request, user.getId());
+            Notification notification = notificationService.addOrderNotification(newOrder.getId());
             return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));

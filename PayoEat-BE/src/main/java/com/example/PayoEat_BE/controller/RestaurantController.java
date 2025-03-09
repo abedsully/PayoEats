@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
+import com.example.PayoEat_BE.model.Notification;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.model.User;
@@ -9,6 +10,7 @@ import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.admin.IAdminService;
+import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
 import com.example.PayoEat_BE.dto.RestaurantDto;
@@ -34,6 +36,7 @@ public class RestaurantController {
     private final IRestaurantService restaurantService;
     private final IUserService userService;
     private final IAdminService adminService;
+    private final INotificationService notificationService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
@@ -58,7 +61,7 @@ public class RestaurantController {
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), user.getId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
-
+            Notification notification = notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId());
             return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurantApproval));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
