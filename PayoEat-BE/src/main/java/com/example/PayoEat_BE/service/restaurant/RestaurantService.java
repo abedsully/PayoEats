@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.restaurant;
 
+import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
@@ -139,6 +140,11 @@ public class RestaurantService implements IRestaurantService {
         restaurantApprovalRepository.save(restaurantApproval);
 
         return restaurantApproval;
+    }
+
+    @Override
+    public RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval) {
+        return modelMapper.map(restaurantApproval, RestaurantApprovalDto.class);
     }
 
 

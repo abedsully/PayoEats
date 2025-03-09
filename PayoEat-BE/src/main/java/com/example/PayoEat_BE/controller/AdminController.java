@@ -1,13 +1,17 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.model.RestaurantApproval;
+import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.admin.IAdminService;
+import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -18,6 +22,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 @Tag(name = "Admin Controller", description = "Endpoint for managing admin service")
 public class AdminController {
     private final IAdminService adminService;
+    private final IUserService userService;
 
     @PostMapping("/approve-restaurant/{id}")
     @Operation(summary = "Approving a restaurant approval request", description = "Endpoint for approving restaurant approval request")
@@ -38,6 +43,18 @@ public class AdminController {
             return ResponseEntity.ok(new ApiResponse("Restaurant is rejected", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/get-approval")
+    @Operation(summary = "Getting a restaurant approval request lists", description = "Endpoint for getting request approval list")
+    public ResponseEntity<ApiResponse> getApprovalRequestLists() {
+        try {
+            User user = userService.getAuthenticatedUser();
+            List<RestaurantApproval> approvalList = adminService.getAllRestaurantApproval(user.getId());
+            return ResponseEntity.ok(new ApiResponse("Found: ", approvalList));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 }

@@ -61,7 +61,7 @@ public class RestaurantController {
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), user.getId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
-            Notification notification = notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId());
+            notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId(), newRestaurant.getId());
             return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurantApproval));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));

@@ -16,9 +16,14 @@ import java.util.UUID;
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
     private UUID orderId;
     private UUID approvalId;
+    private Long userId;
+    private UUID restaurantId;
     private String message;
     private LocalTime requestTime;
     private LocalDate requestDate;
+    private Boolean isActive;
 }

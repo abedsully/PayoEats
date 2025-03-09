@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.Restaurant;
+import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
@@ -25,7 +26,10 @@ public class OrderService implements IOrderService {
 
     @Override
     public Order addOrder(AddOrderRequest request, Long userId) {
-        return orderRepository.save(createOrder(request, userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        return orderRepository.save(createOrder(request, user.getId()));
     }
 
     @Override
@@ -33,7 +37,10 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-        if (!restaurant.getUserId().equals(userId)) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (!restaurant.getUserId().equals(user.getId())) {
             throw new ForbiddenException("User does not have access to view this restaurant's order");
         }
 

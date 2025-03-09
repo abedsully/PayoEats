@@ -48,7 +48,7 @@ public class OrderController {
         try {
             User user = userService.getAuthenticatedUser();
             Order newOrder = orderService.addOrder(request, user.getId());
-            Notification notification = notificationService.addOrderNotification(newOrder.getId());
+            notificationService.addOrderNotification(newOrder.getId(), newOrder.getRestaurantId(), user.getId());
             return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
