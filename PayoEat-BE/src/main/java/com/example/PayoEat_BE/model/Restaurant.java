@@ -48,6 +48,8 @@ public class Restaurant {
     @JsonIgnore
     private List<Menu> menus;
 
+    private Long restaurantCategory;
+
     public Restaurant(String name, Double rating, String description) {
         this.name = name;
         this.rating = rating;
