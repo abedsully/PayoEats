@@ -55,5 +55,17 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/finish-order/{orderId}")
+    @Operation(summary = "Finishing an order", description = "Finishing order request by restaurant")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> finishOrder(@PathVariable UUID orderId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            orderService.finishOrder(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order finished", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
 
 }

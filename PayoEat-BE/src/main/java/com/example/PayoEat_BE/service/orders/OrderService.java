@@ -61,7 +61,7 @@ public class OrderService implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        if (!restaurant.getUserId().equals(user.getId())) {
+        if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to view this restaurant's order");
         }
 
@@ -80,7 +80,7 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
         if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("Sorry you can't do this operation");
+            throw new ForbiddenException("User does not have access to finish this order");
         }
 
         order.setIsActive(false);

@@ -72,6 +72,10 @@ public class ReviewService implements IReviewService{
             throw new InvalidException("Sorry, you can't review your own restaurant");
         }
 
+        if (request.getReviewContent().isEmpty()) {
+            throw new InvalidException("Please enter the review");
+        }
+
         Review review = new Review();
         review.setReviewContent(request.getReviewContent());
         review.setUserId(user.getId());
