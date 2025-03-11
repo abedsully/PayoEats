@@ -11,4 +11,5 @@ public interface MenuRepository extends JpaRepository<Menu, String> {
     List<Menu> findByRestaurantId(UUID restaurantId);
     Optional<Menu> findByMenuCodeAndRestaurantId(String menuCode, UUID restaurantId);
     Optional<Menu> findByMenuCodeAndIsActiveTrue(String menuCode);
+    List<Menu> findByMenuNameContainingIgnoreCaseAndIsActiveTrue(String menuName);
 }

@@ -9,4 +9,5 @@ import java.util.UUID;
 public class AddOrderRequest {
     private List<String> menuCode;
     private UUID restaurantId;
+    private String orderMessage;
 }

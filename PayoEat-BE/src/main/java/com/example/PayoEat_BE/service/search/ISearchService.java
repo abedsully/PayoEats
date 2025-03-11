@@ -1,5 +1,7 @@
 package com.example.PayoEat_BE.service.search;
 
-public interface ISearchService {
+import com.example.PayoEat_BE.dto.SearchResultDto;
 
+public interface ISearchService {
+    SearchResultDto search(String query);
 }

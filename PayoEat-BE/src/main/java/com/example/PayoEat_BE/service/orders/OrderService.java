@@ -91,6 +91,16 @@ public class OrderService implements IOrderService {
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setMenuList(request.getMenuCode());
         newRestaurantOrder.setRestaurantId(request.getRestaurantId());
+
+        String orderMessage = request.getOrderMessage();
+
+        if (orderMessage == null || orderMessage.isEmpty()) {
+            newRestaurantOrder.setOrderMessage(null);
+        } else {
+            newRestaurantOrder.setOrderMessage(orderMessage);
+        }
+
+        newRestaurantOrder.setOrderMessage(request.getOrderMessage());
         newRestaurantOrder.setUserId(userId);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());

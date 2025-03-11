@@ -52,7 +52,6 @@ public class Restaurant {
 
     private String telephoneNumber;
 
-    private Boolean isClosedToday;
 
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
@@ -61,9 +60,13 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, String description) {
+    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber) {
         this.name = name;
         this.rating = rating;
         this.description = description;
+        this.openingHour = openingHour;
+        this.closingHour = closingHour;
+        this.location = location;
+        this.telephoneNumber = telephoneNumber;
     }
 }

@@ -24,6 +24,7 @@ public class Order {
     private UUID id;
     private LocalDate createdDate;
     private LocalTime createdTime;
+    private String orderMessage;
     private Boolean isActive;
     private Long userId;
     private UUID restaurantId;

@@ -91,7 +91,11 @@ public class RestaurantService implements IRestaurantService {
         Restaurant restaurant = new Restaurant(
                 request.getName(),
                 request.getRating(),
-                request.getDescription()
+                request.getDescription(),
+                request.getOpeningHour(),
+                request.getClosingHour(),
+                request.getLocation(),
+                request.getTelephoneNumber()
         );
 
         restaurant.setUserId(userId);
