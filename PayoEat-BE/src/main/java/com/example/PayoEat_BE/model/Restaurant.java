@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,6 +43,16 @@ public class Restaurant {
     private Boolean isActive;
 
     private Long userId;
+
+    private LocalTime openingHour;
+
+    private LocalTime closingHour;
+
+    private String location;
+
+    private String telephoneNumber;
+
+    private Boolean isClosedToday;
 
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
