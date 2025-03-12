@@ -15,7 +15,7 @@ public class ImageService implements IImageService{
     private final ImageRepository imageRepository;
 
     @Override
-    public Image saveImage(MultipartFile file, String menuCode) {
+    public Image saveImage(MultipartFile file, UUID menuCode) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
         }

@@ -51,6 +51,7 @@ public class UserService implements IUserService{
                     user.setCreatedAt(LocalDateTime.now());
                     user.setUpdatedAt(null);
                     user.setRoles(request.getRoles());
+                    user.setActive(true);
                     return userRepository.save(user);
                 }) .orElseThrow(() -> new UsernameNotFoundException("Oops!" + request.getEmail() +" already exists!"));
     }

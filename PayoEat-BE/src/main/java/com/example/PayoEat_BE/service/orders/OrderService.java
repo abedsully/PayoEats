@@ -46,7 +46,7 @@ public class OrderService implements IOrderService {
         return orderRepository.save(createOrder(request, user.getId()));
     }
 
-    private void validateMenuCodes(List<String> menuCodes, UUID restaurantId) {
+    private void validateMenuCodes(List<UUID> menuCodes, UUID restaurantId) {
         menuCodes.forEach(menuCode ->
                 menuRepository.findByMenuCodeAndRestaurantId(menuCode, restaurantId)
                         .orElseThrow(() -> new NotFoundException("Menu not found or inactive for code: " + menuCode + " in restaurant: " + restaurantId))

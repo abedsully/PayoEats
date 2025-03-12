@@ -58,7 +58,7 @@ public class MenuService implements IMenuService{
     }
 
     @Override
-    public void deleteMenu(String menuCode) {
+    public void deleteMenu(UUID menuCode) {
         menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
                 .map(currentMenu -> {
                     deleteExistingMenu(currentMenu);
@@ -75,7 +75,7 @@ public class MenuService implements IMenuService{
 
 
     @Override
-    public Menu updateMenu(String menuCode, UpdateMenuRequest request, MultipartFile menuImage) {
+    public Menu updateMenu(UUID menuCode, UpdateMenuRequest request, MultipartFile menuImage) {
        return menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
                 .map(existingMenu -> updateExistingMenu(existingMenu, request, menuImage))
                 .map(menuRepository::save)
@@ -117,8 +117,6 @@ public class MenuService implements IMenuService{
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
 
-        String randomSuffix = UUID.randomUUID().toString().substring(0, 5);
-        String menuCode = restaurant.getId() + restaurant.getName();
 
         Menu menu = new Menu(
                 request.getMenuName(),
@@ -126,12 +124,11 @@ public class MenuService implements IMenuService{
                 request.getMenuPrice()
         );
 
-        menu.setMenuCode(menuCode);
         menu.setCreatedAt(LocalDateTime.now());
         menu.setIsActive(true);
         menu.setRestaurant(restaurant);
 
-        Image image = imageService.saveImage(menuImage, menuCode);
+        Image image = imageService.saveImage(menuImage, menu.getMenuCode());
         image.setMenu(menu);
         menu.setMenuImage(image);
 

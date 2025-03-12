@@ -2,12 +2,10 @@ package com.example.PayoEat_BE.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -16,9 +14,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Menu {
     @Id
-    @Column(nullable = false, unique = true, length = 50)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Schema(description = "Unique identifier of the menu")
-    private String menuCode;
+    private UUID menuCode;
 
     @Schema(description = "Name of the menu")
     private String menuName;

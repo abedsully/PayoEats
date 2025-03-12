@@ -28,5 +28,5 @@ public class Order {
     private Boolean isActive;
     private Long userId;
     private UUID restaurantId;
-    private List<String> menuList;
+    private List<UUID> menuList;
 }

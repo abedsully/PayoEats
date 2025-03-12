@@ -31,7 +31,7 @@ public class OrderController {
 
     @GetMapping("/get")
     @Operation(summary = "Getting orders of a restaurant", description = "Returning list of orders of a restaurant")
-    public ResponseEntity<ApiResponse> getOrders(UUID restaurantId) {
+    public ResponseEntity<ApiResponse> getOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
             List<Order> restaurantOrderList = orderService.getOrderByRestaurantId(restaurantId, user.getId());

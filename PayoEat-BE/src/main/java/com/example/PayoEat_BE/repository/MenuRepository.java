@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface MenuRepository extends JpaRepository<Menu, String> {
     List<Menu> findByRestaurantId(UUID restaurantId);
-    Optional<Menu> findByMenuCodeAndRestaurantId(String menuCode, UUID restaurantId);
-    Optional<Menu> findByMenuCodeAndIsActiveTrue(String menuCode);
+    Optional<Menu> findByMenuCodeAndRestaurantId(UUID menuCode, UUID restaurantId);
+    Optional<Menu> findByMenuCodeAndIsActiveTrue(UUID menuCode);
     List<Menu> findByMenuNameContainingIgnoreCaseAndIsActiveTrue(String menuName);
 }

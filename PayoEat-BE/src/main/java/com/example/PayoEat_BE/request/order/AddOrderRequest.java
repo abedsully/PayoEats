@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Data
 public class AddOrderRequest {
-    private List<String> menuCode;
+    private List<UUID> menuCode;
     private UUID restaurantId;
     private String orderMessage;
 }

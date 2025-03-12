@@ -15,6 +15,6 @@ public interface IMenuService {
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);
     List<Menu> getMenusByRestaurantId(UUID restaurantId);
-    void deleteMenu(String menuCode);
-    Menu updateMenu(String menuCode, UpdateMenuRequest request, MultipartFile menuImage);
+    void deleteMenu(UUID menuCode);
+    Menu updateMenu(UUID menuCode, UpdateMenuRequest request, MultipartFile menuImage);
 }

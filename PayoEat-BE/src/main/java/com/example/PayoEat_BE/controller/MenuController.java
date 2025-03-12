@@ -78,7 +78,7 @@ public class MenuController {
 
     @DeleteMapping("/delete-menu/{menuCode}")
     @Operation(summary = "Delete a menu by Menu Code", description = "API to delete restaurant menu by providing its code")
-    public ResponseEntity<ApiResponse> deleteMenu(@PathVariable String menuCode) {
+    public ResponseEntity<ApiResponse> deleteMenu(@PathVariable UUID menuCode) {
         try {
             menuService.deleteMenu(menuCode);
             return ResponseEntity.ok(new ApiResponse("Menu deleted successfully", null));
@@ -87,10 +87,10 @@ public class MenuController {
         }
     }
 
-    @PutMapping(value = "/update-menu/{menuCode}", consumes = {"multipart/form-data"})
+    @PutMapping(value = "/update-menu", consumes = {"multipart/form-data"})
     @Operation(summary = "Update a menu by Menu Code", description = "API to update restaurant menu by providing its code")
     public ResponseEntity<ApiResponse> updateMenu(
-            @PathVariable String menuCode,
+            @RequestParam UUID menuCode,
             @RequestParam String menuName,
             @RequestParam String menuDetail,
             @RequestParam double menuPrice,
