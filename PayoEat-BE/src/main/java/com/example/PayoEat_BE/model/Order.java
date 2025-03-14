@@ -29,4 +29,5 @@ public class Order {
     private Long userId;
     private UUID restaurantId;
     private List<UUID> menuList;
+    private Double totalAmount;
 }

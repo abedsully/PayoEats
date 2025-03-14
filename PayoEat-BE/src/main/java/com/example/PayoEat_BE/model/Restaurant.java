@@ -52,6 +52,8 @@ public class Restaurant {
 
     private String telephoneNumber;
 
+    private Double taxFee;
+
 
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
@@ -60,7 +62,7 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber) {
+    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, Double taxFee) {
         this.name = name;
         this.rating = rating;
         this.description = description;
@@ -68,5 +70,6 @@ public class Restaurant {
         this.closingHour = closingHour;
         this.location = location;
         this.telephoneNumber = telephoneNumber;
+        this.taxFee = taxFee;
     }
 }

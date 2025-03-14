@@ -8,5 +8,5 @@ public interface IBalanceService {
     Balance activateBalance(Long userId);
     Double getMyBalance(Long userId);
     void addBalance(Double amount, Long userId);
-    void processPayment(Double amount, UUID restaurantId, Long userId);
+    void processPayment(UUID orderId, Long userId);
 }
