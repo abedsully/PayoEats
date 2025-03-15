@@ -1,41 +1,38 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.model.Transaction;
 import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.request.AddTransactionRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
-import com.example.PayoEat_BE.service.balance.IBalanceService;
+import com.example.PayoEat_BE.service.transaction.ITransactionService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
+@RequestMapping("/api/transaction")
 @RestController
-@RequestMapping("/api/balance")
 @RequiredArgsConstructor
-@Tag(name = "Balance Controller", description = "API for Managing User's Balance")
-public class BalanceController {
-    private final IBalanceService balanceService;
+public class TransactionController {
+    private final ITransactionService transactionService;
     private final IUserService userService;
 
-    @PostMapping("/get-balance")
-    @Operation(summary = "Get Balance", description = "Add restaurant by request")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'RESTAURANT')")
-    public ResponseEntity<ApiResponse> getMyBalance() {
+    @PostMapping("/top-up")
+    @Operation(summary = "Add Top Up Transaction", description = "API for top up")
+    public ResponseEntity<ApiResponse> topUp(@RequestBody AddTransactionRequest request) {
         try {
-            User currentUser = userService.getAuthenticatedUser();
-            Double userBalance = balanceService.getMyBalance(currentUser.getId());
-            return ResponseEntity.ok(new ApiResponse("My balance: ", userBalance));
+            User user = userService.getAuthenticatedUser();
+            Transaction newTransaction = transactionService.addTopUpTransaction(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Top up is successfully made", newTransaction));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
 
     }
-
-
 }

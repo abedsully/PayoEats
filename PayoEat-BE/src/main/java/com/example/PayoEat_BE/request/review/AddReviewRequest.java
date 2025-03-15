@@ -7,6 +7,5 @@ import java.util.UUID;
 @Data
 public class AddReviewRequest {
     private String reviewContent;
-    private Long userId;
     private UUID restaurantId;
 }

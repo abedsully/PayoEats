@@ -1,6 +1,8 @@
 package com.example.PayoEat_BE.service.review;
 
 import com.example.PayoEat_BE.dto.ReviewDto;
+import com.example.PayoEat_BE.enums.UserRoles;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
@@ -27,8 +29,8 @@ public class ReviewService implements IReviewService{
     private final ModelMapper modelMapper;
 
     @Override
-    public Review addReview(AddReviewRequest request) {
-        return reviewRepository.save(createReview(request));
+    public Review addReview(AddReviewRequest request, Long userId) {
+        return reviewRepository.save(createReview(request, userId));
     }
 
     @Override
@@ -59,15 +61,19 @@ public class ReviewService implements IReviewService{
         return reviewList.stream().map(this::convertToDto).toList();
     }
 
-    private Review createReview(AddReviewRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+    private Review createReview(AddReviewRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (!user.getRoles().equals(UserRoles.CUSTOMER)) {
+            throw new ForbiddenException("You can't review a restaurant, if you're not a customer");
+        }
 
         Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
 
         if(restaurant.getUserId().equals(user.getId())) {
-            throw new InvalidException("Sorry, you can't review your own restaurant");
+            throw new ForbiddenException("Sorry, you can't review your own restaurant");
         }
 
         if (request.getReviewContent().isEmpty()) {

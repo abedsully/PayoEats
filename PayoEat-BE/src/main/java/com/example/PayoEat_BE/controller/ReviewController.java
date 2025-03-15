@@ -34,9 +34,8 @@ public class ReviewController {
     public ResponseEntity<ApiResponse> addReview(@RequestBody AddReviewRequest request) {
         try {
             User user = userService.getAuthenticatedUser();
-            request.setUserId(user.getId());
 
-            Review newReview = reviewService.addReview(request);
+            Review newReview = reviewService.addReview(request, user.getId());
             ReviewDto convertedReview = reviewService.convertToDto(newReview);
 
             return ResponseEntity.ok(new ApiResponse("Review added successfully", convertedReview));

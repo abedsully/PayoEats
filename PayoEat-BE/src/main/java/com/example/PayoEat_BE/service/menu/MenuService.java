@@ -128,7 +128,7 @@ public class MenuService implements IMenuService{
         menu.setIsActive(true);
         menu.setRestaurant(restaurant);
 
-        Image image = imageService.saveImage(menuImage, menu.getMenuCode());
+        Image image = imageService.saveMenuImage(menuImage, menu.getMenuCode());
         image.setMenu(menu);
         menu.setMenuImage(image);
 

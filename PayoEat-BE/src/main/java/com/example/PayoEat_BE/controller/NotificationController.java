@@ -12,10 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,10 +50,9 @@ public class NotificationController {
 
     @GetMapping("/get-user-notifications")
     @Operation(summary = "Getting user notifications", description = "Returning list of notifications for user")
-    public ResponseEntity<ApiResponse> getUserNotification(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse> getUserNotification(@RequestParam Long userId) {
         try {
             User user = userService.getAuthenticatedUser();
-
             List<Notification> notificationList = notificationService.getUserNotification(user.getId());
 
             return ResponseEntity.ok(new ApiResponse("Notification lists: ", notificationList));

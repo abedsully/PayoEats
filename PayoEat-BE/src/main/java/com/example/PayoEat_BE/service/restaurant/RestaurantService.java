@@ -2,7 +2,9 @@ package com.example.PayoEat_BE.service.restaurant;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
+import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
+import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
@@ -11,9 +13,11 @@ import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,14 +30,15 @@ public class RestaurantService implements IRestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final ModelMapper modelMapper;
     private final RestaurantApprovalRepository restaurantApprovalRepository;
+    private final IImageService imageService;
 
     @Override
-    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId) {
+    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile file) {
         if (restaurantExists(request.getName())) {
             throw new AlreadyExistException(request.getName() + " already exists");
         }
 
-        return restaurantRepository.save(createRestaurant(request, userId));
+        return restaurantRepository.save(createRestaurant(request, userId, file));
     }
 
     @Override
@@ -84,24 +89,56 @@ public class RestaurantService implements IRestaurantService {
     }
 
     private boolean restaurantExists(String name) {
-        return restaurantRepository.existsByName(name);
+        return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
-    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId) {
+    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage) {
+        if (request.getName() == null || request.getName().isEmpty()) {
+            throw new InvalidException("Name of restaurant cannot be empty");
+        }
+
+        if (request.getDescription() == null || request.getDescription().isEmpty()) {
+            throw new InvalidException("Description of restaurant cannot be empty");
+        }
+
+        if (request.getOpeningHour() == null || request.getClosingHour() == null) {
+            throw new InvalidException("Opening hour and closing hour cannot be null");
+        }
+
+        if (request.getOpeningHour().isAfter(request.getClosingHour())) {
+            throw new InvalidException("Opening hour cannot be after closing hour");
+        }
+
+        if (request.getTelephoneNumber() == null || request.getTelephoneNumber().isEmpty()) {
+            throw new InvalidException("Telephone number cannot be empty");
+        }
+
+        if (request.getLocation() == null || request.getLocation().isEmpty()) {
+            throw new InvalidException("Location cannot be empty");
+        }
+
+
         Restaurant restaurant = new Restaurant(
                 request.getName(),
-                request.getRating(),
+                0.0,
                 request.getDescription(),
                 request.getOpeningHour(),
                 request.getClosingHour(),
                 request.getLocation(),
-                request.getTelephoneNumber()
+                request.getTelephoneNumber(),
+                request.getTaxFee()
         );
 
+        restaurant.setLocation(request.getLocation());
+        restaurant.setRestaurantCategory(request.getRestaurantCategory());
         restaurant.setUserId(userId);
         restaurant.setCreatedAt(LocalDateTime.now());
         restaurant.setUpdatedAt(null);
         restaurant.setIsActive(false);
+
+        Image image = imageService.saveRestaurantImage(restaurantImage, restaurant.getId());
+        image.setRestaurant(restaurant);
+        restaurant.setRestaurantImage(image);
 
         return restaurant;
     }
@@ -140,6 +177,7 @@ public class RestaurantService implements IRestaurantService {
         restaurantApproval.setRequestedAt(LocalDateTime.now());
         restaurantApproval.setIsApproved(false);
         restaurantApproval.setIsActive(true);
+
 
         restaurantApprovalRepository.save(restaurantApproval);
 

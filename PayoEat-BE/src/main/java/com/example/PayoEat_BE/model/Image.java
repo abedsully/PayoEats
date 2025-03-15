@@ -29,4 +29,8 @@ public class Image {
     @OneToOne
     @JoinColumn(name = "menu_code", unique = true)
     private Menu menu;
+
+    @OneToOne
+    @JoinColumn(name = "restaurant_id", unique = true)
+    private Restaurant restaurant;
 }

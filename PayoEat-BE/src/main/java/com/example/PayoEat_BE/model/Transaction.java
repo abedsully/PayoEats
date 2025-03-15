@@ -22,6 +22,7 @@ public class Transaction {
     private UUID transactionId;
     private TransactionType transactionType;
     private Double transactionAmount;
+    private Long userId;
     private UUID orderId;
     private LocalDateTime dateTime;
 }

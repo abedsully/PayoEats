@@ -12,4 +12,6 @@ public class RestaurantDto {
     private Double rating;
     private String description;
     private Long userId;
+    private String telephoneNumber;
+    private String location;
 }

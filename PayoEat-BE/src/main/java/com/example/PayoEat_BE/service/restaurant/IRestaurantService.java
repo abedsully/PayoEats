@@ -7,12 +7,13 @@ import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface IRestaurantService {
-    Restaurant addRestaurant(AddRestaurantRequest request, Long userId);
+    Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile file);
     Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request);
     void deleteRestaurant(UUID restaurantId);
     Restaurant getRestaurantById(UUID id);

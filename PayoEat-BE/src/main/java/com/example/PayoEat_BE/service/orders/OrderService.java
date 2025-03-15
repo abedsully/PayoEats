@@ -19,7 +19,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +68,7 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public void finishOrder(UUID orderId, Long userId) {
+    public Order finishOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
@@ -84,13 +83,18 @@ public class OrderService implements IOrderService {
         }
 
         order.setIsActive(false);
-        orderRepository.save(order);
+        return orderRepository.save(order);
     }
 
     private Order createOrder(AddOrderRequest request, Long userId) {
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
+
+        double taxFee = restaurant.getTaxFee();
+
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setMenuList(request.getMenuCode());
-        newRestaurantOrder.setRestaurantId(request.getRestaurantId());
+        newRestaurantOrder.setRestaurantId(restaurant.getId());
 
         String orderMessage = request.getOrderMessage();
 
@@ -100,11 +104,27 @@ public class OrderService implements IOrderService {
             newRestaurantOrder.setOrderMessage(orderMessage);
         }
 
+        double totalPrice = 0.0;
+
+        for (UUID menuCode : request.getMenuCode()) {
+            Menu menu = menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
+                    .orElseThrow(() -> new NotFoundException("Menu not found"));
+
+            totalPrice += menu.getMenuPrice();
+        }
+
+        taxFee = (totalPrice * taxFee) / 100;
+
+        totalPrice += taxFee;
+
         newRestaurantOrder.setOrderMessage(request.getOrderMessage());
         newRestaurantOrder.setUserId(userId);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(true);
+        newRestaurantOrder.setTotalAmount(totalPrice);
+
+        orderRepository.save(newRestaurantOrder);
 
         return newRestaurantOrder;
     }

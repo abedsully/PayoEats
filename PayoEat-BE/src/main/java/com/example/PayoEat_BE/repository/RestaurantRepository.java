@@ -9,9 +9,8 @@ import java.util.UUID;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
     List<Restaurant> findByNameContainingIgnoreCase(String name);
-    boolean existsByName(String name);
+    boolean existsByNameAndIsActiveTrue(String name);
     Optional <Restaurant> findByIdAndIsActiveTrue(UUID id);
     Optional <Restaurant> findByIdAndIsActiveFalse(UUID id);
     List<Restaurant> findByIsActiveTrue();
-    Restaurant findByName(String name);
 }

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -60,5 +61,15 @@ public class AuthController {
             return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse(e.getMessage(), null));
         }
 
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<ApiResponse> getAuthenticatedUser() {
+        try {
+            User user = userService.getAuthenticatedUser();
+            return ResponseEntity.ok(new ApiResponse("Success", user));
+        } catch (Exception e) {
+            return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse("Fail", null));
+        }
     }
 }

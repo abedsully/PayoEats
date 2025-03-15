@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByRestaurantId(UUID restaurantId);
     Optional<Order> findByIdAndIsActiveTrue(UUID id);
+    Optional<Order> findByIdAndIsActiveFalse(UUID id);
 }

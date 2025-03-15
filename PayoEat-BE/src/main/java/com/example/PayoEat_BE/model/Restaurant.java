@@ -3,6 +3,7 @@ package com.example.PayoEat_BE.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,7 @@ public class Restaurant {
     private UUID id;
 
     @Schema(description = "Name of the restaurant")
+    @NotBlank(message = "Restaurant name cannot be blank")
     private String name;
 
     @Schema(description = "Rating of the restaurant")
@@ -54,6 +56,8 @@ public class Restaurant {
 
     private Double taxFee;
 
+    @OneToOne(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Image restaurantImage;
 
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")

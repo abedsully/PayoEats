@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IReviewService {
-    Review addReview(AddReviewRequest request);
+    Review addReview(AddReviewRequest request, Long userId);
     List<Review> getReviewsByRestaurantId(UUID restaurantId);
     List<Review> getReviewsByUserId(Long userId);
     ReviewDto convertToDto(Review review);

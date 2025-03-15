@@ -76,9 +76,9 @@ public class MenuController {
         }
     }
 
-    @DeleteMapping("/delete-menu/{menuCode}")
+    @DeleteMapping("/delete-menu")
     @Operation(summary = "Delete a menu by Menu Code", description = "API to delete restaurant menu by providing its code")
-    public ResponseEntity<ApiResponse> deleteMenu(@PathVariable UUID menuCode) {
+    public ResponseEntity<ApiResponse> deleteMenu(@RequestParam UUID menuCode) {
         try {
             menuService.deleteMenu(menuCode);
             return ResponseEntity.ok(new ApiResponse("Menu deleted successfully", null));

@@ -15,7 +15,7 @@ public class ImageService implements IImageService{
     private final ImageRepository imageRepository;
 
     @Override
-    public Image saveImage(MultipartFile file, UUID menuCode) {
+    public Image saveMenuImage(MultipartFile file, UUID menuCode) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
         }
@@ -30,6 +30,26 @@ public class ImageService implements IImageService{
             savedImage.setDownloadUrl("/menu/download/" + savedImage.getId());
             return imageRepository.save(savedImage);
         } catch (IOException e) {
+            throw new RuntimeException("Failed to process image: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Image saveRestaurantImage(MultipartFile file, UUID restaurantId) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File can not be empty");
+        }
+
+        try {
+            Image image = new Image();
+            image.setFileName(file.getOriginalFilename());
+            image.setFileType(file.getContentType());
+            image.setImage(file.getBytes());
+
+            Image savedImage = imageRepository.save(image);
+            savedImage.setDownloadUrl("/restaurant/download" + savedImage.getId());
+            return imageRepository.save(savedImage);
+        } catch (Exception e) {
             throw new RuntimeException("Failed to process image: " + e.getMessage());
         }
     }
