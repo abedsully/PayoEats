@@ -8,5 +8,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ImageRepository extends JpaRepository<Image, UUID> {
-    Image findByMenu(Menu menu);
+    Image findByMenuCode(UUID menuCode);
 }

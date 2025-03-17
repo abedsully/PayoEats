@@ -40,8 +40,7 @@ public class Menu {
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
-    @OneToOne(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Image menuImage;
+    private UUID menuImage;
 
     public Menu(String menuName, String menuDetail, double menuPrice) {
         this.menuName = menuName;

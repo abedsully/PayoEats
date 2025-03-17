@@ -137,8 +137,8 @@ public class RestaurantService implements IRestaurantService {
         restaurant.setIsActive(false);
 
         Image image = imageService.saveRestaurantImage(restaurantImage, restaurant.getId());
-        image.setRestaurant(restaurant);
-        restaurant.setRestaurantImage(image);
+        image.setRestaurantId(restaurant.getId());
+        restaurant.setRestaurantImage(image.getId());
 
         return restaurant;
     }

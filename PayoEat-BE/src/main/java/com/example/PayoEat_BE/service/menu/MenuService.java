@@ -105,7 +105,7 @@ public class MenuService implements IMenuService{
         }
 
         if (menuImage != null) {
-            imageService.updateImage(menuImage, existingMenu.getMenuImage().getId());
+            imageService.updateImage(menuImage, existingMenu.getMenuCode());
         }
 
         existingMenu.setUpdatedAt(LocalDateTime.now());
@@ -129,8 +129,8 @@ public class MenuService implements IMenuService{
         menu.setRestaurant(restaurant);
 
         Image image = imageService.saveMenuImage(menuImage, menu.getMenuCode());
-        image.setMenu(menu);
-        menu.setMenuImage(image);
+        image.setMenuCode(menu.getMenuCode());
+        menu.setMenuImage(image.getId());
 
         return menuRepository.save(menu);
     }

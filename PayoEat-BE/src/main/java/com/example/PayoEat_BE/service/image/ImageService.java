@@ -25,6 +25,7 @@ public class ImageService implements IImageService{
             image.setFileName(file.getOriginalFilename());
             image.setFileType(file.getContentType());
             image.setImage(file.getBytes());
+            image.setMenuCode(menuCode);
 
             Image savedImage = imageRepository.save(image);
             savedImage.setDownloadUrl("/menu/download/" + savedImage.getId());
@@ -45,6 +46,7 @@ public class ImageService implements IImageService{
             image.setFileName(file.getOriginalFilename());
             image.setFileType(file.getContentType());
             image.setImage(file.getBytes());
+            image.setRestaurantId(restaurantId);
 
             Image savedImage = imageRepository.save(image);
             savedImage.setDownloadUrl("/restaurant/download" + savedImage.getId());

@@ -56,8 +56,7 @@ public class Restaurant {
 
     private Double taxFee;
 
-    @OneToOne(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Image restaurantImage;
+    private UUID restaurantImage;
 
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")

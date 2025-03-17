@@ -1,16 +1,14 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
-import com.example.PayoEat_BE.model.Notification;
-import com.example.PayoEat_BE.model.Restaurant;
-import com.example.PayoEat_BE.model.RestaurantApproval;
-import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.admin.IAdminService;
 import com.example.PayoEat_BE.service.balance.IBalanceService;
+import com.example.PayoEat_BE.service.image.IImageService;
 import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
@@ -18,6 +16,8 @@ import com.example.PayoEat_BE.dto.RestaurantDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,6 +41,7 @@ public class RestaurantController {
     private final IAdminService adminService;
     private final INotificationService notificationService;
     private final IBalanceService balanceService;
+    private final IImageService imageService;
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
@@ -158,6 +159,18 @@ public class RestaurantController {
             return ResponseEntity.ok(new ApiResponse("Payment Success", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/image")
+    @Operation(summary = "Show Menu Image by ID", description = "API to display menu image by providing the image ID")
+    public ResponseEntity<ByteArrayResource> showRestaurantImage(@RequestParam UUID imageId) {
+        try {
+            Image image = imageService.getImageById(imageId);
+            ByteArrayResource resource = new ByteArrayResource(image.getImage());
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, image.getFileType()).body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(null);
         }
     }
 

@@ -26,11 +26,7 @@ public class Image {
     private byte[] image;
     private String downloadUrl;
 
-    @OneToOne
-    @JoinColumn(name = "menu_code", unique = true)
-    private Menu menu;
+    private UUID menuCode;
 
-    @OneToOne
-    @JoinColumn(name = "restaurant_id", unique = true)
-    private Restaurant restaurant;
+    private UUID restaurantId;
 }

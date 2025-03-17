@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.dto;
 
+import com.example.PayoEat_BE.model.Image;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,4 +15,5 @@ public class RestaurantDto {
     private Long userId;
     private String telephoneNumber;
     private String location;
+    private UUID restaurantImage;
 }
