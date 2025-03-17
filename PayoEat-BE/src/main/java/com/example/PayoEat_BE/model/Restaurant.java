@@ -58,6 +58,8 @@ public class Restaurant {
 
     private UUID restaurantImage;
 
+    private UUID qrisImage;
+
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
     @JsonIgnore

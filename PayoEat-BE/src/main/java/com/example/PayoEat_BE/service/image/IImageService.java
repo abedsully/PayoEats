@@ -10,4 +10,5 @@ public interface IImageService {
     Image saveRestaurantImage(MultipartFile file, UUID restaurantId);
     Image getImageById(UUID imageId);
     Image updateImage(MultipartFile file, UUID id);
+    Image saveQrisImage(MultipartFile file, UUID restaurantId);
 }

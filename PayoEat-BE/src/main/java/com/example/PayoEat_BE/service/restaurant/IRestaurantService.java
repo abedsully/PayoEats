@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IRestaurantService {
-    Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile file);
+    Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage);
     Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request);
     void deleteRestaurant(UUID restaurantId);
     Restaurant getRestaurantById(UUID id);

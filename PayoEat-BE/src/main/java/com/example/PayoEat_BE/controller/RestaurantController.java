@@ -6,8 +6,6 @@ import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
-import com.example.PayoEat_BE.service.admin.IAdminService;
-import com.example.PayoEat_BE.service.balance.IBalanceService;
 import com.example.PayoEat_BE.service.image.IImageService;
 import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.user.IUserService;
@@ -23,7 +21,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -38,9 +35,7 @@ import static org.springframework.http.HttpStatus.*;
 public class RestaurantController {
     private final IRestaurantService restaurantService;
     private final IUserService userService;
-    private final IAdminService adminService;
     private final INotificationService notificationService;
-    private final IBalanceService balanceService;
     private final IImageService imageService;
 
     @GetMapping("/{id}")
@@ -75,13 +70,14 @@ public class RestaurantController {
                                                      @RequestParam("telephoneNumber") String telephoneNumber,
                                                      @RequestParam("taxFee") double taxFee,
                                                      @RequestParam("restaurantCategory") Long restaurantCategory,
-                                                     @RequestParam("restaurantImage") MultipartFile restaurantImage) {
+                                                     @RequestParam("restaurantImage") MultipartFile restaurantImage,
+                                                     @RequestParam("qrisImage") MultipartFile qrisImage) {
         try {
             User user = userService.getAuthenticatedUser();
             AddRestaurantRequest request = new AddRestaurantRequest(
                     name, rating, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, taxFee, restaurantCategory
             );
-            Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId(), restaurantImage);
+            Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId(), restaurantImage, qrisImage);
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), user.getId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
@@ -147,18 +143,6 @@ public class RestaurantController {
             return ResponseEntity.ok(new ApiResponse("Restaurant deleted successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @PostMapping("/process-payment")
-    @Operation(summary = "Process order payment", description = "API for processing order")
-    public ResponseEntity<ApiResponse> processPayment(@PathVariable UUID orderId) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            balanceService.processPayment(orderId, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Payment Success", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 

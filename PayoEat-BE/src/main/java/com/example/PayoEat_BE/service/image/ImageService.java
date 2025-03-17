@@ -56,6 +56,28 @@ public class ImageService implements IImageService{
         }
     }
 
+    @Override
+    public Image saveQrisImage(MultipartFile file, UUID restaurantId) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File can not be empty");
+        }
+
+        try {
+            Image image = new Image();
+            image.setFileName("QRIS" +  restaurantId);
+            image.setFileType(file.getContentType());
+            image.setImage(file.getBytes());
+            image.setRestaurantId(restaurantId);
+
+            Image savedImage = imageRepository.save(image);
+            savedImage.setDownloadUrl("/qris/download" + savedImage.getId());
+            return imageRepository.save(savedImage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process image: " + e.getMessage());
+        }
+    }
+
+
     public Image getImageById(UUID imageId) {
         return imageRepository.findById(imageId)
                 .orElseThrow(() -> new RuntimeException("Image not found with id: " + imageId));
@@ -81,5 +103,6 @@ public class ImageService implements IImageService{
             throw new RuntimeException("Failed to update image: " + e.getMessage());
         }
     }
+
 
 }

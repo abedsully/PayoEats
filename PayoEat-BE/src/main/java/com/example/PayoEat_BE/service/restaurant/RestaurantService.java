@@ -33,12 +33,12 @@ public class RestaurantService implements IRestaurantService {
     private final IImageService imageService;
 
     @Override
-    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile file) {
+    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage) {
         if (restaurantExists(request.getName())) {
             throw new AlreadyExistException(request.getName() + " already exists");
         }
 
-        return restaurantRepository.save(createRestaurant(request, userId, file));
+        return restaurantRepository.save(createRestaurant(request, userId, restaurantImage, qrisImage));
     }
 
     @Override
@@ -92,7 +92,7 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
-    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage) {
+    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage) {
         if (request.getName() == null || request.getName().isEmpty()) {
             throw new InvalidException("Name of restaurant cannot be empty");
         }
@@ -139,6 +139,10 @@ public class RestaurantService implements IRestaurantService {
         Image image = imageService.saveRestaurantImage(restaurantImage, restaurant.getId());
         image.setRestaurantId(restaurant.getId());
         restaurant.setRestaurantImage(image.getId());
+
+        Image imageQris = imageService.saveQrisImage(qrisImage, restaurant.getId());
+        imageQris.setRestaurantId(restaurant.getId());
+        restaurant.setQrisImage(imageQris.getId());
 
         return restaurant;
     }
