@@ -29,20 +29,15 @@ public class OrderService implements IOrderService {
     private final MenuRepository menuRepository;
 
     @Override
-    public Order addOrder(AddOrderRequest request, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public Order addOrder(AddOrderRequest request) {
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
 
         validateMenuCodes(request.getMenuCode(), restaurant.getId());
 
-        if (!user.getRoles().equals(UserRoles.CUSTOMER)) {
-            throw new ForbiddenException("You need to be a customer to order foods");
-        }
 
-        return orderRepository.save(createOrder(request, user.getId()));
+        return orderRepository.save(createOrder(request));
     }
 
     private void validateMenuCodes(List<UUID> menuCodes, UUID restaurantId) {
@@ -86,7 +81,7 @@ public class OrderService implements IOrderService {
         return orderRepository.save(order);
     }
 
-    private Order createOrder(AddOrderRequest request, Long userId) {
+    private Order createOrder(AddOrderRequest request) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
@@ -118,7 +113,6 @@ public class OrderService implements IOrderService {
         totalPrice += taxFee;
 
         newRestaurantOrder.setOrderMessage(request.getOrderMessage());
-        newRestaurantOrder.setUserId(userId);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(true);

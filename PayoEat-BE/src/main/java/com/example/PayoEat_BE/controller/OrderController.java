@@ -43,11 +43,10 @@ public class OrderController {
 
     @PostMapping("/add")
     @Operation(summary = "Adding order to a restaurant", description = "Making order request to a restaurant")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER')")
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
         try {
             User user = userService.getAuthenticatedUser();
-            Order newOrder = orderService.addOrder(request, user.getId());
+            Order newOrder = orderService.addOrder(request);
             notificationService.addOrderNotification(newOrder.getId(), newOrder.getRestaurantId(), user.getId());
             return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder));
         } catch (Exception e) {
