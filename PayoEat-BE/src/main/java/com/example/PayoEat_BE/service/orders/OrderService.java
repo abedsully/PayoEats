@@ -63,6 +63,26 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public Order confirmOrder(UUID orderId, Long userId) {
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to confirm this order");
+        }
+
+
+
+        return orderRepository.save(order);
+    }
+
+    @Override
     public Order finishOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
@@ -79,6 +99,12 @@ public class OrderService implements IOrderService {
 
         order.setIsActive(false);
         return orderRepository.save(order);
+    }
+
+    @Override
+    public Order getOrderById(UUID orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
     }
 
     private Order createOrder(AddOrderRequest request) {

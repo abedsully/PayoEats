@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface INotificationService {
-    void addOrderNotification(UUID orderId, UUID restaurantId, Long userId);
+    void addOrderNotification(UUID orderId, UUID restaurantId);
     void addRestaurantApprovalNotification(UUID approvalId, UUID restaurantId);
     List<Notification> getRestaurantNotification(UUID restaurantId, Long userId);
     List<Notification> getUserNotification(Long userId);

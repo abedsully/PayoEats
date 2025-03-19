@@ -64,13 +64,34 @@ public class ImageService implements IImageService{
 
         try {
             Image image = new Image();
-            image.setFileName("QRIS" +  restaurantId);
+            image.setFileName("QRIS: " +  restaurantId);
             image.setFileType(file.getContentType());
             image.setImage(file.getBytes());
             image.setRestaurantId(restaurantId);
 
             Image savedImage = imageRepository.save(image);
             savedImage.setDownloadUrl("/qris/download" + savedImage.getId());
+            return imageRepository.save(savedImage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process image: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Image savePaymentProofImage(MultipartFile file, UUID orderId) {
+        if (file == null && file.isEmpty()) {
+            throw new IllegalArgumentException("File can not be empty");
+        }
+
+        try {
+            Image image = new Image();
+            image.setFileName("Payment Proof: " + orderId);
+            image.setFileType(file.getContentType());
+            image.setImage(file.getBytes());
+            image.setOrderId(orderId);
+
+            Image savedImage = imageRepository.save(image);
+            savedImage.setDownloadUrl("/payment/download" + savedImage.getId());
             return imageRepository.save(savedImage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to process image: " + e.getMessage());

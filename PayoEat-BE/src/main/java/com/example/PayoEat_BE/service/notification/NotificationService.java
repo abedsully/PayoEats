@@ -23,22 +23,12 @@ public class NotificationService implements INotificationService {
     private final UserRepository userRepository;
 
     @Override
-    public void addOrderNotification(UUID orderId, UUID restaurantId, Long userId) {
+    public void addOrderNotification(UUID orderId, UUID restaurantId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Notification userNotification = new Notification();
-        userNotification.setMessage("Order received");
-        userNotification.setOrderId(order.getId());
-        userNotification.setRequestTime(LocalTime.now());
-        userNotification.setRequestDate(LocalDate.now());
-        userNotification.setUserId(user.getId());
 
         Notification restaurantNotification = new Notification();
         restaurantNotification.setMessage("Order received");
@@ -47,7 +37,6 @@ public class NotificationService implements INotificationService {
         restaurantNotification.setRequestDate(LocalDate.now());
         restaurantNotification.setRestaurantId(restaurant.getId());
 
-        notificationRepository.save(userNotification);
         notificationRepository.save(restaurantNotification);
     }
 
