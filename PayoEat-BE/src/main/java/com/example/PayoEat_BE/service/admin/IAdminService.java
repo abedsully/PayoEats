@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.admin;
 
+import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 
@@ -10,4 +11,6 @@ public interface IAdminService {
     void approveRestaurant(UUID id);
     void rejectRestaurant(UUID id, String reason);
     List<RestaurantApproval> getAllRestaurantApproval(Long userId);
+    List<RestaurantApprovalDto> getConvertedApprovalDto(List<RestaurantApproval> approvalList);
+    RestaurantApprovalDto convertToDto(RestaurantApproval restaurantApproval);
 }

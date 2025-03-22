@@ -177,6 +177,8 @@ public class RestaurantService implements IRestaurantService {
     public RestaurantApproval addRestaurantApproval(ReviewRestaurantRequest request) {
         RestaurantApproval restaurantApproval = new RestaurantApproval();
         restaurantApproval.setRestaurantId(request.getRestaurantId());
+        restaurantApproval.setRestaurantName(request.getRestaurantName());
+        restaurantApproval.setRestaurantImage(request.getRestaurantImage());
         restaurantApproval.setUserId(request.getUserId());
         restaurantApproval.setRequestedAt(LocalDateTime.now());
         restaurantApproval.setIsApproved(false);

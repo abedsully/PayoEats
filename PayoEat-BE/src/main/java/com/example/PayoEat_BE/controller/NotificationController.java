@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.OrderNotificationDto;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.model.Notification;
 import com.example.PayoEat_BE.model.Restaurant;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,10 +40,12 @@ public class NotificationController {
             List<Notification> notificationList = notificationService.getRestaurantNotification(restaurant.getId(), user.getId());
 
             if (notificationList.isEmpty()) {
-                return ResponseEntity.ok(new ApiResponse("Currently there are no notifications: ", null));
+                return ResponseEntity.status(NOT_FOUND).body(new ApiResponse("Currently there are no notifications: ", null));
             }
 
-            return ResponseEntity.ok(new ApiResponse("Notification lists: ", notificationList));
+            List<OrderNotificationDto> orderNotificationDtos = notificationService.getConvertedOrderNotification(notificationList);
+
+            return ResponseEntity.ok(new ApiResponse("Notification lists: ", orderNotificationDtos));
 
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -54,6 +58,7 @@ public class NotificationController {
         try {
             User user = userService.getAuthenticatedUser();
             List<Notification> notificationList = notificationService.getUserNotification(user.getId());
+
 
             return ResponseEntity.ok(new ApiResponse("Notification lists: ", notificationList));
         } catch (Exception e) {

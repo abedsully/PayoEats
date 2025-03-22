@@ -1,11 +1,13 @@
 package com.example.PayoEat_BE.service.notification;
 
-import com.example.PayoEat_BE.enums.UserRoles;
+import com.example.PayoEat_BE.dto.OrderNotificationDto;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,7 +23,11 @@ public class NotificationService implements INotificationService {
     private final RestaurantRepository restaurantRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
+    private final UserNotificationRepository userNotificationRepository;
 
+
+    // Notification for restaurant when a user is ordering foods
     @Override
     public void addOrderNotification(UUID orderId, UUID restaurantId) {
         Order order = orderRepository.findById(orderId)
@@ -31,15 +37,16 @@ public class NotificationService implements INotificationService {
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
         Notification restaurantNotification = new Notification();
-        restaurantNotification.setMessage("Order received");
-        restaurantNotification.setOrderId(orderId);
+        restaurantNotification.setOrderId(order.getId());
         restaurantNotification.setRequestTime(LocalTime.now());
         restaurantNotification.setRequestDate(LocalDate.now());
         restaurantNotification.setRestaurantId(restaurant.getId());
+        restaurantNotification.setIsActive(true);
 
         notificationRepository.save(restaurantNotification);
     }
 
+    //  Notification for admin when a user is creating a new restaurant (Approval)
     @Override
     public void addRestaurantApprovalNotification(UUID approvalId, UUID restaurantId) {
 
@@ -56,9 +63,11 @@ public class NotificationService implements INotificationService {
         newApprovalNotification.setApprovalId(restaurantApproval.getId());
         newApprovalNotification.setRestaurantId(restaurant.getId());
 
+
         notificationRepository.save(newApprovalNotification);
     }
 
+    // Notification for restaurant to view the list of orders
     @Override
     public List<Notification> getRestaurantNotification(UUID restaurantId, Long userId) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
@@ -74,11 +83,49 @@ public class NotificationService implements INotificationService {
         return notificationRepository.findByRestaurantIdAndIsActiveTrue(restaurant.getId());
     }
 
+    // Notifications for users
     @Override
     public List<Notification> getUserNotification(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
         return notificationRepository.findByUserId(user.getId());
+    }
+
+    // Adding a notification to user
+    @Override
+    public UserNotification addUserNotification(Long userId, UUID approvalId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(approvalId)
+                .orElseThrow(() -> new NotFoundException("Restaurant approval not found with id: " + approvalId));
+
+        if (!user.getId().equals(restaurantApproval.getUserId())) {
+            throw new ForbiddenException("Sorry you can't add user notification with this restaurant approval");
+        }
+
+        UserNotification userNotification = new UserNotification();
+
+        if (!restaurantApproval.getIsApproved() && restaurantApproval.getIsActive()) {
+            userNotification.setMessage("We received your restaurant request: " + restaurantApproval.getRestaurantName() + " . Please wait for our admin to process your restaurant");
+        } else {
+            userNotification.setMessage("Our admin has processed your restaurant request, View here to see the result of your request");
+        }
+
+        userNotification.setApprovalId(restaurantApproval.getId());
+
+        return userNotificationRepository.save(userNotification);
+    }
+
+    @Override
+    public List<OrderNotificationDto> getConvertedOrderNotification(List<Notification> notificationList) {
+        return notificationList.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    public OrderNotificationDto convertToDto(Notification notification) {
+        return modelMapper.map(notification, OrderNotificationDto.class);
     }
 }

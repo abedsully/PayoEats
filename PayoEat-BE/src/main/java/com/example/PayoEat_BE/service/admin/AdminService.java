@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.admin;
 
+import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
@@ -11,6 +12,7 @@ import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ public class AdminService implements IAdminService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantApprovalRepository restaurantApprovalRepository;
     private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public void approveRestaurant(UUID id) {
@@ -62,5 +65,15 @@ public class AdminService implements IAdminService {
             throw new InvalidException("Sorry you cant do this");
         }
         return restaurantApprovalRepository.findAll();
+    }
+
+    @Override
+    public List<RestaurantApprovalDto> getConvertedApprovalDto(List<RestaurantApproval> approvalList) {
+        return approvalList.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    public RestaurantApprovalDto convertToDto(RestaurantApproval restaurantApproval) {
+        return modelMapper.map(restaurantApproval, RestaurantApprovalDto.class);
     }
 }

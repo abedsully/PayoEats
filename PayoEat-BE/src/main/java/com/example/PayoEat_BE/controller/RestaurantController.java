@@ -78,11 +78,12 @@ public class RestaurantController {
                     name, rating, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, taxFee, restaurantCategory
             );
             Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId(), restaurantImage, qrisImage);
-            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), user.getId());
+            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), user.getId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
             notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId(), newRestaurant.getId());
-            return ResponseEntity.ok(new ApiResponse("Restaurant added successfully", convertedRestaurantApproval));
+            notificationService.addUserNotification(user.getId(), newRestaurantApproval.getId());
+            return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", convertedRestaurantApproval));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse("Error: " + e.getMessage(), null));

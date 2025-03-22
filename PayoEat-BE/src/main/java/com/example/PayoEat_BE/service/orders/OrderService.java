@@ -77,6 +77,7 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("User does not have access to confirm this order");
         }
 
+        order.setIsActive(true);
 
 
         return orderRepository.save(order);
@@ -141,7 +142,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setOrderMessage(request.getOrderMessage());
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
-        newRestaurantOrder.setIsActive(true);
+        newRestaurantOrder.setIsActive(false);
         newRestaurantOrder.setTotalAmount(totalPrice);
 
         orderRepository.save(newRestaurantOrder);

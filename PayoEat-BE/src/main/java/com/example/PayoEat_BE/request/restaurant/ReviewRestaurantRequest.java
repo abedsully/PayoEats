@@ -11,5 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ReviewRestaurantRequest {
     private UUID restaurantId;
+    private String restaurantName;
+    private UUID restaurantImage;
     private Long userId;
 }
