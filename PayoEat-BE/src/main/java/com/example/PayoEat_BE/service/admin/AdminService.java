@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.admin;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.enums.UserRoles;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
@@ -10,9 +11,11 @@ import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
+import com.example.PayoEat_BE.request.admin.RejectRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,32 +31,57 @@ public class AdminService implements IAdminService {
     private final ModelMapper modelMapper;
 
     @Override
-    public void approveRestaurant(UUID id) {
+    public RestaurantApproval approveRestaurant(UUID id, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found to approve this restaurant request"));
+
+        if (!user.getRoles().equals(UserRoles.ADMIN)) {
+            throw new ForbiddenException("Sorry only admin can approve restaurant");
+        }
+
         RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Restaurant approval not found with id: " + id));
+                    .orElseThrow(() -> new NotFoundException("Restaurant approval not found with id: " + id));
 
-        UUID restaurantId = restaurantApproval.getRestaurantId();
+        if (restaurantApproval.getIsApproved() && !restaurantApproval.getIsActive()) {
+            throw new InvalidException("This restaurant has been approved, Please ensure your approval id is right");
+        } else if (!restaurantApproval.getIsApproved() && !restaurantApproval.getIsActive()){
+            throw new InvalidException("This restaurant has been rejected, Please ensure your approval id is right");
+        } else {
+            UUID restaurantId = restaurantApproval.getRestaurantId();
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveFalse(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+            Restaurant restaurant = restaurantRepository.findByIdAndIsActiveFalse(restaurantId)
+                    .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-        restaurant.setIsActive(true);
-        restaurantApproval.setIsApproved(true);
-        restaurantApproval.setIsActive(false);
+            restaurant.setIsActive(true);
+            restaurantApproval.setIsApproved(true);
+            restaurantApproval.setIsActive(false);
 
-        restaurantRepository.save(restaurant);
-        restaurantApprovalRepository.save(restaurantApproval);
+            restaurantRepository.save(restaurant);
+            return restaurantApprovalRepository.save(restaurantApproval);
+        }
     }
 
     @Override
-    public void rejectRestaurant(UUID id, String reason) {
-        RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Restaurant Approval not found with id: " + id));
+    public RestaurantApproval rejectRestaurant(RejectRestaurantRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found to approve this restaurant request"));
 
-        restaurantApproval.setIsApproved(false);
-        restaurantApproval.setReason(reason);
+        if (!user.getRoles().equals(UserRoles.ADMIN)) {
+            throw new ForbiddenException("Sorry only admin can approve restaurant");
+        }
 
-        restaurantApprovalRepository.save(restaurantApproval);
+        RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(request.getApprovalId())
+                .orElseThrow(() -> new NotFoundException("Restaurant Approval not found with id: " + request.getApprovalId()));
+
+        if (restaurantApproval.getIsApproved() && !restaurantApproval.getIsActive()) {
+            throw new InvalidException("This restaurant has been approved, Please ensure your approval id is right");
+        } else if (!restaurantApproval.getIsApproved() && !restaurantApproval.getIsActive()){
+            throw new InvalidException("This restaurant has been rejected, Please ensure your approval id is right");
+        } else {
+            restaurantApproval.setIsApproved(false);
+            restaurantApproval.setReason(request.getRejectionMessage());
+            return restaurantApprovalRepository.save(restaurantApproval);
+        }
     }
 
     @Override

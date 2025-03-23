@@ -1,14 +1,18 @@
 package com.example.PayoEat_BE.service.restaurant;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
+import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
+import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
+import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
@@ -31,11 +35,23 @@ public class RestaurantService implements IRestaurantService {
     private final ModelMapper modelMapper;
     private final RestaurantApprovalRepository restaurantApprovalRepository;
     private final IImageService imageService;
+    private final UserRepository userRepository;
 
     @Override
     public Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("Sorry you can't create a restaurant with this roles: " + user.getRoles());
+        }
+
         if (restaurantExists(request.getName())) {
             throw new AlreadyExistException(request.getName() + " already exists");
+        }
+
+        if (restaurantRepository.existsByUserIdAndIsActiveTrue(userId)) {
+            throw new ForbiddenException("Sorry you have already created a restaurant");
         }
 
         return restaurantRepository.save(createRestaurant(request, userId, restaurantImage, qrisImage));

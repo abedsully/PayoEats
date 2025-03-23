@@ -1,9 +1,12 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.model.RestaurantApproval;
 import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.request.admin.RejectRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.admin.IAdminService;
+import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,24 +26,29 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 public class AdminController {
     private final IAdminService adminService;
     private final IUserService userService;
+    private final INotificationService notificationService;
 
-    @PostMapping("/approve-restaurant/{id}")
+    @PostMapping("/approve-restaurant")
     @Operation(summary = "Approving a restaurant approval request", description = "Endpoint for approving restaurant approval request")
-    public ResponseEntity<ApiResponse> approveRestaurant(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse> approveRestaurant(@RequestParam UUID id) {
         try {
-            adminService.approveRestaurant(id);
-            return ResponseEntity.ok(new ApiResponse("Restaurant is approved", null));
+            User user = userService.getAuthenticatedUser();
+            RestaurantApproval results = adminService.approveRestaurant(id, user.getId());
+            notificationService.addUserNotification(results.getUserId(), results.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant is successfully approved", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 
-    @PostMapping("/reject-restaurant/{id}")
+    @PostMapping("/reject-restaurant")
     @Operation(summary = "Rejecting a restaurant approval request", description = "Endpoint for rejecting restaurant approval request")
-    public ResponseEntity<ApiResponse> rejectRestaurant(@PathVariable UUID id, @RequestParam String reason) {
+    public ResponseEntity<ApiResponse> rejectRestaurant(@RequestBody RejectRestaurantRequest request) {
         try {
-            adminService.rejectRestaurant(id, reason);
-            return ResponseEntity.ok(new ApiResponse("Restaurant is rejected", null));
+            User user = userService.getAuthenticatedUser();
+            RestaurantApproval results = adminService.rejectRestaurant(request, user.getId());
+            notificationService.addUserNotification(results.getUserId(), results.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant is successfully rejected", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
         }
@@ -52,7 +60,8 @@ public class AdminController {
         try {
             User user = userService.getAuthenticatedUser();
             List<RestaurantApproval> approvalList = adminService.getAllRestaurantApproval(user.getId());
-            return ResponseEntity.ok(new ApiResponse("Found: ", approvalList));
+            List<RestaurantApprovalDto> convertedApprovalList = adminService.getConvertedApprovalDto(approvalList);
+            return ResponseEntity.ok(new ApiResponse("Restaurant Approval Lists: ", convertedApprovalList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

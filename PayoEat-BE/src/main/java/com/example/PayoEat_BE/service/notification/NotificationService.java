@@ -69,7 +69,7 @@ public class NotificationService implements INotificationService {
 
     // Notification for restaurant to view the list of orders
     @Override
-    public List<Notification> getRestaurantNotification(UUID restaurantId, Long userId) {
+    public List<Notification> getOrderNotification(UUID restaurantId, Long userId) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
@@ -85,11 +85,11 @@ public class NotificationService implements INotificationService {
 
     // Notifications for users
     @Override
-    public List<Notification> getUserNotification(Long userId) {
+    public List<UserNotification> getUserNotification(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        return notificationRepository.findByUserId(user.getId());
+        return userNotificationRepository.findAll();
     }
 
     // Adding a notification to user
@@ -102,9 +102,6 @@ public class NotificationService implements INotificationService {
         RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(approvalId)
                 .orElseThrow(() -> new NotFoundException("Restaurant approval not found with id: " + approvalId));
 
-        if (!user.getId().equals(restaurantApproval.getUserId())) {
-            throw new ForbiddenException("Sorry you can't add user notification with this restaurant approval");
-        }
 
         UserNotification userNotification = new UserNotification();
 

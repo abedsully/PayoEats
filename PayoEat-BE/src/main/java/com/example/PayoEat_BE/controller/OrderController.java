@@ -41,11 +41,13 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/get-order")
-    @Operation(summary = "Getting order by id", description = "Returning details of an order")
+    @GetMapping("/details")
+    @Operation(summary = "Getting order details", description = "Returning details of an order")
     public ResponseEntity<ApiResponse> getOrderById(@RequestParam UUID orderId) {
         try {
-            Order order = orderService.getOrderById(orderId);
+            User user = userService.getAuthenticatedUser();
+
+            Order order = orderService.getOrderById(orderId, user.getId());
             return ResponseEntity.ok(new ApiResponse("Found: ", order));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -58,7 +60,7 @@ public class OrderController {
         try {
             Order newOrder = orderService.addOrder(request);
             notificationService.addOrderNotification(newOrder.getId(), newOrder.getRestaurantId());
-            return ResponseEntity.ok(new ApiResponse("Order received: ", newOrder.getId()));
+            return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", newOrder.getId()));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

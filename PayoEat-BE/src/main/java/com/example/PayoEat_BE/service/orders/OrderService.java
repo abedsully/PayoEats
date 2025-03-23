@@ -55,7 +55,7 @@ public class OrderService implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to view this restaurant's order");
         }
 
@@ -103,9 +103,22 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public Order getOrderById(UUID orderId) {
-        return orderRepository.findById(orderId)
+    public Order getOrderById(UUID orderId, Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!user.getRoles().equals(UserRoles.RESTAURANT) || !user.getId().equals(restaurant.getUserId())) {
+            throw new ForbiddenException("Sorry you don't have access to view this order details");
+        }
+
+        return order;
     }
 
     private Order createOrder(AddOrderRequest request) {
