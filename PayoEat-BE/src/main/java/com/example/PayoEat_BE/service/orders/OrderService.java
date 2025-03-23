@@ -3,17 +3,16 @@ package com.example.PayoEat_BE.service.orders;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
-import com.example.PayoEat_BE.model.Menu;
-import com.example.PayoEat_BE.model.Order;
-import com.example.PayoEat_BE.model.Restaurant;
-import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.MenuRepository;
 import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
+import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,9 +26,10 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
     private final MenuRepository menuRepository;
+    private final IImageService imageService;
 
     @Override
-    public Order addOrder(AddOrderRequest request) {
+    public Order addOrder(AddOrderRequest request, MultipartFile paymentProof) {
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
@@ -37,7 +37,7 @@ public class OrderService implements IOrderService {
         validateMenuCodes(request.getMenuCode(), restaurant.getId());
 
 
-        return orderRepository.save(createOrder(request));
+        return orderRepository.save(createOrder(request, paymentProof));
     }
 
     private void validateMenuCodes(List<UUID> menuCodes, UUID restaurantId) {
@@ -64,7 +64,7 @@ public class OrderService implements IOrderService {
 
     @Override
     public Order confirmOrder(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
+        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
         User user = userRepository.findById(userId)
@@ -73,7 +73,7 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
-        if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to confirm this order");
         }
 
@@ -81,6 +81,22 @@ public class OrderService implements IOrderService {
 
 
         return orderRepository.save(order);
+    }
+
+    @Override
+    public List<Order> viewActiveOrders(UUID restaurantId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to view this order");
+        }
+
+        return orderRepository.findByRestaurantIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
     }
 
     @Override
@@ -94,7 +110,7 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
-        if (!restaurant.getUserId().equals(user.getId()) && !user.getRoles().equals(UserRoles.RESTAURANT)) {
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to finish this order");
         }
 
@@ -114,14 +130,11 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
-        if (!user.getRoles().equals(UserRoles.RESTAURANT) || !user.getId().equals(restaurant.getUserId())) {
-            throw new ForbiddenException("Sorry you don't have access to view this order details");
-        }
 
         return order;
     }
 
-    private Order createOrder(AddOrderRequest request) {
+    private Order createOrder(AddOrderRequest request, MultipartFile paymentProof) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
@@ -157,6 +170,10 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(false);
         newRestaurantOrder.setTotalAmount(totalPrice);
+
+        Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, newRestaurantOrder.getId());
+        imagePaymentProof.setOrderId(newRestaurantOrder.getId());
+        newRestaurantOrder.setPaymentImage(imagePaymentProof.getId());
 
         orderRepository.save(newRestaurantOrder);
 

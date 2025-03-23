@@ -11,4 +11,5 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByRestaurantId(UUID restaurantId);
     Optional<Order> findByIdAndIsActiveTrue(UUID id);
     Optional<Order> findByIdAndIsActiveFalse(UUID id);
+    Optional<List<Order>> findByRestaurantIdAndIsActiveTrue(UUID restaurantId);
 }

@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -54,17 +55,50 @@ public class OrderController {
         }
     }
 
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = {"multipart/form-data"})
     @Operation(summary = "Adding order to a restaurant", description = "Making order request to a restaurant")
-    public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
+    public ResponseEntity<ApiResponse> addOrder(@RequestParam List<UUID> menuCode,
+                                                @RequestParam UUID restaurantId,
+                                                @RequestParam String orderMessage,
+                                                @RequestParam MultipartFile paymentProof) {
         try {
-            Order newOrder = orderService.addOrder(request);
+            AddOrderRequest request = new AddOrderRequest(menuCode, restaurantId, orderMessage);
+            Order newOrder = orderService.addOrder(request, paymentProof);
             notificationService.addOrderNotification(newOrder.getId(), newOrder.getRestaurantId());
+
             return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", newOrder.getId()));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @GetMapping("/get-active")
+    @Operation(summary = "Getting the list of active orders", description = "Returning list of active orders")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> getActiveOrders(@RequestParam UUID restaurantId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            List<Order> orderList = orderService.viewActiveOrders(restaurantId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", orderList));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/confirm")
+    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> confirmOrder(@RequestParam UUID orderId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            Order order = orderService.confirmOrder(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", order));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+
 
     @PostMapping("/finish-order/{orderId}")
     @Operation(summary = "Finishing an order", description = "Finishing order request by restaurant")
