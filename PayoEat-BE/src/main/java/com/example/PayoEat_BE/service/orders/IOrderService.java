@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IOrderService {
-    Order addOrder(AddOrderRequest request, MultipartFile paymentProof);
+    Order addOrder(AddOrderRequest request);
+    Order addPaymentProof(UUID orderId, MultipartFile paymentProof);
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);
     Order confirmOrder(UUID orderId, Long userId);
     Order finishOrder(UUID orderId, Long userId);

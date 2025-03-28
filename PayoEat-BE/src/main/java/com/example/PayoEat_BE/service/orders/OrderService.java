@@ -9,13 +9,16 @@ import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
+import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Not;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,22 +32,35 @@ public class OrderService implements IOrderService {
     private final IImageService imageService;
 
     @Override
-    public Order addOrder(AddOrderRequest request, MultipartFile paymentProof) {
+    public Order addOrder(AddOrderRequest request) {
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
 
-        validateMenuCodes(request.getMenuCode(), restaurant.getId());
+        validateMenuCodes(request.getItems(), restaurant.getId());
 
 
-        return orderRepository.save(createOrder(request, paymentProof));
+        return orderRepository.save(createOrder(request));
     }
 
-    private void validateMenuCodes(List<UUID> menuCodes, UUID restaurantId) {
-        menuCodes.forEach(menuCode ->
-                menuRepository.findByMenuCodeAndRestaurantId(menuCode, restaurantId)
-                        .orElseThrow(() -> new NotFoundException("Menu not found or inactive for code: " + menuCode + " in restaurant: " + restaurantId))
+    private void validateMenuCodes(List<OrderItemRequest> orderItems, UUID restaurantId) {
+        orderItems.forEach(item ->
+                menuRepository.findByMenuCodeAndRestaurantId(item.getMenuCode(), restaurantId)
+                        .orElseThrow(() -> new NotFoundException("Menu not found or inactive for code: " + item.getMenuCode() + " in restaurant: " + restaurantId))
         );
+    }
+
+    @Override
+    public Order addPaymentProof(UUID orderId, MultipartFile paymentProof) {
+        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, order.getId());
+        imagePaymentProof.setOrderId(order.getId());
+
+        order.setPaymentImage(imagePaymentProof.getId());
+
+        return orderRepository.save(order);
+
     }
 
     @Override
@@ -134,18 +150,16 @@ public class OrderService implements IOrderService {
         return order;
     }
 
-    private Order createOrder(AddOrderRequest request, MultipartFile paymentProof) {
+    private Order createOrder(AddOrderRequest request) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
         double taxFee = restaurant.getTaxFee();
 
         Order newRestaurantOrder = new Order();
-        newRestaurantOrder.setMenuList(request.getMenuCode());
         newRestaurantOrder.setRestaurantId(restaurant.getId());
 
         String orderMessage = request.getOrderMessage();
-
         if (orderMessage == null || orderMessage.isEmpty()) {
             newRestaurantOrder.setOrderMessage(null);
         } else {
@@ -153,30 +167,37 @@ public class OrderService implements IOrderService {
         }
 
         double totalPrice = 0.0;
+        List<OrderItem> orderItems = new ArrayList<>();
 
-        for (UUID menuCode : request.getMenuCode()) {
-            Menu menu = menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
+        for (OrderItemRequest itemRequest : request.getItems()) {
+            Menu menu = menuRepository.findByMenuCodeAndIsActiveTrue(itemRequest.getMenuCode())
                     .orElseThrow(() -> new NotFoundException("Menu not found"));
 
-            totalPrice += menu.getMenuPrice();
+            double itemTotalPrice = menu.getMenuPrice() * itemRequest.getQuantity();
+            totalPrice += itemTotalPrice;
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setMenuCode(itemRequest.getMenuCode());
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setOrder(newRestaurantOrder);
+
+            orderItems.add(orderItem);
         }
 
         taxFee = (totalPrice * taxFee) / 100;
-
         totalPrice += taxFee;
 
-        newRestaurantOrder.setOrderMessage(request.getOrderMessage());
+        newRestaurantOrder.setMenuLists(orderItems);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(false);
         newRestaurantOrder.setTotalAmount(totalPrice);
 
-        Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, newRestaurantOrder.getId());
-        imagePaymentProof.setOrderId(newRestaurantOrder.getId());
-        newRestaurantOrder.setPaymentImage(imagePaymentProof.getId());
+
 
         orderRepository.save(newRestaurantOrder);
 
         return newRestaurantOrder;
     }
+
 }

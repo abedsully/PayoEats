@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +28,10 @@ public class Order {
     private String orderMessage;
     private Boolean isActive;
     private UUID restaurantId;
-    private List<UUID> menuList;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> menuLists = new ArrayList<>();
+
     private Double totalAmount;
     private UUID paymentImage;
 }

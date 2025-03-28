@@ -4,14 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddOrderRequest {
-    private List<OrderItemRequest> items;
-    private UUID restaurantId;
-    private String orderMessage;
+public class OrderItemRequest {
+    private UUID menuCode;
+    private Long quantity;
 }

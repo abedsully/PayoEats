@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.enums.TransactionType;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
+import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.orders.IOrderService;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,22 +57,35 @@ public class OrderController {
         }
     }
 
-    @PostMapping(value = "/add", consumes = {"multipart/form-data"})
+    @PostMapping(value = "/add")
     @Operation(summary = "Adding order to a restaurant", description = "Making order request to a restaurant")
-    public ResponseEntity<ApiResponse> addOrder(@RequestParam List<UUID> menuCode,
-                                                @RequestParam UUID restaurantId,
-                                                @RequestParam String orderMessage,
-                                                @RequestParam MultipartFile paymentProof) {
+    public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
+
         try {
-            AddOrderRequest request = new AddOrderRequest(menuCode, restaurantId, orderMessage);
-            Order newOrder = orderService.addOrder(request, paymentProof);
+            Order newOrder = orderService.addOrder(request);
+
             notificationService.addOrderNotification(newOrder.getId(), newOrder.getRestaurantId());
 
             return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", newOrder.getId()));
+
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @PostMapping(value = "/add-payment-proof", consumes = {"multipart/form-data"})
+    @Operation(summary = "Adding payment proof to an order id", description = "Paying for order")
+    public ResponseEntity<ApiResponse> sendPayment(@RequestParam UUID orderId, @RequestParam MultipartFile paymentProof) {
+        try {
+            Order order = orderService.addPaymentProof(orderId, paymentProof);
+            return ResponseEntity.ok(new ApiResponse("Payment proof received, please wait", order.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+
+
 
     @GetMapping("/get-active")
     @Operation(summary = "Getting the list of active orders", description = "Returning list of active orders")
