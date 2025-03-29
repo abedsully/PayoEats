@@ -13,6 +13,7 @@ public interface IOrderService {
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);
     Order confirmOrder(UUID orderId, Long userId);
     Order finishOrder(UUID orderId, Long userId);
-    Order getOrderById(UUID orderId, Long userId);
+    Order getOrderByIdRestaurant(UUID orderId, Long userId);
+    Order getOrderByIdCustomer(UUID orderId);
     List<Order> viewActiveOrders(UUID restaurantId, Long userId);
 }

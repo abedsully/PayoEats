@@ -27,6 +27,7 @@ public class Order {
     private LocalTime createdTime;
     private String orderMessage;
     private Boolean isActive;
+    private Boolean isCompleted;
     private UUID restaurantId;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

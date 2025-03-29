@@ -12,7 +12,6 @@ import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -131,11 +130,12 @@ public class OrderService implements IOrderService {
         }
 
         order.setIsActive(false);
+        order.setIsCompleted(true);
         return orderRepository.save(order);
     }
 
     @Override
-    public Order getOrderById(UUID orderId, Long userId) {
+    public Order getOrderByIdRestaurant(UUID orderId, Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
@@ -146,6 +146,20 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
+        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
+            throw new ForbiddenException("Sorry you don't have access to view this order");
+        }
+
+        return order;
+    }
+
+    @Override
+    public Order getOrderByIdCustomer(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
         return order;
     }
@@ -192,6 +206,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(false);
         newRestaurantOrder.setTotalAmount(totalPrice);
+        newRestaurantOrder.setIsCompleted(false);
 
 
 
