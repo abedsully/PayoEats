@@ -13,19 +13,23 @@ import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
-import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
 
 
 @Service
@@ -36,25 +40,26 @@ public class RestaurantService implements IRestaurantService {
     private final RestaurantApprovalRepository restaurantApprovalRepository;
     private final IImageService imageService;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
 
     @Override
-    public Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("Sorry you can't create a restaurant with this roles: " + user.getRoles());
-        }
-
+    public Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
         if (restaurantExists(request.getName())) {
             throw new AlreadyExistException(request.getName() + " already exists");
         }
 
-        if (restaurantRepository.existsByUserIdAndIsActiveTrue(userId)) {
+        if (!request.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("Sorry you can't create a restaurant with this roles: " + request.getRoles());
+        }
+
+        Restaurant newRestaurant = restaurantRepository.save(createRestaurant(request, restaurantImage, qrisImage));
+
+        if (restaurantRepository.existsByUserIdAndIsActiveTrue(newRestaurant.getUserId())) {
             throw new ForbiddenException("Sorry you have already created a restaurant");
         }
 
-        return restaurantRepository.save(createRestaurant(request, userId, restaurantImage, qrisImage));
+        return newRestaurant;
     }
 
     @Override
@@ -108,7 +113,11 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
-    private Restaurant createRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage) {
+    private Restaurant createRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
+        if (!isValidEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email not valid");
+        }
+
         if (request.getName() == null || request.getName().isEmpty()) {
             throw new InvalidException("Name of restaurant cannot be empty");
         }
@@ -145,9 +154,19 @@ public class RestaurantService implements IRestaurantService {
                 request.getTaxFee()
         );
 
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(null);
+        user.setRoles(request.getRoles());
+        user.setActive(true);
+        userRepository.save(user);
+
         restaurant.setLocation(request.getLocation());
         restaurant.setRestaurantCategory(request.getRestaurantCategory());
-        restaurant.setUserId(userId);
+        restaurant.setUserId(user.getId());
         restaurant.setCreatedAt(LocalDateTime.now());
         restaurant.setUpdatedAt(null);
         restaurant.setIsActive(false);

@@ -3,7 +3,7 @@ package com.example.PayoEat_BE.service.restaurant;
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.RestaurantApproval;
-import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IRestaurantService {
-    Restaurant addRestaurant(AddRestaurantRequest request, Long userId, MultipartFile restaurantImage, MultipartFile qrisImage);
+    Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage);
     Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request);
     void deleteRestaurant(UUID restaurantId);
     Restaurant getRestaurantById(UUID id);

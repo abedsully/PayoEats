@@ -4,6 +4,7 @@ package com.example.PayoEat_BE.service.user;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.menu.CreateUserRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.Authentication;
@@ -35,6 +36,7 @@ public class UserService implements IUserService{
     }
 
     @Override
+    @Transactional
     public User createUser(CreateUserRequest request) {
 
         if (!isValidEmail(request.getEmail())) {

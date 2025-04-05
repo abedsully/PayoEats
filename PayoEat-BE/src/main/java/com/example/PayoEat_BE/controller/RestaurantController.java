@@ -1,8 +1,9 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
+import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.model.*;
-import com.example.PayoEat_BE.request.restaurant.AddRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
@@ -17,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,10 +58,13 @@ public class RestaurantController {
         }
     }
 
-    @PostMapping(value = "/add-restaurant", consumes = {"multipart/form-data"})
-    @Operation(summary = "Add Restaurant", description = "Add restaurant by request")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'RESTAURANT')")
-    public ResponseEntity<ApiResponse> addRestaurant(@RequestParam("name") String name,
+    @PostMapping(value = "/register-restaurant", consumes = {"multipart/form-data"})
+    @Operation(summary = "Register Restaurant", description = "Register restaurant by request")
+    public ResponseEntity<ApiResponse> registerRestaurant(@RequestParam("username") String username,
+                                                     @RequestParam("email") String email,
+                                                     @RequestParam("password") String password,
+                                                     @RequestParam("userRoles") UserRoles roles,
+                                                     @RequestParam("name") String name,
                                                      @RequestParam("rating") double rating,
                                                      @RequestParam("description") String description,
                                                      @RequestParam("openingHour") String openingHour,
@@ -74,10 +77,10 @@ public class RestaurantController {
                                                      @RequestParam("qrisImage") MultipartFile qrisImage) {
         try {
             User user = userService.getAuthenticatedUser();
-            AddRestaurantRequest request = new AddRestaurantRequest(
-                    name, rating, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, taxFee, restaurantCategory
+            RegisterRestaurantRequest request = new RegisterRestaurantRequest(
+                    username, email, password, roles, name, rating, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, taxFee, restaurantCategory
             );
-            Restaurant newRestaurant = restaurantService.addRestaurant(request, user.getId(), restaurantImage, qrisImage);
+            Restaurant newRestaurant = restaurantService.addRestaurant(request, restaurantImage, qrisImage);
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), user.getId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
