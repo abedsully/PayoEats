@@ -54,8 +54,6 @@ public class Restaurant {
 
     private String telephoneNumber;
 
-    private Double taxFee;
-
     private UUID restaurantImage;
 
     private UUID qrisImage;
@@ -67,7 +65,7 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, Double taxFee) {
+    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber) {
         this.name = name;
         this.rating = rating;
         this.description = description;
@@ -75,6 +73,5 @@ public class Restaurant {
         this.closingHour = closingHour;
         this.location = location;
         this.telephoneNumber = telephoneNumber;
-        this.taxFee = taxFee;
     }
 }

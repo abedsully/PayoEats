@@ -168,7 +168,6 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-        double taxFee = restaurant.getTaxFee();
 
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setRestaurantId(restaurant.getId());
@@ -197,9 +196,6 @@ public class OrderService implements IOrderService {
 
             orderItems.add(orderItem);
         }
-
-        taxFee = (totalPrice * taxFee) / 100;
-        totalPrice += taxFee;
 
         newRestaurantOrder.setMenuLists(orderItems);
         newRestaurantOrder.setCreatedDate(LocalDate.now());

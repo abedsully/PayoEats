@@ -60,32 +60,29 @@ public class RestaurantController {
 
     @PostMapping(value = "/register-restaurant", consumes = {"multipart/form-data"})
     @Operation(summary = "Register Restaurant", description = "Register restaurant by request")
-    public ResponseEntity<ApiResponse> registerRestaurant(@RequestParam("username") String username,
+    public ResponseEntity<ApiResponse> registerRestaurant(
                                                      @RequestParam("email") String email,
                                                      @RequestParam("password") String password,
                                                      @RequestParam("userRoles") UserRoles roles,
-                                                     @RequestParam("name") String name,
-                                                     @RequestParam("rating") double rating,
+                                                     @RequestParam("restaurantName") String restaurantName,
                                                      @RequestParam("description") String description,
                                                      @RequestParam("openingHour") String openingHour,
                                                      @RequestParam("closingHour") String closingHour,
                                                      @RequestParam("location") String location,
                                                      @RequestParam("telephoneNumber") String telephoneNumber,
-                                                     @RequestParam("taxFee") double taxFee,
                                                      @RequestParam("restaurantCategory") Long restaurantCategory,
                                                      @RequestParam("restaurantImage") MultipartFile restaurantImage,
                                                      @RequestParam("qrisImage") MultipartFile qrisImage) {
         try {
-            User user = userService.getAuthenticatedUser();
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    username, email, password, roles, name, rating, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, taxFee, restaurantCategory
+                    email, password, roles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategory
             );
             Restaurant newRestaurant = restaurantService.addRestaurant(request, restaurantImage, qrisImage);
-            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), user.getId());
+            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), newRestaurant.getUserId());
             RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
             RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
             notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId(), newRestaurant.getId());
-            notificationService.addUserNotification(user.getId(), newRestaurantApproval.getId());
+            notificationService.addUserNotification(newRestaurantApproval.getUserId(), newRestaurantApproval.getId());
             return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", convertedRestaurantApproval));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)

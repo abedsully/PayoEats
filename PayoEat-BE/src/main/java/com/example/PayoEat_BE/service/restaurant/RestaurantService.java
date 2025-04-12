@@ -45,8 +45,8 @@ public class RestaurantService implements IRestaurantService {
 
     @Override
     public Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
-        if (restaurantExists(request.getName())) {
-            throw new AlreadyExistException(request.getName() + " already exists");
+        if (restaurantExists(request.getRestaurantName())) {
+            throw new AlreadyExistException(request.getRestaurantName() + " already exists");
         }
 
         if (!request.getRoles().equals(UserRoles.RESTAURANT)) {
@@ -118,7 +118,7 @@ public class RestaurantService implements IRestaurantService {
             throw new IllegalArgumentException("Email not valid");
         }
 
-        if (request.getName() == null || request.getName().isEmpty()) {
+        if (request.getRestaurantName() == null || request.getRestaurantName().isEmpty()) {
             throw new InvalidException("Name of restaurant cannot be empty");
         }
 
@@ -144,23 +144,24 @@ public class RestaurantService implements IRestaurantService {
 
 
         Restaurant restaurant = new Restaurant(
-                request.getName(),
+                request.getRestaurantName(),
                 0.0,
                 request.getDescription(),
                 request.getOpeningHour(),
                 request.getClosingHour(),
                 request.getLocation(),
-                request.getTelephoneNumber(),
-                request.getTaxFee()
+                request.getTelephoneNumber()
         );
 
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setRoles(request.getRoles());
+        if (request.getRoles().equals(UserRoles.RESTAURANT)) {
+            user.setUsername(null);
+        }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(null);
-        user.setRoles(request.getRoles());
         user.setActive(true);
         userRepository.save(user);
 
