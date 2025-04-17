@@ -231,5 +231,11 @@ public class RestaurantService implements IRestaurantService {
         return modelMapper.map(restaurantApproval, RestaurantApprovalDto.class);
     }
 
+    @Override
+    public Restaurant getRestaurantDetailForApproval(UUID id) {
+        return restaurantRepository.findByIdAndIsActiveFalse(id)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
+    }
+
 
 }

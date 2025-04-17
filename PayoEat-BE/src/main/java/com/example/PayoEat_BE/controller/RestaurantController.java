@@ -50,6 +50,17 @@ public class RestaurantController {
         }
     }
 
+    @GetMapping("/detail-restaurant")
+    @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
+    public ResponseEntity<ApiResponse> getRestaurantDetailForApproval(@RequestParam UUID id) {
+        try {
+            Restaurant restaurant = restaurantService.getRestaurantDetailForApproval(id);
+            return ResponseEntity.ok(new ApiResponse("Restaurant found", restaurant));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     public static LocalTime parseTime(String timeString) {
         try {
             return LocalTime.parse(timeString);
@@ -63,7 +74,7 @@ public class RestaurantController {
     public ResponseEntity<ApiResponse> registerRestaurant(
                                                      @RequestParam("email") String email,
                                                      @RequestParam("password") String password,
-                                                     @RequestParam("userRoles") UserRoles roles,
+                                                     @RequestParam("userRoles") UserRoles userRoles,
                                                      @RequestParam("restaurantName") String restaurantName,
                                                      @RequestParam("description") String description,
                                                      @RequestParam("openingHour") String openingHour,
@@ -75,7 +86,7 @@ public class RestaurantController {
                                                      @RequestParam("qrisImage") MultipartFile qrisImage) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, roles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategory
+                    email, password, userRoles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategory
             );
             Restaurant newRestaurant = restaurantService.addRestaurant(request, restaurantImage, qrisImage);
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), newRestaurant.getUserId());
@@ -148,7 +159,7 @@ public class RestaurantController {
     }
 
     @GetMapping("/image")
-    @Operation(summary = "Show Menu Image by ID", description = "API to display menu image by providing the image ID")
+    @Operation(summary = "Show Restaurant Image by ID", description = "API to display menu image by providing the image ID")
     public ResponseEntity<ByteArrayResource> showRestaurantImage(@RequestParam UUID imageId) {
         try {
             Image image = imageService.getImageById(imageId);
