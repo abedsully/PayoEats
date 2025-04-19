@@ -46,4 +46,11 @@ public class RestaurantCategoryService implements IRestaurantCategoryService{
     public List<RestaurantCategory> getAllRestaurantCategory() {
         return restaurantCategoryRepository.findByIsActiveTrue();
     }
+
+    @Override
+    public RestaurantCategory getRestaurantCategoryById(Long id) {
+        return restaurantCategoryRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new NotFoundException("Restaurant categpry not found with id: " + id));
+
+    }
 }

@@ -7,4 +7,5 @@ import java.util.List;
 public interface IRestaurantCategoryService {
     RestaurantCategory addCategory(String categoryName, Long userId);
     List<RestaurantCategory> getAllRestaurantCategory();
+    RestaurantCategory getRestaurantCategoryById(Long id);
 }

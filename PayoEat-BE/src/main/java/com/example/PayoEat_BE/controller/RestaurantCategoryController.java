@@ -50,4 +50,15 @@ public class RestaurantCategoryController {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @GetMapping("/get-by-id")
+    @Operation(summary = "Getting restaurant category by id", description = "Returning a single restaurant category")
+    public ResponseEntity<ApiResponse> getRestaurantCategoryById(@RequestParam Long id) {
+        try {
+            RestaurantCategory result = restaurantCategoryService.getRestaurantCategoryById(id);
+            return ResponseEntity.ok(new ApiResponse("Found: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
 }
