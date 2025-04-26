@@ -81,12 +81,14 @@ public class RestaurantController {
                                                      @RequestParam("closingHour") String closingHour,
                                                      @RequestParam("location") String location,
                                                      @RequestParam("telephoneNumber") String telephoneNumber,
-                                                     @RequestParam("restaurantCategory") Long restaurantCategory,
+                                                     @RequestParam("restaurantCategoryCode") Long restaurantCategoryCode,
+                                                     @RequestParam("restaurantColor") String restaurantColor,
                                                      @RequestParam("restaurantImage") MultipartFile restaurantImage,
-                                                     @RequestParam("qrisImage") MultipartFile qrisImage) {
+                                                     @RequestParam("qrisImage") MultipartFile qrisImage
+                                                     ) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, userRoles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategory
+                    email, password, userRoles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
             );
             Restaurant newRestaurant = restaurantService.addRestaurant(request, restaurantImage, qrisImage);
             ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), newRestaurant.getUserId());

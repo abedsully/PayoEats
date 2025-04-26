@@ -142,6 +142,10 @@ public class RestaurantService implements IRestaurantService {
             throw new InvalidException("Location cannot be empty");
         }
 
+        if (request.getColor() == null || request.getColor().isEmpty()) {
+            throw new InvalidException("Color cannot be empty");
+        }
+
 
         Restaurant restaurant = new Restaurant(
                 request.getRestaurantName(),
@@ -150,7 +154,8 @@ public class RestaurantService implements IRestaurantService {
                 request.getOpeningHour(),
                 request.getClosingHour(),
                 request.getLocation(),
-                request.getTelephoneNumber()
+                request.getTelephoneNumber(),
+                request.getColor()
         );
 
         User user = new User();

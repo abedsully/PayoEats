@@ -58,6 +58,8 @@ public class Restaurant {
 
     private UUID qrisImage;
 
+    private String color;
+
     @Schema(description = "List of menu in restaurant")
     @OneToMany(mappedBy = "restaurant")
     @JsonIgnore
@@ -65,7 +67,7 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber) {
+    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color) {
         this.name = name;
         this.rating = rating;
         this.description = description;
@@ -73,5 +75,6 @@ public class Restaurant {
         this.closingHour = closingHour;
         this.location = location;
         this.telephoneNumber = telephoneNumber;
+        this.color = color;
     }
 }

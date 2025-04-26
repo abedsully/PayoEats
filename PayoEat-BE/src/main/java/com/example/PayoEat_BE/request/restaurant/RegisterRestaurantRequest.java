@@ -21,4 +21,5 @@ public class RegisterRestaurantRequest {
     private String location;
     private String telephoneNumber;
     private Long restaurantCategory;
+    private String color;
 }
