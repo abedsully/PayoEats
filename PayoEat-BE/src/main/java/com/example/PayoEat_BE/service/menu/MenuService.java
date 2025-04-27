@@ -54,7 +54,7 @@ public class MenuService implements IMenuService{
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-        return menuRepository.findByRestaurantId(restaurantId);
+        return menuRepository.findByRestaurantId(restaurant.getId());
     }
 
     @Override

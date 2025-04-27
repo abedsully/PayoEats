@@ -16,4 +16,5 @@ public class RestaurantDto {
     private String telephoneNumber;
     private String location;
     private UUID restaurantImage;
+    private String color;
 }

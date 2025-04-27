@@ -4,6 +4,8 @@ import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Restaurant;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 public class MenuDto {
     private String menuCode;
@@ -11,5 +13,5 @@ public class MenuDto {
     private String menuDetail;
     private Double menuPrice;
     private RestaurantDto restaurant;
-    private ImageDto image;
+    private UUID menuImage;
 }

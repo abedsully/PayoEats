@@ -49,9 +49,9 @@ public class MenuController {
         }
     }
 
-    @GetMapping("/image/{imageId}")
+    @GetMapping("/image")
     @Operation(summary = "Show Menu Image by ID", description = "API to display menu image by providing the image ID")
-    public ResponseEntity<ByteArrayResource> showMenuImage(@PathVariable("imageId") UUID imageId) {
+    public ResponseEntity<ByteArrayResource> showMenuImage(@RequestParam UUID imageId) {
         try {
             Image image = imageService.getImageById(imageId);
 
@@ -64,9 +64,9 @@ public class MenuController {
         }
     }
 
-    @GetMapping("/get-menus/{restaurantId}")
+    @GetMapping("/get-menus")
     @Operation(summary = "Show Menus by Restaurant ID", description = "API to display menus by providing restaurant ID")
-    public ResponseEntity<ApiResponse> getMenusByRestaurantId(@PathVariable UUID restaurantId) {
+    public ResponseEntity<ApiResponse> getMenusByRestaurantId(@RequestParam UUID restaurantId) {
         try {
             List<Menu> menus = menuService.getMenusByRestaurantId(restaurantId);
             List<MenuDto> convertedMenus = menuService.getConvertedMenus(menus);
