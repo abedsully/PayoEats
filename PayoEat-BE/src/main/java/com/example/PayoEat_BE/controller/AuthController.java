@@ -35,7 +35,7 @@ public class AuthController {
     private final JwtUtils jwtUtils;
 
     @PostMapping("/register")
-    @Operation(summary = "User registration", description = "Registers a new user and returns a UserDto")
+    @Operation(summary = "User registration", description = "Endpoint for registering user")
     public ResponseEntity<ApiResponse> register(@RequestBody CreateUserRequest request) {
         try {
             User user = userService.createUser(request);
@@ -45,10 +45,23 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/confirm")
+    @Operation(summary = "User email confirmation", description = "Endpoint for confirming registered user's email")
+    public String confirm(@RequestParam String token) {
+        return userService.confirmToken(token);
+    }
+
     @PostMapping("/login")
-    @Operation(summary = "User login", description = "Authenticates a user and returns a JWT token")
+    @Operation(summary = "User login", description = "Endpoint for handling user's login")
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
+            User user = userService.findByEmail(request.getEmail());
+
+            if (!user.isActive()) {
+                return ResponseEntity.status(UNAUTHORIZED)
+                        .body(new ApiResponse("Account not activated. Please confirm your email.", null));
+            }
+
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                     request.getEmail(), request.getPassword()
             ));
@@ -64,6 +77,7 @@ public class AuthController {
     }
 
     @GetMapping("/user")
+    @Operation(summary = "Getting authenticated user", description = "Endpoint for getting the currently authenticated user")
     public ResponseEntity<ApiResponse> getAuthenticatedUser() {
         try {
             User user = userService.getAuthenticatedUser();

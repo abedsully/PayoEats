@@ -38,9 +38,9 @@ public class RestaurantController {
     private final INotificationService notificationService;
     private final IImageService imageService;
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
-    public ResponseEntity<ApiResponse> getRestaurantById(@PathVariable UUID id) {
+    @GetMapping("/detail")
+    @Operation(summary = "Getting details of restaurant", description = "This endpoint is used for getting restaurant detail")
+    public ResponseEntity<ApiResponse> getRestaurantById(@RequestParam UUID id) {
         try {
             Restaurant restaurant = restaurantService.getRestaurantById(id);
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
@@ -51,7 +51,7 @@ public class RestaurantController {
     }
 
     @GetMapping("/detail-restaurant")
-    @Operation(summary = "Get restaurant by ID", description = "Returns a single restaurant based on its ID")
+    @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
     public ResponseEntity<ApiResponse> getRestaurantDetailForApproval(@RequestParam UUID id) {
         try {
             Restaurant restaurant = restaurantService.getRestaurantDetailForApproval(id);

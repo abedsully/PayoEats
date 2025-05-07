@@ -34,6 +34,11 @@ public class User {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean isActive;
+    @Column(name = "is_active")
+    private boolean isActive = false;
+
+    @Column(name = "confirmation_token")
+    private String confirmationToken;
+
 }
 

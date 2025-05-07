@@ -92,7 +92,7 @@ public class AdminService implements IAdminService {
         if(!user.getRoles().equals(UserRoles.ADMIN)) {
             throw new InvalidException("Sorry you cant do this");
         }
-        return restaurantApprovalRepository.findAll();
+        return restaurantApprovalRepository.findByIsActiveTrueAndIsApprovedFalse();
     }
 
     @Override

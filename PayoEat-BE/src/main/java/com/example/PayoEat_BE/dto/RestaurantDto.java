@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.model.Image;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Data
@@ -17,4 +18,7 @@ public class RestaurantDto {
     private String location;
     private UUID restaurantImage;
     private String color;
+    private Long categoryCode;
+    private LocalTime closingHour;
+    private LocalTime openingHour;
 }
