@@ -29,8 +29,8 @@ public class ReviewService implements IReviewService{
     private final ModelMapper modelMapper;
 
     @Override
-    public Review addReview(AddReviewRequest request, Long userId) {
-        return reviewRepository.save(createReview(request, userId));
+    public Review addReview(AddReviewRequest request) {
+        return reviewRepository.save(createReview(request));
     }
 
     @Override
@@ -61,10 +61,11 @@ public class ReviewService implements IReviewService{
         return reviewList.stream().map(this::convertToDto).toList();
     }
 
-    private Review createReview(AddReviewRequest request, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    private Review createReview(AddReviewRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
 
+        // tambah is_active nanti
         if (!user.getRoles().equals(UserRoles.CUSTOMER)) {
             throw new ForbiddenException("You can't review a restaurant, if you're not a customer");
         }
