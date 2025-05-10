@@ -10,12 +10,10 @@ import com.example.PayoEat_BE.security.jwt.JwtUtils;
 import com.example.PayoEat_BE.security.user.AuthUserDetails;
 import com.example.PayoEat_BE.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -84,6 +82,28 @@ public class AuthController {
             return ResponseEntity.ok(new ApiResponse("Success", user));
         } catch (Exception e) {
             return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse("Fail", null));
+        }
+    }
+
+    @PostMapping("/forget-password")
+    @Operation(summary = "Forget password user", description = "Endpoint for confirming email for forget password")
+    public ResponseEntity<ApiResponse> forgetPassword(@RequestParam String email) {
+        try {
+            String message = userService.forgetPassword(email);
+            return ResponseEntity.ok(new ApiResponse(message, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password user", description = "Endpoint for reseting password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestParam String password, @RequestParam String token) {
+        try {
+            String message = userService.resetPassword(token, password);
+            return ResponseEntity.ok(new ApiResponse(message, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
         }
     }
 }

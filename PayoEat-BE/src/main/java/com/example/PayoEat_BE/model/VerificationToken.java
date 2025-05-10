@@ -22,4 +22,7 @@ public class VerificationToken {
 
     private LocalDateTime expiryDate;
 
+    // 1 for Email Verification, 2 for Forget Password
+    private Character type;
+
 }

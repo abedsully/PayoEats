@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.user;
 
 
 import com.example.PayoEat_BE.enums.UserRoles;
+import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.model.VerificationToken;
@@ -70,6 +71,7 @@ public class UserService implements IUserService{
                     verificationToken.setToken(token);
                     verificationToken.setUserId(savedUser.getId());
                     verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+                    verificationToken.setType('1');
                     tokenRepository.save(verificationToken);
 
                     emailService.sendConfirmationEmail(savedUser.getEmail(), token);
@@ -80,7 +82,7 @@ public class UserService implements IUserService{
     }
 
     public String confirmToken(String token) {
-        Optional<VerificationToken> optionalToken = tokenRepository.findByToken(token);
+        Optional<VerificationToken> optionalToken = tokenRepository.findByTokenAndType(token, '1');
 
         if (optionalToken.isEmpty()) {
             return "Invalid token.";
@@ -114,6 +116,46 @@ public class UserService implements IUserService{
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
+    }
+
+    @Override
+    public String forgetPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
+
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUserId(user.getId());
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setType('1');
+
+        tokenRepository.save(verificationToken);
+
+        emailService.sendConfirmationEmail(user.getEmail(), token);
+
+        return "Reset password link has been sent to your email, please check your email";
+    }
+
+    @Override
+    public String resetPassword(String token, String password) {
+        VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, '2')
+                .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
+
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new InvalidException("Token already expired");
+        }
+
+        User user = userRepository.findById(verificationToken.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + verificationToken.getUserId()));
+
+        user.setPassword(passwordEncoder.encode(password));
+
+        userRepository.save(user);
+        tokenRepository.delete(verificationToken);
+
+        return "Your password is changed successfully";
+
     }
 
     private boolean isValidEmail(String email) {
