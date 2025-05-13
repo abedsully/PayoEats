@@ -6,17 +6,16 @@ import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
-import com.example.PayoEat_BE.model.Image;
-import com.example.PayoEat_BE.model.Restaurant;
-import com.example.PayoEat_BE.model.RestaurantApproval;
-import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
+import com.example.PayoEat_BE.repository.VerificationTokenRepository;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.service.EmailService;
 import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.UUID;
 
 
-
 @Service
 @RequiredArgsConstructor
 public class RestaurantService implements IRestaurantService {
@@ -41,6 +39,8 @@ public class RestaurantService implements IRestaurantService {
     private final IImageService imageService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final EmailService emailService;
 
 
     @Override
@@ -168,7 +168,9 @@ public class RestaurantService implements IRestaurantService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(null);
         user.setActive(true);
-        userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
+
 
         restaurant.setLocation(request.getLocation());
         restaurant.setRestaurantCategory(request.getRestaurantCategory());
@@ -184,6 +186,17 @@ public class RestaurantService implements IRestaurantService {
         Image imageQris = imageService.saveQrisImage(qrisImage, restaurant.getId());
         imageQris.setRestaurantId(restaurant.getId());
         restaurant.setQrisImage(imageQris.getId());
+
+
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUserId(savedUser.getId());
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setType('1');
+        verificationTokenRepository.save(verificationToken);
+
+        emailService.sendConfirmationEmail(savedUser.getEmail(), token);
 
         return restaurant;
     }
