@@ -1,5 +1,8 @@
 package com.example.PayoEat_BE.service.orders;
 
+import com.example.PayoEat_BE.request.order.CancelOrderRequest;
+import com.example.PayoEat_BE.utils.QrCodeUtil;
+import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
@@ -29,6 +32,14 @@ public class OrderService implements IOrderService {
     private final UserRepository userRepository;
     private final MenuRepository menuRepository;
     private final IImageService imageService;
+
+
+    @Override
+    public String nice(UUID orderId) {
+        String qrCode = QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
+
+        return qrCode;
+    }
 
     @Override
     public Order addOrder(AddOrderRequest request) {
@@ -92,8 +103,7 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("User does not have access to confirm this order");
         }
 
-        order.setIsActive(true);
-
+        order.setOrderStatus(OrderStatus.CONFIRMED);
 
         return orderRepository.save(order);
     }
@@ -115,6 +125,68 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public String cancelOrderByRestaurant(CancelOrderRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Order order = orderRepository.findByIdAndIsActiveTrue(request.getOrderId())
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + request.getOrderId()));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to view this order");
+        }
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setIsActive(false);
+        order.setCancellationReason(request.getCancellationReason());
+
+        orderRepository.save(order);
+
+        return "Order cancelled successfully";
+    }
+
+    @Override
+    public String cancelOrderByCustomer(CancelOrderRequest request) {
+        Order order = orderRepository.findByIdAndIsActiveTrue(request.getOrderId())
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + request.getOrderId()));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        order.setIsActive(false);
+        order.setCancellationReason(request.getCancellationReason());
+
+        orderRepository.save(order);
+
+        return "Order cancelled successfully";
+    }
+
+    @Override
+    public String processOrder(UUID orderId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to view this order");
+        }
+
+        order.setOrderStatus(OrderStatus.DINING);
+        orderRepository.save(order);
+
+        return "Order is processed";
+    }
+
+    @Override
     public Order finishOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
@@ -130,7 +202,7 @@ public class OrderService implements IOrderService {
         }
 
         order.setIsActive(false);
-        order.setIsCompleted(true);
+        order.setOrderStatus(OrderStatus.FINISHED);
         return orderRepository.save(order);
     }
 
@@ -200,11 +272,9 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setMenuLists(orderItems);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
-        newRestaurantOrder.setIsActive(false);
+        newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setTotalAmount(totalPrice);
-        newRestaurantOrder.setIsCompleted(false);
-
-
+        newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
 
         orderRepository.save(newRestaurantOrder);
 

@@ -29,6 +29,16 @@ public class OrderController {
     private final IUserService userService;
     private final INotificationService notificationService;
 
+    @GetMapping("/test")
+    public ResponseEntity<ApiResponse> test(@RequestParam UUID orderId) {
+        try {
+            String nice = orderService.nice(orderId);
+            return ResponseEntity.ok(new ApiResponse("Order lists: ", nice));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/get")
     @Operation(summary = "Getting orders of a restaurant", description = "Returning list of orders of a restaurant")
     public ResponseEntity<ApiResponse> getOrders(@RequestParam UUID restaurantId) {

@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.model;
 
+import com.example.PayoEat_BE.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,7 +28,7 @@ public class Order {
     private LocalTime createdTime;
     private String orderMessage;
     private Boolean isActive;
-    private Boolean isCompleted;
+    private OrderStatus orderStatus;
     private UUID restaurantId;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -35,4 +36,5 @@ public class Order {
 
     private Double totalAmount;
     private UUID paymentImage;
+    private String cancellationReason;
 }
