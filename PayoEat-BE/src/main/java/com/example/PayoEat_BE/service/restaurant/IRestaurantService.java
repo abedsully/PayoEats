@@ -24,4 +24,5 @@ public interface IRestaurantService {
     RestaurantApproval addRestaurantApproval(ReviewRestaurantRequest request);
     RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval);
     Restaurant getRestaurantDetailForApproval(UUID id);
+    List<Restaurant> getSimilarRestaurant(UUID id);
 }

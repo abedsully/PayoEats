@@ -254,5 +254,13 @@ public class RestaurantService implements IRestaurantService {
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }
 
+    @Override
+    public List<Restaurant> getSimilarRestaurant(UUID id) {
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
+
+        return restaurantRepository.findByRestaurantCategoryAndIsActiveTrueAndIdNot(restaurant.getRestaurantCategory(), id);
+    }
+
 
 }

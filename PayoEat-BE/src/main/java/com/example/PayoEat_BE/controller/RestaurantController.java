@@ -61,6 +61,21 @@ public class RestaurantController {
         }
     }
 
+    @GetMapping("/similar-restaurants")
+    @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
+    public ResponseEntity<ApiResponse> getSimilarRestaurants(@RequestParam UUID id) {
+        try {
+            List<Restaurant> restaurants = restaurantService.getSimilarRestaurant(id);
+            if (restaurants.isEmpty()) {
+                return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("Currently there are no restaurants yet", null));
+            }
+            List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
+            return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     public static LocalTime parseTime(String timeString) {
         try {
             return LocalTime.parse(timeString);

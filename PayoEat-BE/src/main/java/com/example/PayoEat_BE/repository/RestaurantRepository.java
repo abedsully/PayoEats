@@ -14,4 +14,5 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
     Optional <Restaurant> findByIdAndIsActiveFalse(UUID id);
     List<Restaurant> findByIsActiveTrue();
     boolean existsByUserIdAndIsActiveTrue(Long userId);
+    List<Restaurant> findByRestaurantCategoryAndIsActiveTrueAndIdNot(Long restaurantCategory, UUID id);
 }

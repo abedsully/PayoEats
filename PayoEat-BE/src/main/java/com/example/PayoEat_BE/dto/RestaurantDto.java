@@ -18,7 +18,8 @@ public class RestaurantDto {
     private String location;
     private UUID restaurantImage;
     private String color;
-    private Long categoryCode;
+    private Long restaurantCategory;
+    private String categoryName;
     private LocalTime closingHour;
     private LocalTime openingHour;
 }

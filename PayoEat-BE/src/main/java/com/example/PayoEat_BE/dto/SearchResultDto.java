@@ -5,9 +5,10 @@ import com.example.PayoEat_BE.model.Restaurant;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class SearchResultDto {
-    private List<Restaurant> restaurantList;
-    private List<Menu> menuList;
+    private String restaurantName;
+    private UUID restaurantId;
 }
