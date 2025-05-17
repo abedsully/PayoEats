@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;

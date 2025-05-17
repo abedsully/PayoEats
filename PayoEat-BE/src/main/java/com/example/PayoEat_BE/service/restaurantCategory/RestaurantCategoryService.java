@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.restaurantCategory;
 
+import com.example.PayoEat_BE.dto.RestaurantCategoryDto;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
@@ -9,6 +10,7 @@ import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.RestaurantCategoryRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,7 @@ import java.util.List;
 public class RestaurantCategoryService implements IRestaurantCategoryService{
     private final RestaurantCategoryRepository restaurantCategoryRepository;
     private final UserRepository userRepository;
+    private final ModelMapper modelMapper;
 
     @Override
     public RestaurantCategory addCategory(String categoryName, Long userID) {
@@ -43,8 +46,9 @@ public class RestaurantCategoryService implements IRestaurantCategoryService{
     }
 
     @Override
-    public List<RestaurantCategory> getAllRestaurantCategory() {
-        return restaurantCategoryRepository.findByIsActiveTrue();
+    public List<RestaurantCategoryDto> getAllRestaurantCategory() {
+        List<RestaurantCategory> restaurantCategoryList =  restaurantCategoryRepository.findByIsActiveTrue();
+        return getConvertedLists(restaurantCategoryList);
     }
 
     @Override
@@ -52,5 +56,15 @@ public class RestaurantCategoryService implements IRestaurantCategoryService{
         return restaurantCategoryRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new NotFoundException("Restaurant categpry not found with id: " + id));
 
+    }
+
+    @Override
+    public RestaurantCategoryDto convertToDto(RestaurantCategory restaurantCategory) {
+        return modelMapper.map(restaurantCategory, RestaurantCategoryDto.class);
+    }
+
+    @Override
+    public List<RestaurantCategoryDto> getConvertedLists(List<RestaurantCategory> restaurantCategoryList) {
+        return restaurantCategoryList.stream().map(this::convertToDto).toList();
     }
 }

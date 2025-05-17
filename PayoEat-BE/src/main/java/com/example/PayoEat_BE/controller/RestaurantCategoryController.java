@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantCategoryDto;
 import com.example.PayoEat_BE.model.RestaurantCategory;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.response.ApiResponse;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,13 +39,14 @@ public class RestaurantCategoryController {
         }
     }
 
-    @GetMapping("/get-all")
+    @GetMapping("/all")
     @Operation(summary = "Getting all available restaurant category", description = "Returning list of available restaurant category")
     public ResponseEntity<ApiResponse> getAll() {
         try {
-            List<RestaurantCategory> restaurantCategoryList = restaurantCategoryService.getAllRestaurantCategory();
+            List<RestaurantCategoryDto> restaurantCategoryList = restaurantCategoryService.getAllRestaurantCategory();
+
             if (restaurantCategoryList.isEmpty()) {
-                return ResponseEntity.ok(new ApiResponse("Currently, there are no available restaurant category", null));
+                return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("No restaurant category available", null));
             }
             return ResponseEntity.ok(new ApiResponse("Found: ", restaurantCategoryList));
         } catch (Exception e) {
