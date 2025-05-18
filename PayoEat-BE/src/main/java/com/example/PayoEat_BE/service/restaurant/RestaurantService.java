@@ -19,6 +19,8 @@ import com.example.PayoEat_BE.service.EmailService;
 import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +43,7 @@ public class RestaurantService implements IRestaurantService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestaurantService.class);
 
     @Override
     public Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
@@ -208,6 +211,8 @@ public class RestaurantService implements IRestaurantService {
 
     @Override
     public List<Restaurant> getAllRestaurants() {
+        LOGGER.info("Masuk request all restaurants");
+
         return restaurantRepository.findByIsActiveTrue();
     }
 
