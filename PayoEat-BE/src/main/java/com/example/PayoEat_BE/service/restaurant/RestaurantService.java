@@ -164,6 +164,7 @@ public class RestaurantService implements IRestaurantService {
         user.setRoles(request.getRoles());
         if (request.getRoles().equals(UserRoles.RESTAURANT)) {
             user.setUsername(null);
+            user.setRestaurantName(request.getRestaurantName());
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));

@@ -40,5 +40,7 @@ public class User {
     @Column(name = "confirmation_token")
     private String confirmationToken;
 
+    private String restaurantName;
+
 }
 
