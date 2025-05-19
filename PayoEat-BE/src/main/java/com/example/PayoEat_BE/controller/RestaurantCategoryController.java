@@ -41,7 +41,7 @@ public class RestaurantCategoryController {
 
     @GetMapping("/all")
     @Operation(summary = "Getting all available restaurant category", description = "Returning list of available restaurant category")
-    public ResponseEntity<ApiResponse> getAll() {
+    public ResponseEntity<ApiResponse> getAllRestaurantCategory() {
         try {
             List<RestaurantCategoryDto> restaurantCategoryList = restaurantCategoryService.getAllRestaurantCategory();
 
