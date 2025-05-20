@@ -44,9 +44,28 @@ public class AuthController {
     }
 
     @GetMapping("/confirm")
-    @Operation(summary = "User email confirmation", description = "Endpoint for confirming registered user's email")
-    public String confirm(@RequestParam String token) {
-        return userService.confirmToken(token);
+    public ResponseEntity<String> confirmEmail(@RequestParam("token") String token) {
+        String result = userService.confirmToken(token);
+
+        String htmlResponse = """
+        <html>
+        <head>
+            <meta http-equiv="refresh" content="5;url=http://localhost:5173/login" />
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+                .message-box { padding: 20px; border: 1px solid #ccc; display: inline-block; border-radius: 10px; background-color: #f9f9f9; }
+            </style>
+        </head>
+        <body>
+            <div class="message-box">
+                <h2>%s</h2>
+                <p>You will be redirected to the login page shortly...</p>
+            </div>
+        </body>
+        </html>
+        """.formatted(result);
+
+        return ResponseEntity.ok().body(htmlResponse);
     }
 
     @PostMapping("/login")

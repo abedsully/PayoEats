@@ -171,7 +171,7 @@ public class RestaurantService implements IRestaurantService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(null);
-        user.setActive(true);
+        user.setActive(false);
 
         User savedUser = userRepository.save(user);
 
