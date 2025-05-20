@@ -12,6 +12,7 @@ public class RestaurantDto {
     private UUID id;
     private String name;
     private Double rating;
+    private Long totalRating;
     private String description;
     private Long userId;
     private String telephoneNumber;

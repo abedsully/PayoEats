@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,13 +32,16 @@ public class ReviewController {
     @PostMapping("/add")
     @Operation(summary = "Add Review", description = "Add a review to a restaurant")
     @PreAuthorize("hasAuthority('CUSTOMER')")
-    public ResponseEntity<ApiResponse> addReview(@RequestBody AddReviewRequest request) {
+    public ResponseEntity<ApiResponse> addReview(@RequestParam("content") String reviewContent,
+                                                 @RequestParam("restaurantId") UUID restaurantId,
+                                                 @RequestParam("rating") Double rating,
+                                                 @RequestParam("file") MultipartFile reviewImage) {
         try {
+            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating);
             User user = userService.getAuthenticatedUser();
 
-            AddReviewRequest requestReview = new AddReviewRequest(request.getReviewContent(), request.getRestaurantId(), request.getUserId());
 
-            Review newReview = reviewService.addReview(requestReview);
+            Review newReview = reviewService.addReview(request, reviewImage, user.getId());
             ReviewDto convertedReview = reviewService.convertToDto(newReview);
 
             return ResponseEntity.ok(new ApiResponse("Review added successfully", convertedReview));
@@ -46,18 +50,17 @@ public class ReviewController {
         }
     }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/get")
     @Operation(summary = "Get Reviews by Restaurant Id", description = "Getting reviews with restaurant id")
-    public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse> getReviewsByRestaurantId(@RequestParam UUID id) {
         try {
-            List<Review> reviewList = reviewService.getReviewsByRestaurantId(id);
-            List<ReviewDto> convertedReview = reviewService.getConvertedReviews(reviewList);
+            List<ReviewDto> reviewList = reviewService.getReviewsByRestaurantId(id);
 
             if(reviewList.isEmpty()) {
                 return ResponseEntity.ok(new ApiResponse("No reviews yet: ", null));
             }
 
-            return ResponseEntity.ok(new ApiResponse("Review lists: ", convertedReview));
+            return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

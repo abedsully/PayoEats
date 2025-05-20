@@ -98,6 +98,27 @@ public class ImageService implements IImageService{
         }
     }
 
+    @Override
+    public Image saveReviewImage(MultipartFile file, UUID reviewId) {
+        if (file == null && file.isEmpty()) {
+            throw new IllegalArgumentException("File can not be empty");
+        }
+
+        try {
+            Image image = new Image();
+            image.setFileName("Review image" + reviewId);
+            image.setFileType(file.getContentType());
+            image.setImage(file.getBytes());
+            image.setReviewId(reviewId);
+
+            Image savedImage = imageRepository.save(image);
+            savedImage.setDownloadUrl("/review/image" + savedImage.getId());
+            return imageRepository.save(savedImage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process image: " + e.getMessage());
+        }
+    }
+
 
     public Image getImageById(UUID imageId) {
         return imageRepository.findById(imageId)

@@ -10,5 +10,5 @@ import java.util.UUID;
 public class AddReviewRequest {
     private String reviewContent;
     private UUID restaurantId;
-    private Long userId;
+    private Double rating;
 }

@@ -25,4 +25,6 @@ public class Review {
     private LocalDateTime updatedAt;
     private Boolean isActive;
     private UUID restaurantId;
+    private Double rating;
+    private UUID imageId;
 }

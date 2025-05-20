@@ -32,6 +32,9 @@ public class Restaurant {
     @Schema(description = "Rating of the restaurant")
     private Double rating;
 
+    @Column(name = "total_rating")
+    private Long totalRating;
+
     @Schema(description = "Description of the restaurant")
     private String description;
 
@@ -67,9 +70,10 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color) {
+    public Restaurant(String name, Double rating, Long totalRating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color) {
         this.name = name;
         this.rating = rating;
+        this.totalRating = totalRating;
         this.description = description;
         this.openingHour = openingHour;
         this.closingHour = closingHour;

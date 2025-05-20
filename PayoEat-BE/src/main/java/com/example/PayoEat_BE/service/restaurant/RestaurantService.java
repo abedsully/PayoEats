@@ -152,6 +152,7 @@ public class RestaurantService implements IRestaurantService {
         Restaurant restaurant = new Restaurant(
                 request.getRestaurantName(),
                 0.0,
+                0L,
                 request.getDescription(),
                 request.getOpeningHour(),
                 request.getClosingHour(),

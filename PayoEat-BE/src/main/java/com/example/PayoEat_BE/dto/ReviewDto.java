@@ -11,4 +11,7 @@ public class ReviewDto {
     private LocalDateTime createdAt;
     private UUID restaurantId;
     private Long userId;
+    private String username;
+    private Double rating;
+    private UUID imageId;
 }

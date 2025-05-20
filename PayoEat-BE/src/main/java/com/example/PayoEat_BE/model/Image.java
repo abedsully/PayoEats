@@ -30,4 +30,5 @@ public class Image {
 
     private UUID restaurantId;
     private UUID orderId;
+    private UUID reviewId;
 }

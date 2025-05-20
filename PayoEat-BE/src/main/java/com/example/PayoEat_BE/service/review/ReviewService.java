@@ -5,6 +5,7 @@ import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
+import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.Review;
 import com.example.PayoEat_BE.model.User;
@@ -12,13 +13,18 @@ import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.ReviewRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.review.AddReviewRequest;
+import com.example.PayoEat_BE.service.image.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,19 +33,43 @@ public class ReviewService implements IReviewService{
     private final RestaurantRepository restaurantRepository;
     private final ReviewRepository reviewRepository;
     private final ModelMapper modelMapper;
+    private final ImageService imageService;
+
 
     @Override
-    public Review addReview(AddReviewRequest request) {
-        return reviewRepository.save(createReview(request));
+    public Review addReview(AddReviewRequest request, MultipartFile reviewImage, Long userId) {
+        return reviewRepository.save(createReview(request, reviewImage, userId));
     }
 
     @Override
-    public List<Review> getReviewsByRestaurantId(UUID restaurantId) {
+    public List<ReviewDto> getReviewsByRestaurantId(UUID restaurantId) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaruant not found with id: " + restaurantId));
 
-        return reviewRepository.findByRestaurantId(restaurant.getId())
+        List<Review> reviewList = reviewRepository.findByRestaurantId(restaurant.getId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+
+        List<ReviewDto> reviewDtoList = new ArrayList<>();
+
+        for (Review review : reviewList) {
+            Long userId = review.getUserId();
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException("User not found with id " + userId));
+
+            ReviewDto reviewDto = new ReviewDto();
+            reviewDto.setRating(review.getRating());
+            reviewDto.setReviewContent(review.getReviewContent());
+            reviewDto.setUsername(user.getUsername());
+            reviewDto.setRestaurantId(review.getRestaurantId());
+            reviewDto.setCreatedAt(review.getCreatedAt());
+            reviewDto.setUserId(user.getId());
+            reviewDto.setImageId(review.getImageId());
+
+            reviewDtoList.add(reviewDto);
+        }
+
+        return reviewDtoList;
     }
 
     @Override
@@ -61,11 +91,10 @@ public class ReviewService implements IReviewService{
         return reviewList.stream().map(this::convertToDto).toList();
     }
 
-    private Review createReview(AddReviewRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
+    private Review createReview(AddReviewRequest request, MultipartFile reviewImage, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        // tambah is_active nanti
         if (!user.getRoles().equals(UserRoles.CUSTOMER)) {
             throw new ForbiddenException("You can't review a restaurant, if you're not a customer");
         }
@@ -81,6 +110,16 @@ public class ReviewService implements IReviewService{
             throw new InvalidException("Please enter the review");
         }
 
+        if (request.getRating() < 1) {
+            throw new InvalidException("Rating can not be lower than 1 star");
+        }
+
+        Double currentRestaurantRating = restaurant.getRating();
+        Long totalRating = restaurant.getTotalRating() + 1;
+
+        restaurant.setRating((currentRestaurantRating + request.getRating()) / totalRating);
+        restaurant.setTotalRating(totalRating);
+
         Review review = new Review();
         review.setReviewContent(request.getReviewContent());
         review.setUserId(user.getId());
@@ -88,6 +127,13 @@ public class ReviewService implements IReviewService{
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(null);
         review.setIsActive(true);
+        review.setRating(request.getRating());
+
+        Image imageReview = imageService.saveReviewImage(reviewImage, review.getId());
+        imageReview.setReviewId(review.getId());
+        review.setImageId(imageReview.getId());
+
+        restaurantRepository.save(restaurant);
 
         return review;
     }

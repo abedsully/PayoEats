@@ -12,4 +12,5 @@ public interface IImageService {
     Image updateImage(MultipartFile file, UUID id);
     Image saveQrisImage(MultipartFile file, UUID restaurantId);
     Image savePaymentProofImage(MultipartFile file, UUID orderId);
+    Image saveReviewImage(MultipartFile file, UUID reviewId);
 }
