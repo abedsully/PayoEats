@@ -39,8 +39,17 @@ public class AdminService implements IAdminService {
             throw new ForbiddenException("Sorry only admin can approve restaurant");
         }
 
+
         RestaurantApproval restaurantApproval = restaurantApprovalRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Restaurant approval not found with id: " + id));
+
+        User userRestaurant = userRepository.findById(restaurantApproval.getUserId())
+                .orElseThrow(() -> new NotFoundException("Restaurant user not found with id: " + restaurantApproval.getUserId()));
+
+        if (!userRestaurant.isActive()) {
+            throw new InvalidException("The user has not activated the email yet, you can't approve this restaurant yet");
+        }
+
 
         if (restaurantApproval.getIsApproved() && !restaurantApproval.getIsActive()) {
             throw new InvalidException("This restaurant has been approved, Please ensure your approval id is right");

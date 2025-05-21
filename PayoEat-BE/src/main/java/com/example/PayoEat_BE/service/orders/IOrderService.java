@@ -1,10 +1,12 @@
 package com.example.PayoEat_BE.service.orders;
 
+import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,4 +24,6 @@ public interface IOrderService {
     String cancelOrderByCustomer(CancelOrderRequest request);
 
     String processOrder(UUID orderId, Long userId);
+    RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
+
 }

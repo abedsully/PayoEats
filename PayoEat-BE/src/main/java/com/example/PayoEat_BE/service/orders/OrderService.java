@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.orders;
 
+import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
@@ -184,6 +185,52 @@ public class OrderService implements IOrderService {
         orderRepository.save(order);
 
         return "Order is processed";
+    }
+
+    @Override
+    public RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
+        }
+
+        Restaurant restaurant = restaurantRepository.findByUserIdAndIsActiveTrue(user.getId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with user id: " + userId));
+
+
+        if (!restaurant.getUserId().equals(user.getId())) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
+        }
+
+        long activeOrders = 0L;
+        long completedOrders = 0L;
+        long totalOrders = 0L;
+        Double totalIncome = 0.0;
+
+        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(restaurant.getId(), date, OrderStatus.DINING);
+        List<Order> completedOrderLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveFalse(restaurant.getId(), date, OrderStatus.FINISHED);
+
+        activeOrders = (long) activeOrdersLists.size();
+        completedOrders = (long) completedOrderLists.size();
+        totalOrders = activeOrders + completedOrders;
+
+        for (Order order : activeOrdersLists) {
+            totalIncome += order.getTotalAmount();
+        }
+
+        for (Order order : completedOrderLists) {
+            totalIncome += order.getTotalAmount();
+        }
+
+        RestaurantStatusDto result = new RestaurantStatusDto();
+        result.setActiveOrders(activeOrders);
+        result.setCompletedOrders(completedOrders);
+        result.setTotalOrders(totalOrders);
+        result.setTotalIncome(totalIncome);
+
+        return result;
     }
 
     @Override

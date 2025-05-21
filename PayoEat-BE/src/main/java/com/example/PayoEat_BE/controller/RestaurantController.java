@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
+import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
@@ -9,6 +10,7 @@ import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.image.IImageService;
 import com.example.PayoEat_BE.service.notification.INotificationService;
+import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
 import com.example.PayoEat_BE.dto.RestaurantDto;
@@ -21,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -34,6 +37,7 @@ import static org.springframework.http.HttpStatus.*;
 @Tag(name = "Restaurant Controller", description = "Endpoint for managing restaurants")
 public class RestaurantController {
     private final IRestaurantService restaurantService;
+    private final IOrderService orderService;
     private final IUserService userService;
     private final INotificationService notificationService;
     private final IImageService imageService;
@@ -184,6 +188,19 @@ public class RestaurantController {
             return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, image.getFileType()).body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(null);
+        }
+    }
+
+    @GetMapping("/status")
+    @Operation(summary = "Get restaurant status", description = "Getting restaurant status")
+    public ResponseEntity<ApiResponse> getRestaurantStatus(@RequestParam LocalDate date) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            RestaurantStatusDto result = orderService.restaurantOrderStatus(date, user.getId());
+
+            return ResponseEntity.ok(new ApiResponse("Found", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
         }
     }
 
