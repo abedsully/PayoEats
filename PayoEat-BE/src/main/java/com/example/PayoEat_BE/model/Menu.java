@@ -42,6 +42,8 @@ public class Menu {
 
     private UUID menuImage;
 
+    private String menuImageUrl;
+
     public Menu(String menuName, String menuDetail, double menuPrice) {
         this.menuName = menuName;
         this.menuDetail = menuDetail;

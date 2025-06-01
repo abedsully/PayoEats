@@ -22,4 +22,7 @@ public class AddMenuRequest {
 
     @JsonProperty("restaurantId")
     private UUID restaurantId;
+
+    private Long userId;
+
 }

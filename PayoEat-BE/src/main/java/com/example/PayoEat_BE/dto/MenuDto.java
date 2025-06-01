@@ -12,6 +12,6 @@ public class MenuDto {
     private String menuName;
     private String menuDetail;
     private Double menuPrice;
-    private RestaurantDto restaurant;
     private UUID menuImage;
+    private String menuImageUrl;
 }

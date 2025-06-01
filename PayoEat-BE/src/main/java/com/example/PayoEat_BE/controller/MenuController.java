@@ -1,13 +1,18 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.MenuDto;
+import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Menu;
+import com.example.PayoEat_BE.model.Restaurant;
+import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
 import com.example.PayoEat_BE.request.menu.UpdateMenuRequest;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.image.IImageService;
 import com.example.PayoEat_BE.service.menu.IMenuService;
+import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +35,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class MenuController {
     private final IMenuService menuService;
     private final IImageService imageService;
+    private final IUserService userService;
 
     @PostMapping(value = "/add-menu", consumes = {"multipart/form-data"})
     @Operation(summary = "Add Menu in Restaurant", description = "API for adding menu in restaurant")
@@ -40,12 +46,37 @@ public class MenuController {
             @RequestParam("restaurantId") UUID restaurantId,
             @RequestParam("menuImage") MultipartFile menuImage) {
         try {
-            AddMenuRequest request = new AddMenuRequest(menuName, menuDetail, menuPrice, restaurantId);
+            User user = userService.getAuthenticatedUser();
+            AddMenuRequest request = new AddMenuRequest(menuName, menuDetail, menuPrice, restaurantId, user.getId());
             Menu menu = menuService.addMenu(request, menuImage);
             MenuDto convertedMenu = menuService.convertToDto(menu);
             return ResponseEntity.ok(new ApiResponse("Menu successfully added", convertedMenu));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping(value = "/preview-upload", consumes = {"multipart/form-data"})
+    @Operation(summary = "Preview upload restaurant menu", description = "API for previewing uploaded restaurant menu")
+    public ResponseEntity<ApiResponse> previewUploadMenu(@RequestParam MultipartFile file) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            List<MenuDto> results =  menuService.previewUploadedMenu(file, user.getId());
+            return ResponseEntity.ok(new ApiResponse("List Menu: ", results));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
+    @Operation(summary = "Upload restaurant menu", description = "API for uploading restaurant menu")
+    public ResponseEntity<ApiResponse> uploadMenu(@RequestParam MultipartFile file) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            List<MenuDto> results =  menuService.uploadMenu(file, user.getId());
+            return ResponseEntity.ok(new ApiResponse("List Menu: ", results));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
     }
 
