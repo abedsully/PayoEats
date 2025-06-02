@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.model.Image;
@@ -99,7 +100,7 @@ public class MenuController {
     @Operation(summary = "Show Menus by Menu Code", description = "API to display menus by providing menu code")
     public ResponseEntity<ApiResponse> getMenuByCode(@RequestParam UUID[] menuCodes) {
         try {
-            List<MenuDto> result = menuService.getMenuByCode(menuCodes);
+            CartMenuDto result = menuService.getMenuByCode(menuCodes);
             return ResponseEntity.ok(new ApiResponse("Result: ", result));
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse("Error: " + e.getMessage(), null));

@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.menu;
 
+import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
 import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IMenuService {
-    List<MenuDto> getMenuByCode(UUID[] menuCodes);
+    CartMenuDto getMenuByCode(UUID[] menuCodes);
     Menu addMenu(AddMenuRequest request, MultipartFile menuImage);
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);
@@ -21,4 +22,5 @@ public interface IMenuService {
     List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException;
 
     List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException;
+    String getRestaurantNameByMenuCode(UUID menuCode);
 }

@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.menu;
 
+import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
 import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
@@ -44,18 +45,29 @@ public class MenuService implements IMenuService{
     private final UserRepository userRepository;
 
     @Override
-    public List<MenuDto> getMenuByCode(UUID[] menuCodes) {
+    public CartMenuDto getMenuByCode(UUID[] menuCodes) {
+
+        CartMenuDto cartMenuDto = new CartMenuDto();
 
         List<MenuDto> menuDtoList = new ArrayList<>();
+        String restaurantName = "";
         for (UUID menuCode : menuCodes) {
             Menu menu =  menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
                     .orElseThrow(() -> new NotFoundException("Menu not found with id: " + menuCode));
+
+            if (restaurantName.isEmpty()) {
+                restaurantName = menu.getRestaurant().getName();
+            }
 
             MenuDto convertedMenu = convertToDto(menu);
 
             menuDtoList.add(convertedMenu);
         }
-        return menuDtoList;
+
+        cartMenuDto.setMenuDtos(menuDtoList);
+        cartMenuDto.setRestaurantName(restaurantName);
+
+        return cartMenuDto;
     }
 
     @Override
@@ -202,6 +214,11 @@ public class MenuService implements IMenuService{
         } catch (IOException e) {
             throw new IOException(e.getMessage());
         }
+    }
+
+    @Override
+    public String getRestaurantNameByMenuCode(UUID menuCode) {
+        return "";
     }
 
     private Menu updateExistingMenu(Menu existingMenu, UpdateMenuRequest request, MultipartFile menuImage) {
