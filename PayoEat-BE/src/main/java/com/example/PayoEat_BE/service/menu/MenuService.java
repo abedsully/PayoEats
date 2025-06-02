@@ -44,9 +44,18 @@ public class MenuService implements IMenuService{
     private final UserRepository userRepository;
 
     @Override
-    public Menu getMenuById(String menuId) {
-        return menuRepository.findById(menuId)
-                .orElseThrow(() -> new NotFoundException("Menu not found with id: " + menuId));
+    public List<MenuDto> getMenuByCode(UUID[] menuCodes) {
+
+        List<MenuDto> menuDtoList = new ArrayList<>();
+        for (UUID menuCode : menuCodes) {
+            Menu menu =  menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
+                    .orElseThrow(() -> new NotFoundException("Menu not found with id: " + menuCode));
+
+            MenuDto convertedMenu = convertToDto(menu);
+
+            menuDtoList.add(convertedMenu);
+        }
+        return menuDtoList;
     }
 
     @Override

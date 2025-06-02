@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IMenuService {
-    Menu getMenuById(String menuId);
+    List<MenuDto> getMenuByCode(UUID[] menuCodes);
     Menu addMenu(AddMenuRequest request, MultipartFile menuImage);
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);

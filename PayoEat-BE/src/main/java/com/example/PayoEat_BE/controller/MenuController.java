@@ -95,6 +95,17 @@ public class MenuController {
         }
     }
 
+    @GetMapping("/get-menu-by-code")
+    @Operation(summary = "Show Menus by Menu Code", description = "API to display menus by providing menu code")
+    public ResponseEntity<ApiResponse> getMenuByCode(@RequestParam UUID[] menuCodes) {
+        try {
+            List<MenuDto> result = menuService.getMenuByCode(menuCodes);
+            return ResponseEntity.ok(new ApiResponse("Result: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/get-menus")
     @Operation(summary = "Show Menus by Restaurant ID", description = "API to display menus by providing restaurant ID")
     public ResponseEntity<ApiResponse> getMenusByRestaurantId(@RequestParam UUID restaurantId) {
