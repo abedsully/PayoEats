@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IOrderService {
-    String nice(UUID orderId);
+    String generateOrderIdQrCode(UUID orderId);
     Order addOrder(AddOrderRequest request);
     Order addPaymentProof(UUID orderId, MultipartFile paymentProof);
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);

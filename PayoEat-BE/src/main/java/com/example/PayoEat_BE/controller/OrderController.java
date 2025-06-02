@@ -32,7 +32,7 @@ public class OrderController {
     @GetMapping("/test")
     public ResponseEntity<ApiResponse> test(@RequestParam UUID orderId) {
         try {
-            String nice = orderService.nice(orderId);
+            String nice = orderService.generateOrderIdQrCode(orderId);
             return ResponseEntity.ok(new ApiResponse("Order lists: ", nice));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -75,7 +75,7 @@ public class OrderController {
         }
     }
 
-    @PostMapping(value = "/add")
+    @PostMapping(value = "/place")
     @Operation(summary = "Adding order to a restaurant", description = "Making order request to a restaurant")
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
 

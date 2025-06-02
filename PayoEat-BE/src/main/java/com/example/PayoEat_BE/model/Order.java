@@ -37,4 +37,6 @@ public class Order {
     private Double totalAmount;
     private UUID paymentImage;
     private String cancellationReason;
+    private LocalTime dineInTime;
+    private Long quotas;
 }

@@ -36,12 +36,14 @@ public class OrderService implements IOrderService {
 
 
     @Override
-    public String nice(UUID orderId) {
+    public String generateOrderIdQrCode(UUID orderId) {
         String qrCode = QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
 
         return qrCode;
     }
 
+
+    // Flow pertama, user add order
     @Override
     public Order addOrder(AddOrderRequest request) {
 
@@ -89,6 +91,7 @@ public class OrderService implements IOrderService {
         return orderRepository.findByRestaurantId(restaurant.getId());
     }
 
+    // Flow 2, restaurant confirm order (CASE YES)
     @Override
     public Order confirmOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
@@ -102,6 +105,10 @@ public class OrderService implements IOrderService {
 
         if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to confirm this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
+            throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
         }
 
         order.setOrderStatus(OrderStatus.CONFIRMED);
@@ -125,6 +132,8 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new NotFoundException("Order not found"));
     }
 
+
+    // Flow 2, Restaurant confirm (NO)
     @Override
     public String cancelOrderByRestaurant(CancelOrderRequest request, Long userId) {
         User user = userRepository.findById(userId)
@@ -138,6 +147,10 @@ public class OrderService implements IOrderService {
 
         if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to view this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
+            throw new IllegalArgumentException("This order can't be cancelled");
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
@@ -156,6 +169,11 @@ public class OrderService implements IOrderService {
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+
+        if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
+            throw new IllegalArgumentException("You can't cancel this order, as the order has already been processed");
+        }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.setIsActive(false);
@@ -179,6 +197,10 @@ public class OrderService implements IOrderService {
 
         if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to view this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+            throw new IllegalArgumentException("Unable to process order, order has not been confirmed yet");
         }
 
         order.setOrderStatus(OrderStatus.DINING);
@@ -246,6 +268,10 @@ public class OrderService implements IOrderService {
 
         if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
             throw new ForbiddenException("User does not have access to finish this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.DINING)) {
+            throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
         }
 
         order.setIsActive(false);
@@ -322,6 +348,8 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setTotalAmount(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
+        newRestaurantOrder.setQuotas(request.getQuotas());
+        newRestaurantOrder.setDineInTime(request.getDineInTime());
 
         orderRepository.save(newRestaurantOrder);
 
