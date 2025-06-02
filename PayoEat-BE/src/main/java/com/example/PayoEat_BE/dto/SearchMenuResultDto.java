@@ -9,4 +9,5 @@ public class SearchMenuResultDto {
     private UUID menuCode;
     private String menuName;
     private UUID menuImage;
+    private String menuImageUrl;
 }

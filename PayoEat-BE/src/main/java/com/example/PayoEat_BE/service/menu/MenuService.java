@@ -183,7 +183,7 @@ public class MenuService implements IMenuService{
                 menu.setMenuImageUrl(getCellValue(row.getCell(3)));
                 menu.setCreatedAt(LocalDateTime.now());
                 menu.setRestaurant(restaurant);
-
+                menu.setIsActive(true);
                 menuList.add(menu);
             }
 
