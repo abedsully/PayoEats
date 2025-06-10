@@ -10,6 +10,7 @@ import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -126,6 +127,25 @@ public class OrderController {
             User user = userService.getAuthenticatedUser();
             Order order = orderService.confirmOrder(orderId, user.getId());
             return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", order));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/confirm-redirect")
+    public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
+        String html = "<html><body onload='document.forms[0].submit()'>" +
+                "<form method='POST' action='/api/order/confirm2'>" +
+                "<input type='hidden' name='orderId' value='" + orderId + "'/>" +
+                "</form></body></html>";
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+    }
+
+    @PostMapping("/confirm2")
+    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
+    public ResponseEntity<ApiResponse> confirmOrder2(@RequestParam UUID orderId) {
+        try {
+            return ResponseEntity.ok(new ApiResponse("Nice job, order id: " + orderId, null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

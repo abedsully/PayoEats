@@ -16,8 +16,9 @@ public class QrCodeUtil {
 
     public static String generateBase64Qr(String text, int width, int height) {
         try {
+            String url = "http://localhost:8080/api/order/confirm-redirect?orderId=" + text;
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height);
+            BitMatrix bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height);
             BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
