@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Order;
+import com.example.PayoEat_BE.model.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;

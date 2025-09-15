@@ -9,3 +9,4 @@ public enum OrderStatus {
     // Dining: Customer has already come to the restaurant and scan the order barcode
     // Finished: Customer has finished eating & order is finished
 }
+    

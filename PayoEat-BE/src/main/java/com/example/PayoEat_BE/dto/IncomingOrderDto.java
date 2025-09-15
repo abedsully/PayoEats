@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-public class CartMenuDto {
-    private String restaurantName;
+public class IncomingOrderDto {
     private UUID restaurantId;
-    private List<MenuDto> menuDtos;
+    private UUID orderId;
+    private List<MenuListDto> menuLists;
 }
+

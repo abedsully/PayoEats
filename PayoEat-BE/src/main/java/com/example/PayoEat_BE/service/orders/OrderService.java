@@ -1,6 +1,9 @@
 package com.example.PayoEat_BE.service.orders;
 
+import com.example.PayoEat_BE.dto.IncomingOrderDto;
+import com.example.PayoEat_BE.dto.MenuListDto;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
+import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
@@ -8,10 +11,6 @@ import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
-import com.example.PayoEat_BE.repository.MenuRepository;
-import com.example.PayoEat_BE.repository.OrderRepository;
-import com.example.PayoEat_BE.repository.RestaurantRepository;
-import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.service.image.IImageService;
@@ -29,6 +28,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
     private final MenuRepository menuRepository;
@@ -185,6 +185,12 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public Order getOrderDetail(UUID orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+    }
+
+    @Override
     public String processOrder(UUID orderId, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
@@ -239,11 +245,11 @@ public class OrderService implements IOrderService {
         totalOrders = activeOrders + completedOrders;
 
         for (Order order : activeOrdersLists) {
-            totalIncome += order.getTotalAmount();
+            totalIncome += order.getTotalPrice();
         }
 
         for (Order order : completedOrderLists) {
-            totalIncome += order.getTotalAmount();
+            totalIncome += order.getTotalPrice();
         }
 
         RestaurantStatusDto result = new RestaurantStatusDto();
@@ -309,6 +315,60 @@ public class OrderService implements IOrderService {
         return order;
     }
 
+    @Override
+    public List<OrderItem> getOrderItems(UUID orderId) {
+        return orderItemRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    public List<IncomingOrderDto> getIncomingOrder(UUID restaurantId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+
+        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
+            throw new ForbiddenException("Sorry you don't have access to view this order");
+        }
+
+        List<Order> orderList = orderRepository
+                .findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(
+                        restaurantId, LocalDate.now(), OrderStatus.RECEIVED
+                );
+
+        List<IncomingOrderDto> incomingOrders = new ArrayList<>();
+
+        for (Order o : orderList) {
+            IncomingOrderDto dto = new IncomingOrderDto();
+            dto.setRestaurantId(restaurantId);
+            dto.setOrderId(o.getId());
+
+            List<OrderItem> orderItems = getOrderItems(o.getId());
+
+            List<MenuListDto> menuDtos = new ArrayList<>();
+            for (OrderItem oi : orderItems) {
+                MenuListDto menuDto = new MenuListDto();
+                menuDto.setMenuCode(oi.getMenuCode());
+                menuDto.setQuantity(oi.getQuantity());
+
+                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
+                    menuDto.setMenuName(menu.getMenuName());
+                    menuDto.setMenuPrice(menu.getMenuPrice());
+                    menuDto.setMenuImage(menu.getMenuImageUrl());
+                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
+                });
+
+                menuDtos.add(menuDto);
+            }
+
+            dto.setMenuLists(menuDtos);
+            incomingOrders.add(dto);
+        }
+
+        return incomingOrders;
+    }
+
     private Order createOrder(AddOrderRequest request) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
@@ -324,6 +384,8 @@ public class OrderService implements IOrderService {
             newRestaurantOrder.setOrderMessage(orderMessage);
         }
 
+        double subTotalPrice = 0.0;
+        double taxPrice = 0.0;
         double totalPrice = 0.0;
         List<OrderItem> orderItems = new ArrayList<>();
 
@@ -332,7 +394,7 @@ public class OrderService implements IOrderService {
                     .orElseThrow(() -> new NotFoundException("Menu not found"));
 
             double itemTotalPrice = menu.getMenuPrice() * itemRequest.getQuantity();
-            totalPrice += itemTotalPrice;
+            subTotalPrice += itemTotalPrice;
 
             OrderItem orderItem = new OrderItem();
             orderItem.setMenuCode(itemRequest.getMenuCode());
@@ -342,11 +404,21 @@ public class OrderService implements IOrderService {
             orderItems.add(orderItem);
         }
 
+        taxPrice = (subTotalPrice * restaurant.getTax()) / 100;
+        totalPrice = subTotalPrice + taxPrice;
+
+
         newRestaurantOrder.setMenuLists(orderItems);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCreatedTime(LocalTime.now());
         newRestaurantOrder.setIsActive(true);
-        newRestaurantOrder.setTotalAmount(totalPrice);
+
+
+        // Area setting up numbers for price
+        newRestaurantOrder.setSubTotal(subTotalPrice);
+        newRestaurantOrder.setTaxPrice(taxPrice);
+        newRestaurantOrder.setTotalPrice(totalPrice);
+
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setQuotas(request.getQuotas());
         newRestaurantOrder.setDineInTime(request.getDineInTime());

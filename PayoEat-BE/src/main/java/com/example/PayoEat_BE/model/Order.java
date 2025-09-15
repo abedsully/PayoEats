@@ -28,13 +28,22 @@ public class Order {
     private LocalTime createdTime;
     private String orderMessage;
     private Boolean isActive;
+
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
+
     private UUID restaurantId;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> menuLists = new ArrayList<>();
 
-    private Double totalAmount;
+    // Sub total price dari items
+    private Double subTotal;
+    // Total price setelah ditambah subtotal & tax price
+    private Double totalPrice;
+    // Tax price diambil dari harga subTotal * tax price %
+    private Double taxPrice;
+
     private UUID paymentImage;
     private String cancellationReason;
     private LocalTime dineInTime;

@@ -47,6 +47,8 @@ public class Restaurant {
     @Schema(description = "Status of restaurant")
     private Boolean isActive;
 
+    private Long tax;
+
     private Long userId;
 
     private LocalTime openingHour;
@@ -70,7 +72,7 @@ public class Restaurant {
 
     private Long restaurantCategory;
 
-    public Restaurant(String name, Double rating, Long totalRating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color) {
+    public Restaurant(String name, Double rating, Long totalRating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color, Long tax) {
         this.name = name;
         this.rating = rating;
         this.totalRating = totalRating;
@@ -80,5 +82,6 @@ public class Restaurant {
         this.location = location;
         this.telephoneNumber = telephoneNumber;
         this.color = color;
+        this.tax = tax;
     }
 }

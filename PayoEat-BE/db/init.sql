@@ -69,50 +69,52 @@ CREATE TABLE IF NOT EXISTS menu (
     updated_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     restaurant_id UUID,
-    menu_image UUID
+    menu_image UUID,
+    menu_image_url VARCHAR(255)
 );
 
-INSERT INTO menu (menu_code, menu_name, menu_detail, menu_price, created_at, updated_at, is_active, restaurant_id, menu_image)
+INSERT INTO menu (menu_code, menu_name, menu_detail, menu_price, created_at, updated_at, is_active, restaurant_id, menu_image, menu_image_url)
 VALUES
 -- Sunset Grill
-('a0010000-0000-0000-0000-000000000001', 'Grilled Ribeye', 'Juicy ribeye steak grilled to perfection.', 25.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', '90000000-0000-0000-0000-000000000001'),
-('a0010000-0000-0000-0000-000000000002', 'BBQ Chicken', 'Charcoal grilled chicken with BBQ sauce.', 14.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', '90000000-0000-0000-0000-000000000002'),
+('a0010000-0000-0000-0000-000000000001', 'Grilled Ribeye', 'Juicy ribeye steak grilled to perfection.', 25.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', '90000000-0000-0000-0000-000000000001', 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092'),
+('a0010000-0000-0000-0000-000000000002', 'BBQ Chicken', 'Charcoal grilled chicken with BBQ sauce.', 14.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', '90000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1604908177522-0400d1a59f7f'),
 
 -- Green Garden
-('a0010000-0000-0000-0000-000000000003', 'Vegan Buddha Bowl', 'Quinoa, tofu, and fresh vegetables.', 12.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', '90000000-0000-0000-0000-000000000003'),
-('a0010000-0000-0000-0000-000000000004', 'Avocado Toast', 'Whole grain bread with smashed avocado.', 9.75, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', '90000000-0000-0000-0000-000000000004'),
+('a0010000-0000-0000-0000-000000000003', 'Vegan Buddha Bowl', 'Quinoa, tofu, and fresh vegetables.', 12.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', '90000000-0000-0000-0000-000000000003', 'https://images.unsplash.com/photo-1604908813065-5e6f26c7d0d6'),
+('a0010000-0000-0000-0000-000000000004', 'Avocado Toast', 'Whole grain bread with smashed avocado.', 9.75, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', '90000000-0000-0000-0000-000000000004', 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90'),
 
 -- Ocean Breeze
-('a0010000-0000-0000-0000-000000000005', 'Grilled Salmon', 'Fresh salmon with lemon butter.', 22.00, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440002', '90000000-0000-0000-0000-000000000005'),
-('a0010000-0000-0000-0000-000000000006', 'Shrimp Tacos', 'Soft tacos filled with spicy shrimp.', 13.00, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440002', '90000000-0000-0000-0000-000000000006'),
+('a0010000-0000-0000-0000-000000000005', 'Grilled Salmon', 'Fresh salmon with lemon butter.', 22.00, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440002', '90000000-0000-0000-0000-000000000005', 'https://images.unsplash.com/photo-1604908813194-083a4b8c4a3a'),
+('a0010000-0000-0000-0000-000000000006', 'Shrimp Tacos', 'Soft tacos filled with spicy shrimp.', 13.00, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440002', '90000000-0000-0000-0000-000000000006', 'https://images.unsplash.com/photo-1601924582971-6b8c49d049fa'),
 
 -- Night Owl Diner
-('a0010000-0000-0000-0000-000000000007', 'Midnight Burger', 'All-beef patty with fried egg.', 11.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440003', '90000000-0000-0000-0000-000000000007'),
-('a0010000-0000-0000-0000-000000000008', 'Loaded Fries', 'Fries topped with cheese and bacon.', 7.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440003', '90000000-0000-0000-0000-000000000008'),
+('a0010000-0000-0000-0000-000000000007', 'Midnight Burger', 'All-beef patty with fried egg.', 11.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440003', '90000000-0000-0000-0000-000000000007', 'https://images.unsplash.com/photo-1550547660-d9450f859349'),
+('a0010000-0000-0000-0000-000000000008', 'Loaded Fries', 'Fries topped with cheese and bacon.', 7.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440003', '90000000-0000-0000-0000-000000000008', 'https://images.unsplash.com/photo-1541592106381-f3e06cc4f7e8'),
 
 -- The Burger Spot
-('a0010000-0000-0000-0000-000000000009', 'Classic Cheeseburger', 'Beef patty, cheese, lettuce, and tomato.', 10.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440004', '90000000-0000-0000-0000-000000000009'),
-('a0010000-0000-0000-0000-000000000010', 'Bacon Double Burger', 'Double patty with crispy bacon.', 13.25, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440004', '90000000-0000-0000-0000-000000000010'),
+('a0010000-0000-0000-0000-000000000009', 'Classic Cheeseburger', 'Beef patty, cheese, lettuce, and tomato.', 10.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440004', '90000000-0000-0000-0000-000000000009', 'https://images.unsplash.com/photo-1550547660-7ab8b406a7a7'),
+('a0010000-0000-0000-0000-000000000010', 'Bacon Double Burger', 'Double patty with crispy bacon.', 13.25, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440004', '90000000-0000-0000-0000-000000000010', 'https://images.unsplash.com/photo-1601050690594-2ccf3a21e5a1'),
 
 -- Pasta Palace
-('a0010000-0000-0000-0000-000000000011', 'Spaghetti Carbonara', 'Creamy pasta with pancetta.', 15.90, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440005', '90000000-0000-0000-0000-000000000011'),
-('a0010000-0000-0000-0000-000000000012', 'Fettuccine Alfredo', 'Rich Alfredo sauce with mushrooms.', 14.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440005', '90000000-0000-0000-0000-000000000012'),
+('a0010000-0000-0000-0000-000000000011', 'Spaghetti Carbonara', 'Creamy pasta with pancetta.', 15.90, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440005', '90000000-0000-0000-0000-000000000011', 'https://images.unsplash.com/photo-1589308078055-72050a96f1c3'),
+('a0010000-0000-0000-0000-000000000012', 'Fettuccine Alfredo', 'Rich Alfredo sauce with mushrooms.', 14.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440005', '90000000-0000-0000-0000-000000000012', 'https://images.unsplash.com/photo-1601924928376-24968ed92a2d'),
 
 -- Taco Fiesta
-('a0010000-0000-0000-0000-000000000013', 'Beef Tacos', 'Corn tortillas with spicy beef.', 9.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440006', '90000000-0000-0000-0000-000000000013'),
-('a0010000-0000-0000-0000-000000000014', 'Nachos Supreme', 'Loaded nachos with jalapeños.', 8.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440006', '90000000-0000-0000-0000-000000000014'),
+('a0010000-0000-0000-0000-000000000013', 'Beef Tacos', 'Corn tortillas with spicy beef.', 9.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440006', '90000000-0000-0000-0000-000000000013', 'https://images.unsplash.com/photo-1617196038572-41d546a01b1d'),
+('a0010000-0000-0000-0000-000000000014', 'Nachos Supreme', 'Loaded nachos with jalapeños.', 8.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440006', '90000000-0000-0000-0000-000000000014', 'https://images.unsplash.com/photo-1601924928290-abbf74349f7b'),
 
 -- Sushi World
-('a0010000-0000-0000-0000-000000000015', 'Salmon Nigiri', 'Fresh salmon over sushi rice.', 6.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440007', '90000000-0000-0000-0000-000000000015'),
-('a0010000-0000-0000-0000-000000000016', 'Sushi Platter', 'Assorted sushi and sashimi.', 18.75, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440007', '90000000-0000-0000-0000-000000000016'),
+('a0010000-0000-0000-0000-000000000015', 'Salmon Nigiri', 'Fresh salmon over sushi rice.', 6.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440007', '90000000-0000-0000-0000-000000000015', 'https://images.unsplash.com/photo-1589302168068-964664d93dc0'),
+('a0010000-0000-0000-0000-000000000016', 'Sushi Platter', 'Assorted sushi and sashimi.', 18.75, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440007', '90000000-0000-0000-0000-000000000016', 'https://images.unsplash.com/photo-1601924570929-3c3b16e8a3e9'),
 
 -- Cafe Morning
-('a0010000-0000-0000-0000-000000000017', 'Pancake Stack', 'Fluffy pancakes with maple syrup.', 7.80, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440008', '90000000-0000-0000-0000-000000000017'),
-('a0010000-0000-0000-0000-000000000018', 'Eggs Benedict', 'Poached eggs on English muffin.', 10.25, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440008', '90000000-0000-0000-0000-000000000018'),
+('a0010000-0000-0000-0000-000000000017', 'Pancake Stack', 'Fluffy pancakes with maple syrup.', 7.80, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440008', '90000000-0000-0000-0000-000000000017', 'https://images.unsplash.com/photo-1587732056644-7b3d1a8e0c04'),
+('a0010000-0000-0000-0000-000000000018', 'Eggs Benedict', 'Poached eggs on English muffin.', 10.25, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440008', '90000000-0000-0000-0000-000000000018', 'https://images.unsplash.com/photo-1604908813109-2f6c9a1d9a11'),
 
 -- BBQ Brothers
-('a0010000-0000-0000-0000-000000000019', 'BBQ Ribs', 'Slow-cooked pork ribs with sauce.', 19.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440009', '90000000-0000-0000-0000-000000000019'),
-('a0010000-0000-0000-0000-000000000020', 'Smoked Brisket', 'Tender brisket smoked overnight.', 21.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440009', '90000000-0000-0000-0000-000000000020');
+('a0010000-0000-0000-0000-000000000019', 'BBQ Ribs', 'Slow-cooked pork ribs with sauce.', 19.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440009', '90000000-0000-0000-0000-000000000019', 'https://images.unsplash.com/photo-1604908812966-65d12f99b8c9'),
+('a0010000-0000-0000-0000-000000000020', 'Smoked Brisket', 'Tender brisket smoked overnight.', 21.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440009', '90000000-0000-0000-0000-000000000020', 'https://images.unsplash.com/photo-1601050690730-6df9f8b4a5f6');
+
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,

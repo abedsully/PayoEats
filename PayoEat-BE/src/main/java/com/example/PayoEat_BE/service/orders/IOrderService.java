@@ -1,7 +1,9 @@
 package com.example.PayoEat_BE.service.orders;
 
+import com.example.PayoEat_BE.dto.IncomingOrderDto;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.Order;
+import com.example.PayoEat_BE.model.OrderItem;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,10 +21,12 @@ public interface IOrderService {
     Order finishOrder(UUID orderId, Long userId);
     Order getOrderByIdRestaurant(UUID orderId, Long userId);
     Order getOrderByIdCustomer(UUID orderId);
+    List<OrderItem> getOrderItems(UUID orderId);
+    List<IncomingOrderDto> getIncomingOrder(UUID restaurantId, Long userId);
     List<Order> viewActiveOrders(UUID restaurantId, Long userId);
     String cancelOrderByRestaurant(CancelOrderRequest request, Long userId);
     String cancelOrderByCustomer(CancelOrderRequest request);
-
+    Order getOrderDetail(UUID orderId);
     String processOrder(UUID orderId, Long userId);
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
 

@@ -1,8 +1,10 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.IncomingOrderDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
+import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.orders.IOrderService;
@@ -30,11 +32,11 @@ public class OrderController {
     private final IUserService userService;
     private final INotificationService notificationService;
 
-    @GetMapping("/test")
-    public ResponseEntity<ApiResponse> test(@RequestParam UUID orderId) {
+    @GetMapping("/progress")
+    public ResponseEntity<ApiResponse> getOrder(@RequestParam UUID orderId) {
         try {
-            String nice = orderService.generateOrderIdQrCode(orderId);
-            return ResponseEntity.ok(new ApiResponse("Order lists: ", nice));
+            Order result = orderService.getOrderDetail(orderId);
+            return ResponseEntity.ok(new ApiResponse("Order lists: ", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -103,6 +105,19 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/get-incoming-order")
+    @Operation(summary = "Getting the list of incoming orders", description = "Returning list of incoming orders")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> getIncomingOrders(@RequestParam UUID restaurantId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            List<IncomingOrderDto> incomingOrderLists = orderService.getIncomingOrder(restaurantId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", incomingOrderLists));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
 
 
 
@@ -127,6 +142,19 @@ public class OrderController {
             User user = userService.getAuthenticatedUser();
             Order order = orderService.confirmOrder(orderId, user.getId());
             return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", order));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/reject")
+    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> rejectOrder(@RequestBody CancelOrderRequest request) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            String result = orderService.cancelOrderByRestaurant(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order has been cancelled", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

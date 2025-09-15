@@ -51,12 +51,17 @@ public class MenuService implements IMenuService{
 
         List<MenuDto> menuDtoList = new ArrayList<>();
         String restaurantName = "";
+        UUID restaurantId = null;
         for (UUID menuCode : menuCodes) {
             Menu menu =  menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
                     .orElseThrow(() -> new NotFoundException("Menu not found with id: " + menuCode));
 
             if (restaurantName.isEmpty()) {
                 restaurantName = menu.getRestaurant().getName();
+            }
+
+            if (restaurantId == null) {
+                restaurantId = menu.getRestaurant().getId();
             }
 
             MenuDto convertedMenu = convertToDto(menu);
@@ -66,6 +71,7 @@ public class MenuService implements IMenuService{
 
         cartMenuDto.setMenuDtos(menuDtoList);
         cartMenuDto.setRestaurantName(restaurantName);
+        cartMenuDto.setRestaurantId(restaurantId);
 
         return cartMenuDto;
     }
