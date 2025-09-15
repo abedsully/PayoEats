@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.IncomingOrderDto;
+import com.example.PayoEat_BE.dto.ProgressOrderDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
@@ -35,8 +36,8 @@ public class OrderController {
     @GetMapping("/progress")
     public ResponseEntity<ApiResponse> getOrder(@RequestParam UUID orderId) {
         try {
-            Order result = orderService.getOrderDetail(orderId);
-            return ResponseEntity.ok(new ApiResponse("Order lists: ", result));
+            ProgressOrderDto result = orderService.getProgressOrder(orderId);
+            return ResponseEntity.ok(new ApiResponse("Success viewing order progresss", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

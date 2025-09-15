@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.IncomingOrderDto;
+import com.example.PayoEat_BE.dto.ProgressOrderDto;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.OrderItem;
@@ -29,5 +30,6 @@ public interface IOrderService {
     Order getOrderDetail(UUID orderId);
     String processOrder(UUID orderId, Long userId);
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
+    ProgressOrderDto getProgressOrder(UUID orderId);
 
 }

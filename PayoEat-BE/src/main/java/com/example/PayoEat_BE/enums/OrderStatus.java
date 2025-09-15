@@ -1,7 +1,7 @@
 package com.example.PayoEat_BE.enums;
 
 public enum OrderStatus {
-    RECEIVED, CANCELLED, CONFIRMED, DINING, FINISHED
+    RECEIVED, CANCELLED, PAYMENT, CONFIRMED, DINING, FINISHED
 
     // Received: Order received, Customer has just placed an order
     // Cancelled: Order cancelled by customer or Restaurant cancel the order

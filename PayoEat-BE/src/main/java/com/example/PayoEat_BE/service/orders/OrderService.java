@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.IncomingOrderDto;
 import com.example.PayoEat_BE.dto.MenuListDto;
+import com.example.PayoEat_BE.dto.ProgressOrderDto;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
@@ -28,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
+    private final OrderRepositoryy orderRepositoryy;
     private final OrderItemRepository orderItemRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
@@ -91,10 +93,10 @@ public class OrderService implements IOrderService {
         return orderRepository.findByRestaurantId(restaurant.getId());
     }
 
-    // Flow 2, restaurant confirm order (CASE YES)
+    // Flow 2, restaurant confirm order, masuk ke payment
     @Override
     public Order confirmOrder(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
         User user = userRepository.findById(userId)
@@ -108,6 +110,30 @@ public class OrderService implements IOrderService {
         }
 
         if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
+            throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
+        }
+
+        order.setOrderStatus(OrderStatus.PAYMENT);
+
+        return orderRepository.save(order);
+    }
+
+    // Flow tambahan order
+    public Order confirmOrderPayment(UUID orderId, Long userId) {
+        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to confirm this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
             throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
         }
 
@@ -136,6 +162,7 @@ public class OrderService implements IOrderService {
     // Flow 2, Restaurant confirm (NO)
     @Override
     public String cancelOrderByRestaurant(CancelOrderRequest request, Long userId) {
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
@@ -259,6 +286,11 @@ public class OrderService implements IOrderService {
         result.setTotalIncome(totalIncome);
 
         return result;
+    }
+
+    @Override
+    public ProgressOrderDto getProgressOrder(UUID orderId) {
+        return orderRepositoryy.getProgressOrder(orderId);
     }
 
     @Override
