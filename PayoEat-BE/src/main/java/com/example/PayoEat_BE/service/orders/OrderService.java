@@ -1,9 +1,6 @@
 package com.example.PayoEat_BE.service.orders;
 
-import com.example.PayoEat_BE.dto.IncomingOrderDto;
-import com.example.PayoEat_BE.dto.MenuListDto;
-import com.example.PayoEat_BE.dto.ProgressOrderDto;
-import com.example.PayoEat_BE.dto.RestaurantStatusDto;
+import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
@@ -67,7 +64,7 @@ public class OrderService implements IOrderService {
 
     @Override
     public Order addPaymentProof(UUID orderId, MultipartFile paymentProof) {
-        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
         Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, order.getId());
         imagePaymentProof.setOrderId(order.getId());
@@ -119,8 +116,9 @@ public class OrderService implements IOrderService {
     }
 
     // Flow tambahan order
+    @Override
     public Order confirmOrderPayment(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveFalse(orderId)
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
         User user = userRepository.findById(userId)
@@ -138,6 +136,31 @@ public class OrderService implements IOrderService {
         }
 
         order.setOrderStatus(OrderStatus.CONFIRMED);
+
+        return orderRepository.save(order);
+    }
+
+    @Override
+    public Order rejectOrderPayment(UUID orderId, Long userId) {
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+
+        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to confirm this order");
+        }
+
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
+            throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
+        }
+
+        order.setOrderStatus(OrderStatus.PAYMENT);
+        order.setPaymentImage(null);
 
         return orderRepository.save(order);
     }
@@ -294,7 +317,7 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public Order finishOrder(UUID orderId, Long userId) {
+    public String finishOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
 
@@ -314,7 +337,9 @@ public class OrderService implements IOrderService {
 
         order.setIsActive(false);
         order.setOrderStatus(OrderStatus.FINISHED);
-        return orderRepository.save(order);
+        orderRepository.save(order);
+
+        return "This order has been completed";
     }
 
     @Override
@@ -401,6 +426,103 @@ public class OrderService implements IOrderService {
         return incomingOrders;
     }
 
+    @Override
+    public List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+
+        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
+            throw new ForbiddenException("Sorry you don't have access to view this order");
+        }
+
+        List<Order> orderList = orderRepository
+                .findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(
+                        restaurantId, LocalDate.now(), OrderStatus.PAYMENT
+                );
+
+        List<ConfirmedOrderDto> confirmedOrderDtos = new ArrayList<>();
+
+        for (Order o : orderList) {
+            ConfirmedOrderDto dto = new ConfirmedOrderDto();
+            dto.setRestaurantId(restaurantId);
+            dto.setOrderId(o.getId());
+            dto.setPaymentImage(o.getPaymentImage());
+
+            List<OrderItem> orderItems = getOrderItems(o.getId());
+
+            List<MenuListDto> menuDtos = new ArrayList<>();
+            for (OrderItem oi : orderItems) {
+                MenuListDto menuDto = new MenuListDto();
+                menuDto.setMenuCode(oi.getMenuCode());
+                menuDto.setQuantity(oi.getQuantity());
+
+                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
+                    menuDto.setMenuName(menu.getMenuName());
+                    menuDto.setMenuPrice(menu.getMenuPrice());
+                    menuDto.setMenuImage(menu.getMenuImageUrl());
+                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
+                });
+
+                menuDtos.add(menuDto);
+            }
+
+            dto.setMenuLists(menuDtos);
+            confirmedOrderDtos.add(dto);
+        }
+
+        return confirmedOrderDtos;
+    }
+
+    @Override
+    public List<ActiveOrderDto> getActiveOrder(UUID restaurantId, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+
+        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
+            throw new ForbiddenException("Sorry you don't have access to view this order");
+        }
+
+        List<Order> orderList = orderRepositoryy.getActiveOrders(restaurantId);
+
+        List<ActiveOrderDto> activeOrderDtos = new ArrayList<>();
+
+        for (Order o : orderList) {
+            ActiveOrderDto dto = new ActiveOrderDto();
+            dto.setRestaurantId(restaurantId);
+            dto.setOrderId(o.getId());
+            dto.setDineInTime(o.getDineInTime());
+
+            List<OrderItem> orderItems = getOrderItems(o.getId());
+
+            List<MenuListDto> menuDtos = new ArrayList<>();
+            for (OrderItem oi : orderItems) {
+                MenuListDto menuDto = new MenuListDto();
+                menuDto.setMenuCode(oi.getMenuCode());
+                menuDto.setQuantity(oi.getQuantity());
+
+                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
+                    menuDto.setMenuName(menu.getMenuName());
+                    menuDto.setMenuPrice(menu.getMenuPrice());
+                    menuDto.setMenuImage(menu.getMenuImageUrl());
+                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
+                });
+
+                menuDtos.add(menuDto);
+            }
+
+            dto.setMenuLists(menuDtos);
+            activeOrderDtos.add(dto);
+        }
+
+        return activeOrderDtos;
+    }
+
     private Order createOrder(AddOrderRequest request) {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
@@ -453,7 +575,7 @@ public class OrderService implements IOrderService {
 
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setQuotas(request.getQuotas());
-        newRestaurantOrder.setDineInTime(request.getDineInTime());
+        newRestaurantOrder.setDineInTime(null);
 
         orderRepository.save(newRestaurantOrder);
 

@@ -1,8 +1,6 @@
 package com.example.PayoEat_BE.service.orders;
 
-import com.example.PayoEat_BE.dto.IncomingOrderDto;
-import com.example.PayoEat_BE.dto.ProgressOrderDto;
-import com.example.PayoEat_BE.dto.RestaurantStatusDto;
+import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.OrderItem;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
@@ -19,11 +17,15 @@ public interface IOrderService {
     Order addPaymentProof(UUID orderId, MultipartFile paymentProof);
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);
     Order confirmOrder(UUID orderId, Long userId);
-    Order finishOrder(UUID orderId, Long userId);
+    Order confirmOrderPayment(UUID orderId, Long userId);
+    Order rejectOrderPayment(UUID orderId, Long userId);
+    String finishOrder(UUID orderId, Long userId);
     Order getOrderByIdRestaurant(UUID orderId, Long userId);
     Order getOrderByIdCustomer(UUID orderId);
     List<OrderItem> getOrderItems(UUID orderId);
     List<IncomingOrderDto> getIncomingOrder(UUID restaurantId, Long userId);
+    List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId, Long userId);
+    List<ActiveOrderDto> getActiveOrder(UUID restaurantId, Long userId);
     List<Order> viewActiveOrders(UUID restaurantId, Long userId);
     String cancelOrderByRestaurant(CancelOrderRequest request, Long userId);
     String cancelOrderByCustomer(CancelOrderRequest request);

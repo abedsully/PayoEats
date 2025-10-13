@@ -4,7 +4,7 @@ import com.example.PayoEat_BE.dto.RestaurantCategoryDto;
 import com.example.PayoEat_BE.model.RestaurantCategory;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.response.ApiResponse;
-import com.example.PayoEat_BE.service.restaurantCategory.IRestaurantCategoryService;
+import com.example.PayoEat_BE.service.restaurant_category.IRestaurantCategoryService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,4 +1,4 @@
-package com.example.PayoEat_BE.service.restaurantCategory;
+package com.example.PayoEat_BE.service.restaurant_category;
 
 import com.example.PayoEat_BE.dto.RestaurantCategoryDto;
 import com.example.PayoEat_BE.model.RestaurantCategory;
