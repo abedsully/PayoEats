@@ -218,4 +218,15 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/qr")
+    @Operation(summary = "Getting order QR", description = "Getting order QR code")
+    public ResponseEntity<ApiResponse> getOrderQR(@RequestParam UUID orderId) {
+        try {
+            String result = orderService.generateOrderIdQrCode(orderId);
+            return ResponseEntity.ok(new ApiResponse("Nice job, order id: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
 }

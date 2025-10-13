@@ -205,4 +205,16 @@ public class RestaurantController {
         }
     }
 
+    @GetMapping("/get-id")
+    @Operation(summary = "Get restaurant id by userId", description = "Getting restaurant id by userId")
+    public ResponseEntity<ApiResponse> getRestaurantStatus() {
+        try {
+            User user = userService.getAuthenticatedUser();
+            String result = restaurantService.getRestaurantByUserId(user.getId());
+            return ResponseEntity.ok(new ApiResponse("Found", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
+        }
+    }
+
 }

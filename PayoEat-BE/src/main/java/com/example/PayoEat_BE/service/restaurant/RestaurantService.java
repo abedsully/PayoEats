@@ -7,10 +7,7 @@ import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
-import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
-import com.example.PayoEat_BE.repository.RestaurantRepository;
-import com.example.PayoEat_BE.repository.UserRepository;
-import com.example.PayoEat_BE.repository.VerificationTokenRepository;
+import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
@@ -42,6 +39,7 @@ public class RestaurantService implements IRestaurantService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
+    private final RestaurantRepositoryy restaurantRepositoryy;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestaurantService.class);
 
@@ -268,6 +266,18 @@ public class RestaurantService implements IRestaurantService {
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
 
         return restaurantRepository.findByRestaurantCategoryAndIsActiveTrueAndIdNot(restaurant.getRestaurantCategory(), id);
+    }
+
+    @Override
+    public String getRestaurantByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+
+        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
+            throw new ForbiddenException("User does not have access to access this menu");
+        }
+
+        return restaurantRepositoryy.getRestaurantId(userId);
     }
 
 

@@ -36,9 +36,7 @@ public class OrderService implements IOrderService {
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
-        String qrCode = QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
-
-        return qrCode;
+        return QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
     }
 
 
@@ -287,7 +285,7 @@ public class OrderService implements IOrderService {
         long totalOrders = 0L;
         Double totalIncome = 0.0;
 
-        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(restaurant.getId(), date, OrderStatus.DINING);
+        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurant.getId(), date, List.of(OrderStatus.DINING));
         List<Order> completedOrderLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveFalse(restaurant.getId(), date, OrderStatus.FINISHED);
 
         activeOrders = (long) activeOrdersLists.size();
@@ -390,8 +388,8 @@ public class OrderService implements IOrderService {
         }
 
         List<Order> orderList = orderRepository
-                .findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(
-                        restaurantId, LocalDate.now(), OrderStatus.RECEIVED
+                .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
+                        restaurantId, LocalDate.now(), List.of(OrderStatus.RECEIVED)
                 );
 
         List<IncomingOrderDto> incomingOrders = new ArrayList<>();
@@ -404,6 +402,8 @@ public class OrderService implements IOrderService {
             List<OrderItem> orderItems = getOrderItems(o.getId());
 
             List<MenuListDto> menuDtos = new ArrayList<>();
+            double subtotal = 0.0;
+            double orderTotalPrice = 0.0;
             for (OrderItem oi : orderItems) {
                 MenuListDto menuDto = new MenuListDto();
                 menuDto.setMenuCode(oi.getMenuCode());
@@ -416,8 +416,18 @@ public class OrderService implements IOrderService {
                     menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
                 });
 
+                if (menuDto.getTotalPrice() != null) {
+                    subtotal += menuDto.getTotalPrice();
+                }
+
                 menuDtos.add(menuDto);
             }
+
+            double tax = subtotal * 0.1;
+            orderTotalPrice = subtotal + tax;
+            dto.setTotalPrice(orderTotalPrice);
+            dto.setSubTotal(subtotal);
+            dto.setTaxPrice(tax);
 
             dto.setMenuLists(menuDtos);
             incomingOrders.add(dto);
@@ -439,8 +449,8 @@ public class OrderService implements IOrderService {
         }
 
         List<Order> orderList = orderRepository
-                .findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(
-                        restaurantId, LocalDate.now(), OrderStatus.PAYMENT
+                .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
+                        restaurantId, LocalDate.now(), List.of(OrderStatus.PAYMENT)
                 );
 
         List<ConfirmedOrderDto> confirmedOrderDtos = new ArrayList<>();
@@ -488,7 +498,7 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("Sorry you don't have access to view this order");
         }
 
-        List<Order> orderList = orderRepositoryy.getActiveOrders(restaurantId);
+        List<Order> orderList = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurantId, LocalDate.now(), List.of(OrderStatus.DINING, OrderStatus.CONFIRMED));
 
         List<ActiveOrderDto> activeOrderDtos = new ArrayList<>();
 

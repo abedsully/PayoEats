@@ -10,5 +10,8 @@ public class IncomingOrderDto {
     private UUID restaurantId;
     private UUID orderId;
     private List<MenuListDto> menuLists;
+    private Double totalPrice;
+    private Double subTotal;
+    private Double taxPrice;
 }
 

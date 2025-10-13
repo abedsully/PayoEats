@@ -20,6 +20,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveFalse(UUID restaurantId, LocalDate date, OrderStatus orderStatus);
 
     // Active Orders
-    List<Order> findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveTrue(UUID restaurantId, LocalDate date, OrderStatus orderStatus);
+    List<Order> findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(UUID restaurantId, LocalDate date, List<OrderStatus> orderStatuses);
 
 }
