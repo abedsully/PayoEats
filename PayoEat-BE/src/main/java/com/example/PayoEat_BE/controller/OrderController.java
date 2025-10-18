@@ -1,9 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
-import com.example.PayoEat_BE.dto.ActiveOrderDto;
-import com.example.PayoEat_BE.dto.ConfirmedOrderDto;
-import com.example.PayoEat_BE.dto.IncomingOrderDto;
-import com.example.PayoEat_BE.dto.ProgressOrderDto;
+import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
@@ -39,7 +36,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse> getOrder(@RequestParam UUID orderId) {
         try {
             ProgressOrderDto result = orderService.getProgressOrder(orderId);
-            return ResponseEntity.ok(new ApiResponse("Success viewing order progresss", result));
+            return ResponseEntity.ok(new ApiResponse("Success viewing order progress", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -141,7 +138,7 @@ public class OrderController {
         try {
             User user = userService.getAuthenticatedUser();
             List<ActiveOrderDto> orderList = orderService.getActiveOrder(restaurantId, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", orderList));
+            return ResponseEntity.ok(new ApiResponse("Getting list of active order is successful!", orderList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -186,6 +183,19 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/reject-payment")
+    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> rejectOrderPayment(@RequestBody RejectOrderPaymentDto request) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            orderService.rejectOrderPayment(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Order payment is rejected", "Order payment is rejected"));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     @PostMapping("/finish")
     @Operation(summary = "Finishing an order", description = "Finishing user's order, done by restaurant")
     @PreAuthorize("hasAnyAuthority('RESTAURANT')")
@@ -201,20 +211,70 @@ public class OrderController {
 
     @GetMapping("/confirm-redirect")
     public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
-        String html = "<html><body onload='document.forms[0].submit()'>" +
-                "<form method='POST' action='/api/order/confirm2'>" +
-                "<input type='hidden' name='orderId' value='" + orderId + "'/>" +
-                "</form></body></html>";
-        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
+        String html = String.format("""
+    <html>
+      <head>
+        <title>Confirming Order...</title>
+      </head>
+      <body onload='document.forms[0].submit()'>
+        <p>Processing your order... please wait.</p>
+        <form method='POST' action='/api/order/confirm2'>
+          <input type='hidden' name='orderId' value='%s'/>
+        </form>
+      </body>
+    </html>
+    """, orderId.toString());
+
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(html);
     }
 
+    // POST endpoint to confirm order
     @PostMapping("/confirm2")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
-    public ResponseEntity<ApiResponse> confirmOrder2(@RequestParam UUID orderId) {
+    public ResponseEntity<String> confirmOrder2(@RequestParam UUID orderId) {
         try {
-            return ResponseEntity.ok(new ApiResponse("Nice job, order id: " + orderId, null));
+            String result = orderService.processOrder(orderId);
+
+            // HTML with JS redirect
+            String html = """
+                <html>
+                  <head>
+                    <title>Order Confirmed</title>
+                    <script>
+                      // Redirect after 1 second
+                      setTimeout(() => {
+                        window.location.href = 'http://localhost:5173/dashboard';
+                      }, 1000);
+                    </script>
+                  </head>
+                  <body>
+                    <h1>Order confirmed!</h1>
+                    <p>Redirecting to dashboard...</p>
+                  </body>
+                </html>
+                """;
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(html);
+
         } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+            // Error page fallback
+            String errorHtml = String.format("""
+    <html>
+      <body>
+        <h1>Error processing order</h1>
+        <p>%s</p>
+      </body>
+    </html>
+    """, e.getMessage());
+
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(errorHtml);
         }
     }
 
@@ -224,6 +284,17 @@ public class OrderController {
         try {
             String result = orderService.generateOrderIdQrCode(orderId);
             return ResponseEntity.ok(new ApiResponse("Nice job, order id: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/check-payment")
+    @Operation(summary = "Checking order payment", description = "Checking order payment")
+    public ResponseEntity<ApiResponse> checkOrderPayment(@RequestParam UUID orderId) {
+        try {
+            Boolean result = orderService.checkPayment(orderId);
+            return ResponseEntity.ok(new ApiResponse("Order payment result: ", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

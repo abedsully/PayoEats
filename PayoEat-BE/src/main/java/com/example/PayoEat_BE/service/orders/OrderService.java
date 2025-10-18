@@ -1,6 +1,8 @@
 package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.*;
+import com.example.PayoEat_BE.enums.PaymentStatus;
+import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
@@ -16,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,17 +64,42 @@ public class OrderService implements IOrderService {
         );
     }
 
+    public boolean checkOrderStatus(Order order) {
+        LocalDateTime paymentBeginAt = order.getPaymentBeginAt();
+        LocalDateTime now = LocalDateTime.now();
+
+        Duration duration = Duration.between(paymentBeginAt, now);
+
+        if (duration.toMinutes() > 10) {
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.EXPIRED);
+            orderRepository.save(order);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     @Override
     public Order addPaymentProof(UUID orderId, MultipartFile paymentProof) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        if (order.getOrderStatus() != OrderStatus.PAYMENT) {
+            throw new InvalidException("Unable to add payment proof as the order status is not PAYMENT");
+        }
+
+        if (!checkOrderStatus(order) && order.getPaymentImage() == null) {
+            throw new InvalidException("This order has been cancelled, it has crossed 10 minutes");
+        }
+
         Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, order.getId());
         imagePaymentProof.setOrderId(order.getId());
 
         order.setPaymentImage(imagePaymentProof.getId());
+        order.setPaymentStatus(PaymentStatus.UPLOADED);
 
         return orderRepository.save(order);
-
     }
 
     @Override
@@ -109,6 +138,9 @@ public class OrderService implements IOrderService {
         }
 
         order.setOrderStatus(OrderStatus.PAYMENT);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+
+        order.setPaymentBeginAt(LocalDateTime.now());
 
         return orderRepository.save(order);
     }
@@ -129,19 +161,20 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("User does not have access to confirm this order");
         }
 
-        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
-            throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImage() == null) {
+            throw new IllegalArgumentException("Unable to confirm this order payment");
         }
 
         order.setOrderStatus(OrderStatus.CONFIRMED);
+        order.setPaymentStatus(PaymentStatus.APPROVED);
 
         return orderRepository.save(order);
     }
 
     @Override
-    public Order rejectOrderPayment(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+    public void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId) {
+        Order order = orderRepository.findByIdAndIsActiveTrue(dto.getOrderId())
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + dto.getOrderId()));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
@@ -153,14 +186,31 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("User does not have access to confirm this order");
         }
 
-        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
-            throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImage() == null) {
+            throw new IllegalArgumentException("Unable to reject this order payment");
         }
 
-        order.setOrderStatus(OrderStatus.PAYMENT);
         order.setPaymentImage(null);
+        order.setPaymentImageRejectionReason(dto.getRejectionReason());
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setPaymentBeginAt(LocalDateTime.now());
+        Long countPaymentImageRejection = order.getPaymentImageRejectionCount();
 
-        return orderRepository.save(order);
+        if (countPaymentImageRejection == null) {
+            countPaymentImageRejection = 1L;
+        } else {
+            countPaymentImageRejection += 1L;
+        }
+
+        // Automatically cancel the order because it has been rejected 3 times
+        if (countPaymentImageRejection > 2L) {
+            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.EXPIRED);
+        }
+
+        order.setPaymentImageRejectionCount(countPaymentImageRejection);
+
+        orderRepository.save(order);
     }
 
     @Override
@@ -219,7 +269,7 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
 
-        if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
+        if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
             throw new IllegalArgumentException("You can't cancel this order, as the order has already been processed");
         }
 
@@ -239,9 +289,7 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public String processOrder(UUID orderId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public String processOrder(UUID orderId) {
 
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
@@ -249,15 +297,12 @@ public class OrderService implements IOrderService {
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
 
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to view this order");
-        }
-
         if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
             throw new IllegalArgumentException("Unable to process order, order has not been confirmed yet");
         }
 
-        order.setOrderStatus(OrderStatus.DINING);
+        order.setOrderStatus(OrderStatus.ACTIVE);
+        order.setDineInTime(LocalTime.now());
         orderRepository.save(order);
 
         return "Order is processed";
@@ -285,7 +330,7 @@ public class OrderService implements IOrderService {
         long totalOrders = 0L;
         Double totalIncome = 0.0;
 
-        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurant.getId(), date, List.of(OrderStatus.DINING));
+        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurant.getId(), date, List.of(OrderStatus.ACTIVE));
         List<Order> completedOrderLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveFalse(restaurant.getId(), date, OrderStatus.FINISHED);
 
         activeOrders = (long) activeOrdersLists.size();
@@ -315,6 +360,18 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public Boolean checkPayment(UUID orderId) {
+        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
+            throw new IllegalArgumentException("This order payment can not be checked as the order status is invalid");
+        }
+
+        return orderRepositoryy.checkPayment(order.getId());
+    }
+
+    @Override
     public String finishOrder(UUID orderId, Long userId) {
         Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
@@ -329,7 +386,7 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("User does not have access to finish this order");
         }
 
-        if (!order.getOrderStatus().equals(OrderStatus.DINING)) {
+        if (!order.getOrderStatus().equals(OrderStatus.ACTIVE)) {
             throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
         }
 
@@ -464,6 +521,8 @@ public class OrderService implements IOrderService {
             List<OrderItem> orderItems = getOrderItems(o.getId());
 
             List<MenuListDto> menuDtos = new ArrayList<>();
+            double subtotal = 0.0;
+            double orderTotalPrice = 0.0;
             for (OrderItem oi : orderItems) {
                 MenuListDto menuDto = new MenuListDto();
                 menuDto.setMenuCode(oi.getMenuCode());
@@ -476,8 +535,18 @@ public class OrderService implements IOrderService {
                     menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
                 });
 
+                if (menuDto.getTotalPrice() != null) {
+                    subtotal += menuDto.getTotalPrice();
+                }
+
                 menuDtos.add(menuDto);
             }
+
+            double tax = subtotal * 0.1;
+            orderTotalPrice = subtotal + tax;
+            dto.setTotalPrice(orderTotalPrice);
+            dto.setSubTotal(subtotal);
+            dto.setTaxPrice(tax);
 
             dto.setMenuLists(menuDtos);
             confirmedOrderDtos.add(dto);
@@ -498,7 +567,7 @@ public class OrderService implements IOrderService {
             throw new ForbiddenException("Sorry you don't have access to view this order");
         }
 
-        List<Order> orderList = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurantId, LocalDate.now(), List.of(OrderStatus.DINING, OrderStatus.CONFIRMED));
+        List<Order> orderList = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurantId, LocalDate.now(), List.of(OrderStatus.ACTIVE, OrderStatus.CONFIRMED));
 
         List<ActiveOrderDto> activeOrderDtos = new ArrayList<>();
 

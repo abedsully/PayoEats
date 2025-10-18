@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.model;
 
 import com.example.PayoEat_BE.enums.OrderStatus;
+import com.example.PayoEat_BE.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,6 +35,7 @@ public class Order {
 
     private UUID restaurantId;
 
+    private LocalDateTime paymentBeginAt;
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> menuLists = new ArrayList<>();
 
@@ -48,4 +50,9 @@ public class Order {
     private String cancellationReason;
     private LocalTime dineInTime;
     private Long quotas;
+    private String paymentImageRejectionReason;
+    private Long paymentImageRejectionCount;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 }

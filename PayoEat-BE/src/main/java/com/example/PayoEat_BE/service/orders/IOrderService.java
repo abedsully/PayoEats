@@ -18,7 +18,7 @@ public interface IOrderService {
     List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId);
     Order confirmOrder(UUID orderId, Long userId);
     Order confirmOrderPayment(UUID orderId, Long userId);
-    Order rejectOrderPayment(UUID orderId, Long userId);
+    void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId);
     String finishOrder(UUID orderId, Long userId);
     Order getOrderByIdRestaurant(UUID orderId, Long userId);
     Order getOrderByIdCustomer(UUID orderId);
@@ -30,8 +30,8 @@ public interface IOrderService {
     String cancelOrderByRestaurant(CancelOrderRequest request, Long userId);
     String cancelOrderByCustomer(CancelOrderRequest request);
     Order getOrderDetail(UUID orderId);
-    String processOrder(UUID orderId, Long userId);
+    String processOrder(UUID orderId);
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
     ProgressOrderDto getProgressOrder(UUID orderId);
-
+    Boolean checkPayment(UUID orderId);
 }

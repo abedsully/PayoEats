@@ -11,4 +11,7 @@ public class ConfirmedOrderDto {
     private UUID orderId;
     private List<MenuListDto> menuLists;
     private UUID paymentImage;
+    private Double totalPrice;
+    private Double subTotal;
+    private Double taxPrice;
 }
