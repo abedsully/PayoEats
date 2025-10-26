@@ -25,5 +25,5 @@ public interface IRestaurantService {
     RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval);
     Restaurant getRestaurantDetailForApproval(UUID id);
     List<Restaurant> getSimilarRestaurant(UUID id);
-    String getRestaurantByUserId(Long userId);
+    UUID getRestaurantByUserId(Long userId);
 }

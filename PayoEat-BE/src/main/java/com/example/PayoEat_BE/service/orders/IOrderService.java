@@ -23,9 +23,9 @@ public interface IOrderService {
     Order getOrderByIdRestaurant(UUID orderId, Long userId);
     Order getOrderByIdCustomer(UUID orderId);
     List<OrderItem> getOrderItems(UUID orderId);
-    List<IncomingOrderDto> getIncomingOrder(UUID restaurantId, Long userId);
-    List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId, Long userId);
-    List<ActiveOrderDto> getActiveOrder(UUID restaurantId, Long userId);
+    List<IncomingOrderDto> getIncomingOrder(UUID restaurantId);
+    List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId);
+    List<ActiveOrderDto> getActiveOrder(UUID restaurantId);
     List<Order> viewActiveOrders(UUID restaurantId, Long userId);
     String cancelOrderByRestaurant(CancelOrderRequest request, Long userId);
     String cancelOrderByCustomer(CancelOrderRequest request);

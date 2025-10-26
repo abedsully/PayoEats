@@ -433,16 +433,12 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public List<IncomingOrderDto> getIncomingOrder(UUID restaurantId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public List<IncomingOrderDto> getIncomingOrder(UUID restaurantId) {
+
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
-            throw new ForbiddenException("Sorry you don't have access to view this order");
-        }
 
         List<Order> orderList = orderRepository
                 .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
@@ -494,16 +490,9 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId) {
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
-            throw new ForbiddenException("Sorry you don't have access to view this order");
-        }
 
         List<Order> orderList = orderRepository
                 .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
@@ -556,16 +545,12 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public List<ActiveOrderDto> getActiveOrder(UUID restaurantId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public List<ActiveOrderDto> getActiveOrder(UUID restaurantId) {
+
 
         Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
-            throw new ForbiddenException("Sorry you don't have access to view this order");
-        }
 
         List<Order> orderList = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurantId, LocalDate.now(), List.of(OrderStatus.ACTIVE, OrderStatus.CONFIRMED));
 

@@ -210,7 +210,7 @@ public class RestaurantController {
     public ResponseEntity<ApiResponse> getRestaurantStatus() {
         try {
             User user = userService.getAuthenticatedUser();
-            String result = restaurantService.getRestaurantByUserId(user.getId());
+            UUID result = restaurantService.getRestaurantByUserId(user.getId());
             return ResponseEntity.ok(new ApiResponse("Found", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));

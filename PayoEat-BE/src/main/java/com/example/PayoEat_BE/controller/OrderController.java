@@ -2,35 +2,52 @@ package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.model.Order;
+import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.repository.OrderRepositoryy;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.orders.IOrderService;
+import com.example.PayoEat_BE.service.restaurant.RestaurantService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/order")
+@Component
 @Tag(name = "Order Controller", description = "Endpoint for managing order")
 public class OrderController {
     private final IOrderService orderService;
     private final IUserService userService;
     private final INotificationService notificationService;
+    private final OrderRepositoryy orderRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final List<UUID> trackedOrderIds = new CopyOnWriteArrayList<>();
+    private final List<UUID> trackedRestaurantIds = new CopyOnWriteArrayList<>();
+    private final RestaurantService restaurantService;
 
     @GetMapping("/progress")
     public ResponseEntity<ApiResponse> getOrder(@RequestParam UUID orderId) {
@@ -111,7 +128,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse> getIncomingOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
-            List<IncomingOrderDto> incomingOrderLists = orderService.getIncomingOrder(restaurantId, user.getId());
+            List<IncomingOrderDto> incomingOrderLists = orderService.getIncomingOrder(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", incomingOrderLists));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -124,7 +141,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse> getConfirmedOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
-            List<ConfirmedOrderDto> confirmedOrder = orderService.getConfirmedOrder(restaurantId, user.getId());
+            List<ConfirmedOrderDto> confirmedOrder = orderService.getConfirmedOrder(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Order confirmed, Please directly process this order!", confirmedOrder));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -137,7 +154,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse> getActiveOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
-            List<ActiveOrderDto> orderList = orderService.getActiveOrder(restaurantId, user.getId());
+            List<ActiveOrderDto> orderList = orderService.getActiveOrder(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Getting list of active order is successful!", orderList));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -299,5 +316,82 @@ public class OrderController {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @MessageMapping("/order-progress/request")
+    public void handleOrderRequest(UUID orderId) {
+        // Save the orderId if not already tracked
+        if (!trackedOrderIds.contains(orderId)) {
+            trackedOrderIds.add(orderId);
+        }
+
+        // Send the first response immediately
+        ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+        messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+    }
+
+    /**
+     * Scheduled task to push updates every 5 seconds
+     */
+    @Scheduled(fixedRate = 5000)
+    public void sendPeriodicUpdates() {
+        for (UUID orderId : trackedOrderIds) {
+            ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+            messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+        }
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void sendRestaurantOrders() {
+        for (UUID restaurantId : trackedRestaurantIds) {
+            try {
+                List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId);
+                List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
+                List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("incoming", incoming);
+                payload.put("confirmed", confirmed);
+                payload.put("active", active);
+
+                messagingTemplate.convertAndSend("/topic/restaurant-orders/" + restaurantId, payload);
+
+            } catch (Exception e) {
+                System.err.println("Failed to send restaurant order update for: " + restaurantId);
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @MessageMapping("/restaurant-orders/request")
+    public void handleRestaurantOrderRequest(@Payload String restaurantIdStr) {
+        try {
+            UUID restaurantId = UUID.fromString(restaurantIdStr);
+
+            if (!trackedRestaurantIds.contains(restaurantId)) {
+                trackedRestaurantIds.add(restaurantId);
+            }
+
+            // Immediate push
+            List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId); // assuming restaurantId == userId
+            List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
+            List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("incoming", incoming);
+            payload.put("confirmed", confirmed);
+            payload.put("active", active);
+
+            messagingTemplate.convertAndSend("/topic/restaurant-orders/" + restaurantIdStr, payload);
+
+        } catch (Exception e) {
+            System.err.println("Error in handleRestaurantOrderRequest: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+
+
 
 }

@@ -269,7 +269,7 @@ public class RestaurantService implements IRestaurantService {
     }
 
     @Override
-    public String getRestaurantByUserId(Long userId) {
+    public UUID getRestaurantByUserId(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
