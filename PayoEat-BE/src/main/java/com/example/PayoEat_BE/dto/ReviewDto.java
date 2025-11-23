@@ -13,5 +13,5 @@ public class ReviewDto {
     private Long userId;
     private String username;
     private Double rating;
-    private UUID imageId;
+    private String reviewImageUrl;
 }

@@ -11,18 +11,16 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 public class AddMenuRequest {
-    @JsonProperty("menuName")
     private String menuName;
 
-    @JsonProperty("menuDetail")
     private String menuDetail;
 
-    @JsonProperty("menuPrice")
     private Double menuPrice;
 
-    @JsonProperty("restaurantId")
     private UUID restaurantId;
 
     private Long userId;
+
+    private String menuImageUrl;
 
 }

@@ -16,41 +16,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "orders")
 public class Order {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     private LocalDate createdDate;
     private ZonedDateTime orderTime;
     private String orderMessage;
     private Boolean isActive;
-
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
-
     private UUID restaurantId;
-
-    private LocalDateTime paymentBeginAt;
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> menuLists = new ArrayList<>();
-
+    private ZonedDateTime paymentBeginAt;
     private Double subTotal;
     private Double totalPrice;
     private Double taxPrice;
-
-    private UUID paymentImage;
     private String cancellationReason;
     private LocalTime dineInTime;
-    private Long quotas;
     private String paymentImageRejectionReason;
     private Long paymentImageRejectionCount;
-
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
 }

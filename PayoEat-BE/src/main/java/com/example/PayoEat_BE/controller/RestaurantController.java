@@ -1,15 +1,9 @@
 package com.example.PayoEat_BE.controller;
 
-import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
-import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
-import com.example.PayoEat_BE.service.image.IImageService;
-import com.example.PayoEat_BE.service.notification.INotificationService;
 import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.service.restaurant.IRestaurantService;
@@ -17,11 +11,8 @@ import com.example.PayoEat_BE.dto.RestaurantDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -39,8 +30,6 @@ public class RestaurantController {
     private final IRestaurantService restaurantService;
     private final IOrderService orderService;
     private final IUserService userService;
-    private final INotificationService notificationService;
-    private final IImageService imageService;
 
     @GetMapping("/detail")
     @Operation(summary = "Getting details of restaurant", description = "This endpoint is used for getting restaurant detail")
@@ -93,7 +82,7 @@ public class RestaurantController {
     public ResponseEntity<ApiResponse> registerRestaurant(
                                                      @RequestParam("email") String email,
                                                      @RequestParam("password") String password,
-                                                     @RequestParam("userRoles") UserRoles userRoles,
+                                                     @RequestParam("userRoles") Long roleId,
                                                      @RequestParam("restaurantName") String restaurantName,
                                                      @RequestParam("description") String description,
                                                      @RequestParam("openingHour") String openingHour,
@@ -103,20 +92,16 @@ public class RestaurantController {
                                                      @RequestParam("restaurantCategoryCode") Long restaurantCategoryCode,
                                                      @RequestParam("restaurantColor") String restaurantColor,
                                                      @RequestParam("tax") String tax,
-                                                     @RequestParam("restaurantImage") MultipartFile restaurantImage,
-                                                     @RequestParam("qrisImage") MultipartFile qrisImage
+                                                     @RequestParam("restaurantImageUrl") String restaurantImageUrl,
+                                                     @RequestParam("qrisImageUrl") String qrisImageUrl
                                                      ) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, userRoles, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax), ""
+                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax), restaurantImageUrl, qrisImageUrl
             );
-            Restaurant newRestaurant = restaurantService.addRestaurant(request, restaurantImage, qrisImage);
-            ReviewRestaurantRequest requestApproval = new ReviewRestaurantRequest(newRestaurant.getId(), newRestaurant.getName(), newRestaurant.getRestaurantImage(), newRestaurant.getUserId());
-            RestaurantApproval newRestaurantApproval = restaurantService.addRestaurantApproval(requestApproval);
-            RestaurantApprovalDto convertedRestaurantApproval = restaurantService.convertApprovalToDto(newRestaurantApproval);
-            notificationService.addRestaurantApprovalNotification(newRestaurantApproval.getId(), newRestaurant.getId());
-            notificationService.addUserNotification(newRestaurantApproval.getUserId(), newRestaurantApproval.getId());
-            return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", convertedRestaurantApproval));
+            UUID restaurantId = restaurantService.addRestaurant(request);
+            restaurantService.addRestaurantApproval(restaurantId);
+            return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse("Error: " + e.getMessage(), null));
@@ -139,58 +124,8 @@ public class RestaurantController {
         }
     }
 
-    @GetMapping("/get-restaurant-by-name")
-    @Operation(summary = "Get Restaurants By Name", description = "Getting list of restaurants based on their name")
-    public ResponseEntity<ApiResponse> getRestaurantByName(@RequestParam String name) {
-        try {
-            List<Restaurant> restaurants = restaurantService.findRestaurantByName(name);
 
-            if (restaurants.isEmpty()) {
-                return ResponseEntity.status(NOT_FOUND).body(new ApiResponse("No restaurants found with name: " + name, null));
-            }
 
-            List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
-
-            return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @PutMapping("/update-restaurant/{id}")
-    @Operation(summary = "Updating restaurant by id", description = "API for updating restaurant")
-    public ResponseEntity<ApiResponse> updateRestaurant(@PathVariable UUID id, @RequestBody UpdateRestaurantRequest request) {
-        try {
-            Restaurant updatedRestaurant = restaurantService.updateRestaurant(id, request);
-            RestaurantDto convertedRestaurant = restaurantService.convertToDto(updatedRestaurant);
-            return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", convertedRestaurant));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @DeleteMapping("/delete-restaurant/{id}")
-    @Operation(summary = "Deleting restaurant by id", description = "API for deleting restaurant")
-    public ResponseEntity<ApiResponse> deleteRestaurant(@PathVariable UUID id) {
-        try {
-            restaurantService.deleteRestaurant(id);
-            return ResponseEntity.ok(new ApiResponse("Restaurant deleted successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @GetMapping("/image")
-    @Operation(summary = "Show Restaurant Image by ID", description = "API to display menu image by providing the image ID")
-    public ResponseEntity<ByteArrayResource> showRestaurantImage(@RequestParam UUID imageId) {
-        try {
-            Image image = imageService.getImageById(imageId);
-            ByteArrayResource resource = new ByteArrayResource(image.getImage());
-            return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, image.getFileType()).body(resource);
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(null);
-        }
-    }
 
     @GetMapping("/status")
     @Operation(summary = "Get restaurant status", description = "Getting restaurant status")

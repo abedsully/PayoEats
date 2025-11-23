@@ -1,19 +1,294 @@
 package com.example.PayoEat_BE.repository;
 
+import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
+import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Restaurant;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
-    List<Restaurant> findByNameContainingIgnoreCase(String name);
-    boolean existsByNameAndIsActiveTrue(String name);
-    Optional <Restaurant> findByIdAndIsActiveTrue(UUID id);
-    Optional <Restaurant> findByIdAndIsActiveFalse(UUID id);
-    List<Restaurant> findByIsActiveTrue();
-    boolean existsByUserIdAndIsActiveTrue(Long userId);
-    List<Restaurant> findByRestaurantCategoryAndIsActiveTrueAndIdNot(Long restaurantCategory, UUID id);
-    Optional<Restaurant> findByUserIdAndIsActiveTrue(Long userId);
+@Repository
+@RequiredArgsConstructor
+public class RestaurantRepository {
+    private final JdbcClient jdbcClient;
+
+    public UUID addRestaurant(RegisterRestaurantRequest request, Long userId) {
+        try {
+            String sql = """
+            INSERT INTO restaurant (
+                name,
+                rating,
+                total_rating_count,
+                description,
+                created_at,
+                updated_at,
+                is_active,
+                tax,
+                user_id,
+                opening_hour,
+                closing_hour,
+                location,
+                telephone_number,
+                restaurant_image_url,
+                qris_image_url,
+                color,
+                restaurant_category
+            ) VALUES (
+                :name,
+                :rating,
+                :total_rating_count,
+                :description,
+                :created_at,
+                :updated_at,
+                :is_active,
+                :tax,
+                :user_id,
+                :opening_hour,
+                :closing_hour,
+                :location,
+                :telephone_number,
+                :restaurant_image_url,
+                :qris_image_url,
+                :color,
+                :restaurant_category
+            )
+            RETURNING id;
+        """;
+
+            return jdbcClient.sql(sql)
+                    .param("name", request.getRestaurantName())
+                    .param("rating", 0.0)
+                    .param("total_rating_count", 0L)
+                    .param("description", request.getDescription())
+                    .param("created_at", ZonedDateTime.now())
+                    .param("updated_at", null)
+                    .param("is_active", false)
+                    .param("tax", request.getTax())
+                    .param("user_id", userId)
+                    .param("opening_hour", request.getOpeningHour())
+                    .param("closing_hour", request.getClosingHour())
+                    .param("location", request.getLocation())
+                    .param("telephone_number", request.getTelephoneNumber())
+                    .param("restaurant_image_url", request.getRestaurantImageUrl())
+                    .param("qris_image_url", request.getQrisImageUrl())
+                    .param("color", request.getColor())
+                    .param("restaurant_category", request.getRestaurantCategory())
+                    .query(UUID.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+
+    public Optional<CheckUserRestaurantDto> checkUserRestaurant(Long userId) {
+        try {
+            String sql = """
+                    	SELECT r.id, user_id, u.role_id from restaurant r\s
+                    	join users u on r.user_id  = u.id
+                    	where u.id = :id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("user_id", userId)
+                    .query(CheckUserRestaurantDto.class)
+                    .optional();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public UUID getRestaurantId(Long userId) {
+        try {
+            String sql = "SELECT id from restaurant where user_id = :user_id";
+
+            return jdbcClient.sql(sql)
+                    .param("user_id", userId)
+                    .query(UUID.class)
+                    .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<Boolean> findRestaurantByIdAndIsActiveTrue(UUID restaurantId) {
+        try {
+            String sql = """
+                    select exists(select 1 from restaurant where id = :restaurantId and is_active = true)
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurantId", restaurantId)
+                    .query(Boolean.class)
+                    .optional();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Long getRestaurantCategory(UUID restaurantId) {
+        try {
+            String sql = """
+                    select restaurant_category from restaurant where id = :id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("id", restaurantId)
+                    .query(Long.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Long getRestaurantTax(UUID restaurantId) {
+        try {
+            String sql = """
+                    select tax from restaurant where id = :restaurantId;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurantId", restaurantId)
+                    .query(Long.class)
+                    .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<Restaurant> getAllRestaurant() {
+        try {
+            String sql = """
+                    select
+                    	*
+                    from
+                    	restaurant
+                    where
+                    	and is_active = true
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .query(Restaurant.class)
+                    .stream().toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<Restaurant> getSimilarRestaurant(Long categoryCode, UUID restaurantId) {
+        try {
+            String sql = """
+                    select
+                    	*
+                    from
+                    	restaurant
+                    where
+                    	restaurant_category = :category_code
+                    	and is_active = true
+                    	and id <> =:id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("category_code", categoryCode)
+                    .param("id", restaurantId)
+                    .query(Restaurant.class)
+                    .stream().toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<Restaurant> getDetail(UUID restaurantId, Boolean isActive) {
+        try {
+            String sql = """
+                    select * from restaurant where id = :restaurantId and is_active = :isActive;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurantId", restaurantId)
+                    .param("isActive", isActive)
+                    .query(Restaurant.class)
+                    .optional();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Boolean existsByNameAndIsActiveTrue(String name) {
+        try {
+            String sql = """
+                    select exists(select 1 from restaurants where name = :name and is_active = true);
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("name", name)
+                    .query(Boolean.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer addReview(UUID id, Double rating, Long total) {
+        try {
+            String sql = """
+                    UPDATE restaurant set rating = :rating, total_rating_count = :count
+                    where id = :id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("id", id)
+                    .param("rating", rating)
+                    .param("total", total)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<Restaurant> findByNameContainingIgnoreCase(String name) {
+        try {
+            String sql = "SELECT * from restaurant where LOWER(name) LIKE LOWER(:name)";
+
+            return jdbcClient.sql(sql)
+                    .param("name", name)
+                    .query(Restaurant.class)
+                    .stream().toList();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer approveRestaurant(UUID restaurantId) {
+        try {
+            String sql = """
+                    update restaurant set is_active = true where id = restaurantId;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurantId", restaurantId)
+                    .query(Integer.class)
+                    .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+
 }

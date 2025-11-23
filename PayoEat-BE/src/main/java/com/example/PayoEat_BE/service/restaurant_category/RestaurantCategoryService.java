@@ -1,7 +1,6 @@
 package com.example.PayoEat_BE.service.restaurant_category;
 
 import com.example.PayoEat_BE.dto.RestaurantCategoryDto;
-import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
@@ -24,25 +23,22 @@ public class RestaurantCategoryService implements IRestaurantCategoryService{
     private final ModelMapper modelMapper;
 
     @Override
-    public RestaurantCategory addCategory(String categoryName, Long userID) {
+    public void addCategory(String categoryName, Long userID) {
 
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userID));
 
-        if (!user.getRoles().equals(UserRoles.ADMIN)) {
+        if (!user.getRoleId().equals(1L)) {
             throw new ForbiddenException("Only admin can add restaurant category");
         }
 
-        if(restaurantCategoryRepository.existsByCategoryNameAndIsActiveTrue(categoryName)) {
-            throw new InvalidException("Restaurant category already exist with name: " + categoryName);
-        }
 
         RestaurantCategory newRestaurantCategory = new RestaurantCategory();
         newRestaurantCategory.setCategoryName(categoryName);
         newRestaurantCategory.setAddedAt(LocalDateTime.now());
         newRestaurantCategory.setIsActive(true);
 
-        return restaurantCategoryRepository.save(newRestaurantCategory);
+        restaurantCategoryRepository.add(newRestaurantCategory);
     }
 
     @Override

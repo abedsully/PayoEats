@@ -14,67 +14,27 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Restaurant {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
     private String name;
-
     private Double rating;
-
-    private Long totalRating;
-
+    private Long totalRatingCount;
     private String description;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private Boolean isActive;
-
     private Long tax;
-
     private Long userId;
-
     private LocalTime openingHour;
-
     private LocalTime closingHour;
-
     private String location;
-
     private String telephoneNumber;
-
-    private UUID restaurantImage;
     private String restaurantImageUrl;
-
-    private UUID qrisImage;
-
+    private String qrisImagUrl;
     private String color;
-
-    @Schema(description = "List of menu in restaurant")
-    @OneToMany(mappedBy = "restaurant")
-    @JsonIgnore
-    private List<Menu> menus;
-
     private Long restaurantCategory;
-
-    public Restaurant(String name, Double rating, Long totalRating, String description, LocalTime openingHour, LocalTime closingHour, String location, String telephoneNumber, String color, Long tax, String restaurantImageUrl) {
-        this.name = name;
-        this.rating = rating;
-        this.totalRating = totalRating;
-        this.description = description;
-        this.openingHour = openingHour;
-        this.closingHour = closingHour;
-        this.location = location;
-        this.telephoneNumber = telephoneNumber;
-        this.color = color;
-        this.tax = tax;
-        this.restaurantImageUrl = restaurantImageUrl;
-    }
 }

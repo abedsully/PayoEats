@@ -12,6 +12,6 @@ import java.util.UUID;
 public class ReviewRestaurantRequest {
     private UUID restaurantId;
     private String restaurantName;
-    private UUID restaurantImage;
+    private String restaurantImageUrl;
     private Long userId;
 }

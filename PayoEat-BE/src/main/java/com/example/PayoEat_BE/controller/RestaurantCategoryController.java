@@ -32,8 +32,8 @@ public class RestaurantCategoryController {
     public ResponseEntity<ApiResponse> addCategory(@RequestParam String categoryName) {
         try {
             User user = userService.getAuthenticatedUser();
-            RestaurantCategory restaurantCategory = restaurantCategoryService.addCategory(categoryName, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Restaurant category is successfully added", restaurantCategory));
+            restaurantCategoryService.addCategory(categoryName, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant category is successfully added", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

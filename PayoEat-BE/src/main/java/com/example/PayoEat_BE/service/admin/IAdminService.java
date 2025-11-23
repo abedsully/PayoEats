@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IAdminService {
-    RestaurantApproval approveRestaurant(UUID id, Long userId);
-    RestaurantApproval rejectRestaurant(RejectRestaurantRequest request, Long userId);
+    void approveRestaurant(UUID id, Long userId);
+    void rejectRestaurant(RejectRestaurantRequest request, Long userId);
     List<RestaurantApproval> getAllRestaurantApproval(Long userId);
     List<RestaurantApprovalDto> getConvertedApprovalDto(List<RestaurantApproval> approvalList);
     RestaurantApprovalDto convertToDto(RestaurantApproval restaurantApproval);

@@ -11,4 +11,5 @@ public class AddReviewRequest {
     private String reviewContent;
     private UUID restaurantId;
     private Double rating;
+    private String reviewImageUrl;
 }

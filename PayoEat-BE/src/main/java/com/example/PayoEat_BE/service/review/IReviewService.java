@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IReviewService {
-    Review addReview(AddReviewRequest request, MultipartFile reviewImage, Long userId);
+    void addReview(AddReviewRequest request, Long userId);
     List<ReviewDto> getReviewsByRestaurantId(UUID restaurantId);
     List<Review> getReviewsByUserId(Long userId);
     ReviewDto convertToDto(Review review);

@@ -12,13 +12,10 @@ import com.example.PayoEat_BE.repository.RestaurantApprovalRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.admin.RejectRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,11 +28,11 @@ public class AdminService implements IAdminService {
     private final ModelMapper modelMapper;
 
     @Override
-    public RestaurantApproval approveRestaurant(UUID id, Long userId) {
+    public void approveRestaurant(UUID id, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found to approve this restaurant request"));
 
-        if (!user.getRoles().equals(UserRoles.ADMIN)) {
+        if (!user.getRoleId().equals(1L)) {
             throw new ForbiddenException("Sorry only admin can approve restaurant");
         }
 
@@ -46,7 +43,7 @@ public class AdminService implements IAdminService {
         User userRestaurant = userRepository.findById(restaurantApproval.getUserId())
                 .orElseThrow(() -> new NotFoundException("Restaurant user not found with id: " + restaurantApproval.getUserId()));
 
-        if (!userRestaurant.isActive()) {
+        if (!userRestaurant.getIsActive()) {
             throw new InvalidException("The user has not activated the email yet, you can't approve this restaurant yet");
         }
 
@@ -58,24 +55,23 @@ public class AdminService implements IAdminService {
         } else {
             UUID restaurantId = restaurantApproval.getRestaurantId();
 
-            Restaurant restaurant = restaurantRepository.findByIdAndIsActiveFalse(restaurantId)
+            Restaurant restaurant = restaurantRepository.getDetail(restaurantId, Boolean.FALSE)
                     .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
 
-            restaurant.setIsActive(true);
             restaurantApproval.setIsApproved(true);
             restaurantApproval.setIsActive(false);
 
-            restaurantRepository.save(restaurant);
-            return restaurantApprovalRepository.save(restaurantApproval);
+            restaurantRepository.approveRestaurant(restaurant.getId());
+            restaurantApprovalRepository.addRestaurantApproval(restaurantApproval);
         }
     }
 
     @Override
-    public RestaurantApproval rejectRestaurant(RejectRestaurantRequest request, Long userId) {
+    public void rejectRestaurant(RejectRestaurantRequest request, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found to approve this restaurant request"));
 
-        if (!user.getRoles().equals(UserRoles.ADMIN)) {
+        if (!user.getRoleId().equals(1L)) {
             throw new ForbiddenException("Sorry only admin can approve restaurant");
         }
 
@@ -89,7 +85,7 @@ public class AdminService implements IAdminService {
         } else {
             restaurantApproval.setIsApproved(false);
             restaurantApproval.setReason(request.getRejectionMessage());
-            return restaurantApprovalRepository.save(restaurantApproval);
+            restaurantApprovalRepository.addRestaurantApproval(restaurantApproval);
         }
     }
 
@@ -98,10 +94,10 @@ public class AdminService implements IAdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        if(!user.getRoles().equals(UserRoles.ADMIN)) {
+        if(!user.getRoleId().equals(1L)) {
             throw new InvalidException("Sorry you cant do this");
         }
-        return restaurantApprovalRepository.findByIsActiveTrueAndIsApprovedFalse();
+        return restaurantApprovalRepository.getAllRestaurantApproval();
     }
 
     @Override

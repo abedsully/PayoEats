@@ -1,57 +1,56 @@
 package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.*;
-import com.example.PayoEat_BE.enums.PaymentStatus;
+import com.example.PayoEat_BE.dto.orders.*;
+import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
-import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.OrderItemRequest;
-import com.example.PayoEat_BE.service.image.IImageService;
+import com.example.PayoEat_BE.utils.UserAccessValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
     private final OrderRepository orderRepository;
-    private final OrderRepositoryy orderRepositoryy;
     private final OrderItemRepository orderItemRepository;
-    private final RestaurantRepository restaurantRepository;
-    private final UserRepository userRepository;
     private final MenuRepository menuRepository;
-    private final IImageService imageService;
-
+    private final RestaurantRepository restaurantRepository;
+    private final UserAccessValidator userAccessValidator;
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
         return QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
     }
 
+    private void checkIfRestaurantExists(UUID restaurantId) {
+        restaurantRepository.findRestaurantByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant is not found"));
+    }
 
     // Flow pertama, user add order
     @Override
-    public Order addOrder(AddOrderRequest request) {
+    public UUID addOrder(AddOrderRequest request) {
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
+        checkIfRestaurantExists(request.getRestaurantId());
 
-        validateMenuCodes(request.getItems(), restaurant.getId());
+        validateMenuCodes(request.getItems(), request.getRestaurantId());
 
-
-        return orderRepository.save(createOrder(request));
+        return createOrder(request);
     }
 
     private void validateMenuCodes(List<OrderItemRequest> orderItems, UUID restaurantId) {
@@ -61,136 +60,57 @@ public class OrderService implements IOrderService {
         );
     }
 
-    public boolean checkOrderStatus(Order order) {
-        LocalDateTime paymentBeginAt = order.getPaymentBeginAt();
-        LocalDateTime now = LocalDateTime.now();
-
-        Duration duration = Duration.between(paymentBeginAt, now);
-
-        if (duration.toMinutes() > 10) {
-            order.setOrderStatus(OrderStatus.CANCELLED);
-            order.setPaymentStatus(PaymentStatus.EXPIRED);
-            orderRepository.save(order);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     @Override
-    public Order addPaymentProof(UUID orderId, MultipartFile paymentProof) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found"));
+    public void addPaymentProof(UUID orderId, String url) {
+        CheckOrderDto order = checkOrderExistance(orderId);
 
         if (order.getOrderStatus() != OrderStatus.PAYMENT) {
             throw new InvalidException("Unable to add payment proof as the order status is not PAYMENT");
         }
 
-        if (!checkOrderStatus(order) && order.getPaymentImage() == null) {
-            throw new InvalidException("This order has been cancelled, it has crossed 10 minutes");
-        }
-
-        Image imagePaymentProof = imageService.savePaymentProofImage(paymentProof, order.getId());
-        imagePaymentProof.setOrderId(order.getId());
-
-        order.setPaymentImage(imagePaymentProof.getId());
-        order.setPaymentStatus(PaymentStatus.UPLOADED);
-
-        return orderRepository.save(order);
-    }
-
-    @Override
-    public List<Order> getOrderByRestaurantId(UUID restaurantId, Long userId) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to view this restaurant's order");
-        }
-
-        return orderRepository.findByRestaurantId(restaurant.getId());
+        orderRepository.addPaymentProof(order.getId(), url);
     }
 
     // Flow 2, restaurant confirm order, masuk ke payment
     @Override
-    public Order confirmOrder(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to confirm this order");
-        }
+    public void confirmOrder(UUID orderId, Long userId) {
+        checkUserRestaurant(userId);
+        CheckOrderDto order = checkOrderExistance(orderId);
+        checkIfRestaurantExists(order.getRestaurantId());
 
         if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
             throw new IllegalArgumentException("Unable to confirm this order because order status is not received");
         }
 
-        order.setOrderStatus(OrderStatus.PAYMENT);
-        order.setPaymentStatus(PaymentStatus.PENDING);
 
-        order.setPaymentBeginAt(LocalDateTime.now());
-
-        return orderRepository.save(order);
+        orderRepository.processOrderToPayment(order.getId());
     }
 
     // Flow tambahan order
     @Override
-    public Order confirmOrderPayment(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+    public void confirmOrderPayment(UUID orderId, Long userId) {
+        checkUserRestaurant(userId);
+        CheckOrderDto order = checkOrderExistance(orderId);
+        checkIfRestaurantExists(order.getRestaurantId());
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to confirm this order");
-        }
-
-        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImage() == null) {
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImageUrl().isBlank() || order.getPaymentImageUrl().isEmpty()) {
             throw new IllegalArgumentException("Unable to confirm this order payment");
         }
 
-        order.setOrderStatus(OrderStatus.CONFIRMED);
-        order.setPaymentStatus(PaymentStatus.APPROVED);
-
-        return orderRepository.save(order);
+        orderRepository.confirmOrderPayment(order.getId());
     }
 
     @Override
     public void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(dto.getOrderId())
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + dto.getOrderId()));
+        checkUserRestaurant(userId);
+        CheckOrderDto order = checkOrderExistance(dto.getOrderId());
+        checkIfRestaurantExists(order.getRestaurantId());
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to confirm this order");
-        }
-
-        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImage() == null) {
+        if (!order.getOrderStatus().equals(OrderStatus.PAYMENT) || order.getPaymentImageUrl().isBlank() || order.getPaymentImageUrl().isEmpty()) {
             throw new IllegalArgumentException("Unable to reject this order payment");
         }
 
-        order.setPaymentImage(null);
-        order.setPaymentImageRejectionReason(dto.getRejectionReason());
-        order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setPaymentBeginAt(LocalDateTime.now());
         Long countPaymentImageRejection = order.getPaymentImageRejectionCount();
 
         if (countPaymentImageRejection == null) {
@@ -199,414 +119,297 @@ public class OrderService implements IOrderService {
             countPaymentImageRejection += 1L;
         }
 
-        // Automatically cancel the order because it has been rejected 3 times
         if (countPaymentImageRejection > 2L) {
-            order.setOrderStatus(OrderStatus.CANCELLED);
-            order.setPaymentStatus(PaymentStatus.EXPIRED);
+            orderRepository.cancelOrder(order.getId(), "Payment limit has exceeded");
+            return;
         }
 
-        order.setPaymentImageRejectionCount(countPaymentImageRejection);
-
-        orderRepository.save(order);
+        orderRepository.rejectOrderPayment(order.getId(), dto.getRejectionReason(), countPaymentImageRejection);
     }
-
-    @Override
-    public List<Order> viewActiveOrders(UUID restaurantId, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to view this order");
-        }
-
-        return orderRepository.findByRestaurantIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Order not found"));
-    }
-
 
     // Flow 2, Restaurant confirm (NO)
     @Override
     public String cancelOrderByRestaurant(CancelOrderRequest request, Long userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Order order = orderRepository.findByIdAndIsActiveTrue(request.getOrderId())
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + request.getOrderId()));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to view this order");
-        }
+        checkUserRestaurant(userId);
+        CheckOrderDto order = checkOrderExistance(request.getOrderId());
+        checkIfRestaurantExists(order.getRestaurantId());
 
         if (!order.getOrderStatus().equals(OrderStatus.RECEIVED)) {
             throw new IllegalArgumentException("This order can't be cancelled");
         }
 
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        order.setIsActive(false);
-        order.setCancellationReason(request.getCancellationReason());
+        if (request.getCancellationReason().isEmpty() || order.getPaymentImageUrl().isBlank()) {
+            throw new IllegalArgumentException("Please provide cancellation reason");
+        }
 
-        orderRepository.save(order);
+        orderRepository.cancelOrder(order.getId(), request.getCancellationReason());
 
         return "Order cancelled successfully";
     }
 
     @Override
     public String cancelOrderByCustomer(CancelOrderRequest request) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(request.getOrderId())
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + request.getOrderId()));
+        CheckOrderDto order = checkOrderExistance(request.getOrderId());
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
+        checkIfRestaurantExists(order.getRestaurantId());
 
         if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
             throw new IllegalArgumentException("You can't cancel this order, as the order has already been processed");
         }
 
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        order.setIsActive(false);
-        order.setCancellationReason(request.getCancellationReason());
-
-        orderRepository.save(order);
+        orderRepository.cancelOrder(order.getId(), request.getCancellationReason());
 
         return "Order cancelled successfully";
     }
 
-    @Override
-    public Order getOrderDetail(UUID orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found"));
-    }
 
     @Override
-    public String processOrder(UUID orderId) {
-
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
+    public String processOrderToActive(UUID orderId) {
+        CheckOrderDto order = checkOrderExistance(orderId);
+        checkIfRestaurantExists(order.getRestaurantId());
 
         if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
             throw new IllegalArgumentException("Unable to process order, order has not been confirmed yet");
         }
 
-        order.setOrderStatus(OrderStatus.ACTIVE);
-        order.setDineInTime(LocalTime.now());
-        orderRepository.save(order);
+        orderRepository.processOrderToActive(order.getId());
 
         return "Order is processed";
     }
 
-    @Override
-    public RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
+        CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
+        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
             throw new ForbiddenException("Unauthorized! You can't access this restaurant");
         }
-
-        Restaurant restaurant = restaurantRepository.findByUserIdAndIsActiveTrue(user.getId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with user id: " + userId));
-
-
-        if (!restaurant.getUserId().equals(user.getId())) {
-            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
-        }
-
-        long activeOrders = 0L;
-        long completedOrders = 0L;
-        long totalOrders = 0L;
-        Double totalIncome = 0.0;
-
-        List<Order> activeOrdersLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurant.getId(), date, List.of(OrderStatus.ACTIVE));
-        List<Order> completedOrderLists = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusAndIsActiveFalse(restaurant.getId(), date, OrderStatus.FINISHED);
-
-        activeOrders = (long) activeOrdersLists.size();
-        completedOrders = (long) completedOrderLists.size();
-        totalOrders = activeOrders + completedOrders;
-
-        for (Order order : activeOrdersLists) {
-            totalIncome += order.getTotalPrice();
-        }
-
-        for (Order order : completedOrderLists) {
-            totalIncome += order.getTotalPrice();
-        }
-
-        RestaurantStatusDto result = new RestaurantStatusDto();
-        result.setActiveOrders(activeOrders);
-        result.setCompletedOrders(completedOrders);
-        result.setTotalOrders(totalOrders);
-        result.setTotalIncome(totalIncome);
 
         return result;
     }
 
     @Override
+    public RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId) {
+
+        User user = userAccessValidator.validateRestaurantUser(userId);
+        CheckUserRestaurantDto result = checkUserRestaurant(user.getId());
+
+        long totalOrderCount = 0L;
+        double totalIncome = 0.0;
+
+        TodayRestaurantStatusDto activeOrders = orderRepository.getTodayRestaurantStatus(result.getId(), date, List.of(OrderStatus.ACTIVE), Boolean.TRUE);
+        TodayRestaurantStatusDto completedOrders = orderRepository.getTodayRestaurantStatus(result.getId(), date, List.of(OrderStatus.FINISHED), Boolean.FALSE);
+
+        totalOrderCount = activeOrders.getTotalCount() + completedOrders.getTotalCount();
+        totalIncome = activeOrders.getTotalPrice() + completedOrders.getTotalPrice();
+
+        RestaurantStatusDto results = new RestaurantStatusDto();
+        results.setActiveOrders(activeOrders.getTotalCount());
+        results.setCompletedOrders(completedOrders.getTotalCount());
+        results.setTotalOrders(totalOrderCount);
+        results.setTotalIncome(totalIncome);
+
+        return results;
+    }
+
+    @Override
     public ProgressOrderDto getProgressOrder(UUID orderId) {
-        return orderRepositoryy.getProgressOrder(orderId);
+        return orderRepository.getProgressOrder(orderId);
     }
 
     @Override
     public Boolean checkPayment(UUID orderId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+        CheckOrderDto order = checkOrderExistance(orderId);
 
         if (!order.getOrderStatus().equals(OrderStatus.PAYMENT)) {
             throw new IllegalArgumentException("This order payment can not be checked as the order status is invalid");
         }
 
-        return orderRepositoryy.checkPayment(order.getId());
+        return orderRepository.checkPayment(order.getId());
+    }
+
+    private CheckOrderDto checkOrderExistance(UUID orderId) {
+        return orderRepository.checkOrderExistance(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
     }
 
     @Override
     public String finishOrder(UUID orderId, Long userId) {
-        Order order = orderRepository.findByIdAndIsActiveTrue(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
+        CheckOrderDto result = checkOrderExistance(orderId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+        checkUserRestaurant(userId);
+        checkIfRestaurantExists(result.getRestaurantId());
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!restaurant.getUserId().equals(user.getId()) || !user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to finish this order");
-        }
-
-        if (!order.getOrderStatus().equals(OrderStatus.ACTIVE)) {
+        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
             throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
         }
 
-        order.setIsActive(false);
-        order.setOrderStatus(OrderStatus.FINISHED);
-        orderRepository.save(order);
+        orderRepository.finishOrder(result.getId());
 
         return "This order has been completed";
     }
 
     @Override
-    public Order getOrderByIdRestaurant(UUID orderId, Long userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        if (!user.getId().equals(restaurant.getUserId()) || user.getRoles() != UserRoles.RESTAURANT) {
-            throw new ForbiddenException("Sorry you don't have access to view this order");
-        }
-
-        return order;
-    }
-
-    @Override
-    public Order getOrderByIdCustomer(UUID orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found with id: " + orderId));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(order.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + order.getRestaurantId()));
-
-        return order;
-    }
-
-    @Override
-    public List<OrderItem> getOrderItems(UUID orderId) {
-        return orderItemRepository.findByOrderId(orderId);
+    public OrderDetailResponseDto getOrderByIdCustomer(UUID orderId) {
+        return orderRepository.getOrderDetails(orderId);
     }
 
     @Override
     public List<IncomingOrderDto> getIncomingOrder(UUID restaurantId) {
+        checkIfRestaurantExists(restaurantId);
 
+        List<IncomingOrderRow> rows = orderRepository.getIncomingOrderRow(restaurantId);
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+        Map<UUID, IncomingOrderDto> orderMap = new LinkedHashMap<>();
 
+        for (IncomingOrderRow r : rows) {
+            orderMap.computeIfAbsent(r.getOrderId(), id -> {
+                IncomingOrderDto dto = new IncomingOrderDto();
+                dto.setRestaurantId(restaurantId);
+                dto.setOrderId(id);
+                dto.setMenuLists(new ArrayList<>());
+                dto.setReceivedAt(r.getOrderTime());
 
-        List<Order> orderList = orderRepository
-                .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
-                        restaurantId, LocalDate.now(), List.of(OrderStatus.RECEIVED)
-                );
+                dto.setSubTotal(0.0);
+                dto.setTaxPrice(0.0);
+                dto.setTotalPrice(0.0);
+                return dto;
+            });
 
-        List<IncomingOrderDto> incomingOrders = new ArrayList<>();
+            IncomingOrderDto dto = orderMap.get(r.getOrderId());
 
-        for (Order o : orderList) {
-            IncomingOrderDto dto = new IncomingOrderDto();
-            dto.setRestaurantId(restaurantId);
-            dto.setOrderId(o.getId());
+            MenuListDto menu = new MenuListDto();
+            menu.setMenuCode(r.getMenuCode());
+            menu.setMenuName(r.getMenuName());
+            menu.setMenuPrice(r.getMenuPrice());
+            menu.setMenuImageUrl(r.getMenuImageUrl());
+            menu.setQuantity(r.getQuantity());
+            menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
 
-            List<OrderItem> orderItems = getOrderItems(o.getId());
+            dto.getMenuLists().add(menu);
 
-            List<MenuListDto> menuDtos = new ArrayList<>();
-            double subtotal = 0.0;
-            double orderTotalPrice = 0.0;
-            for (OrderItem oi : orderItems) {
-                MenuListDto menuDto = new MenuListDto();
-                menuDto.setMenuCode(oi.getMenuCode());
-                menuDto.setQuantity(oi.getQuantity());
+            double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
+            double tax = newSubtotal * 0.1;
 
-                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
-                    menuDto.setMenuName(menu.getMenuName());
-                    menuDto.setMenuPrice(menu.getMenuPrice());
-                    menuDto.setMenuImage(menu.getMenuImageUrl());
-                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
-                });
-
-                if (menuDto.getTotalPrice() != null) {
-                    subtotal += menuDto.getTotalPrice();
-                }
-
-                menuDtos.add(menuDto);
-            }
-
-            double tax = subtotal * 0.1;
-            orderTotalPrice = subtotal + tax;
-            dto.setTotalPrice(orderTotalPrice);
-            dto.setSubTotal(subtotal);
+            dto.setSubTotal(newSubtotal);
             dto.setTaxPrice(tax);
-            dto.setReceivedAt(o.getOrderTime());
-            dto.setMenuLists(menuDtos);
-            incomingOrders.add(dto);
+            dto.setTotalPrice(newSubtotal + tax);
         }
 
-        return incomingOrders;
+        return new ArrayList<>(orderMap.values());
     }
+
 
     @Override
     public List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId) {
+        checkIfRestaurantExists(restaurantId);
 
+        List<ConfirmedOrderRow> rows = orderRepository.getConfirmedOrderRow(restaurantId);
 
+        Map<UUID, ConfirmedOrderDto> orderMap = new LinkedHashMap<>();
 
-        List<Order> orderList = orderRepository
-                .findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(
-                        restaurantId, LocalDate.now(), List.of(OrderStatus.PAYMENT)
-                );
+        for (ConfirmedOrderRow r : rows) {
+            orderMap.computeIfAbsent(r.getOrderId(), id -> {
+                ConfirmedOrderDto dto = new ConfirmedOrderDto();
+                dto.setRestaurantId(restaurantId);
+                dto.setOrderId(id);
+                dto.setMenuLists(new ArrayList<>());
+                dto.setPaymentImageUrl(r.getPaymentImageUrl());
+                dto.setSubTotal(0.0);
+                dto.setTaxPrice(0.0);
+                dto.setTotalPrice(0.0);
+                return dto;
+            });
 
-        List<ConfirmedOrderDto> confirmedOrderDtos = new ArrayList<>();
+            ConfirmedOrderDto dto = orderMap.get(r.getOrderId());
 
-        for (Order o : orderList) {
-            ConfirmedOrderDto dto = new ConfirmedOrderDto();
-            dto.setRestaurantId(restaurantId);
-            dto.setOrderId(o.getId());
-            dto.setPaymentImage(o.getPaymentImage());
+            MenuListDto menu = new MenuListDto();
+            menu.setMenuCode(r.getMenuCode());
+            menu.setMenuName(r.getMenuName());
+            menu.setMenuPrice(r.getMenuPrice());
+            menu.setMenuImageUrl(r.getMenuImageUrl());
+            menu.setQuantity(r.getQuantity());
+            menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
 
-            List<OrderItem> orderItems = getOrderItems(o.getId());
+            dto.getMenuLists().add(menu);
 
-            List<MenuListDto> menuDtos = new ArrayList<>();
-            double subtotal = 0.0;
-            double orderTotalPrice = 0.0;
-            for (OrderItem oi : orderItems) {
-                MenuListDto menuDto = new MenuListDto();
-                menuDto.setMenuCode(oi.getMenuCode());
-                menuDto.setQuantity(oi.getQuantity());
+            double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
+            double tax = newSubtotal * 0.1;
 
-                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
-                    menuDto.setMenuName(menu.getMenuName());
-                    menuDto.setMenuPrice(menu.getMenuPrice());
-                    menuDto.setMenuImage(menu.getMenuImageUrl());
-                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
-                });
-
-                if (menuDto.getTotalPrice() != null) {
-                    subtotal += menuDto.getTotalPrice();
-                }
-
-                menuDtos.add(menuDto);
-            }
-
-            double tax = subtotal * 0.1;
-            orderTotalPrice = subtotal + tax;
-            dto.setTotalPrice(orderTotalPrice);
-            dto.setSubTotal(subtotal);
+            dto.setSubTotal(newSubtotal);
             dto.setTaxPrice(tax);
-
-            dto.setMenuLists(menuDtos);
-            confirmedOrderDtos.add(dto);
+            dto.setTotalPrice(newSubtotal + tax);
         }
 
-        return confirmedOrderDtos;
+        return new ArrayList<>(orderMap.values());
     }
 
     @Override
     public List<ActiveOrderDto> getActiveOrder(UUID restaurantId) {
+        checkIfRestaurantExists(restaurantId);
 
+        List<ActiveOrderRow> rows = orderRepository.getActiveOrderRows(restaurantId);
 
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
+        Map<UUID, ActiveOrderDto> orderMap = new LinkedHashMap<>();
 
+        for (ActiveOrderRow r : rows) {
+            orderMap.computeIfAbsent(r.getOrderId(), id -> {
+                ActiveOrderDto dto = new ActiveOrderDto();
+                dto.setRestaurantId(restaurantId);
+                dto.setOrderId(id);
+                dto.setMenuLists(new ArrayList<>());
+                dto.setDineInTime(r.getDineInTime());
+                return dto;
+            });
 
-        List<Order> orderList = orderRepository.findByRestaurantIdAndCreatedDateAndOrderStatusInAndIsActiveTrue(restaurantId, LocalDate.now(), List.of(OrderStatus.ACTIVE, OrderStatus.CONFIRMED));
+            ActiveOrderDto dto = orderMap.get(r.getOrderId());
 
-        List<ActiveOrderDto> activeOrderDtos = new ArrayList<>();
+            MenuListDto menu = new MenuListDto();
+            menu.setMenuCode(r.getMenuCode());
+            menu.setMenuName(r.getMenuName());
+            menu.setMenuPrice(r.getMenuPrice());
+            menu.setMenuImageUrl(r.getMenuImageUrl());
+            menu.setQuantity(r.getQuantity());
+            menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
 
-        for (Order o : orderList) {
-            ActiveOrderDto dto = new ActiveOrderDto();
-            dto.setRestaurantId(restaurantId);
-            dto.setOrderId(o.getId());
-            dto.setDineInTime(o.getDineInTime());
-
-            List<OrderItem> orderItems = getOrderItems(o.getId());
-
-            List<MenuListDto> menuDtos = new ArrayList<>();
-            for (OrderItem oi : orderItems) {
-                MenuListDto menuDto = new MenuListDto();
-                menuDto.setMenuCode(oi.getMenuCode());
-                menuDto.setQuantity(oi.getQuantity());
-
-                menuRepository.findByMenuCodeAndIsActiveTrue(oi.getMenuCode()).ifPresent(menu -> {
-                    menuDto.setMenuName(menu.getMenuName());
-                    menuDto.setMenuPrice(menu.getMenuPrice());
-                    menuDto.setMenuImage(menu.getMenuImageUrl());
-                    menuDto.setTotalPrice(menu.getMenuPrice() * oi.getQuantity());
-                });
-
-                menuDtos.add(menuDto);
-            }
-
-            dto.setMenuLists(menuDtos);
-            activeOrderDtos.add(dto);
+            dto.getMenuLists().add(menu);
         }
 
-        return activeOrderDtos;
+        return new ArrayList<>(orderMap.values());
     }
 
-    private Order createOrder(AddOrderRequest request) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
+    private UUID createOrder(AddOrderRequest request) {
+        checkIfRestaurantExists(request.getRestaurantId());
 
+        Long restaurantTax = restaurantRepository.getRestaurantTax(request.getRestaurantId());
 
         Order newRestaurantOrder = new Order();
-        newRestaurantOrder.setRestaurantId(restaurant.getId());
+        newRestaurantOrder.setRestaurantId(request.getRestaurantId());
 
         String orderMessage = request.getOrderMessage();
-        if (orderMessage == null || orderMessage.isEmpty()) {
-            newRestaurantOrder.setOrderMessage(null);
-        } else {
-            newRestaurantOrder.setOrderMessage(orderMessage);
-        }
+        newRestaurantOrder.setOrderMessage(
+                (orderMessage == null || orderMessage.isBlank()) ? null : orderMessage
+        );
 
-        double subTotalPrice = 0.0;
-        double taxPrice = 0.0;
-        double totalPrice = 0.0;
+        List<UUID> menuCodes = request.getItems()
+                .stream()
+                .map(OrderItemRequest::getMenuCode)
+                .toList();
+
+        Map<UUID, Menu> menuMap = menuRepository
+                .getMenuDetail(menuCodes)
+                .stream()
+                .collect(Collectors.toMap(Menu::getMenuCode, Function.identity()));
+
         List<OrderItem> orderItems = new ArrayList<>();
+        double subTotalPrice = 0.0;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
-            Menu menu = menuRepository.findByMenuCodeAndIsActiveTrue(itemRequest.getMenuCode())
-                    .orElseThrow(() -> new NotFoundException("Menu not found"));
+
+            Menu menu = menuMap.get(itemRequest.getMenuCode());
+            if (menu == null) {
+                throw new NotFoundException("Menu not found: " + itemRequest.getMenuCode());
+            }
 
             double itemTotalPrice = menu.getMenuPrice() * itemRequest.getQuantity();
             subTotalPrice += itemTotalPrice;
@@ -614,32 +417,30 @@ public class OrderService implements IOrderService {
             OrderItem orderItem = new OrderItem();
             orderItem.setMenuCode(itemRequest.getMenuCode());
             orderItem.setQuantity(itemRequest.getQuantity());
-            orderItem.setOrder(newRestaurantOrder);
 
             orderItems.add(orderItem);
         }
 
-        taxPrice = (subTotalPrice * restaurant.getTax()) / 100;
-        totalPrice = subTotalPrice + taxPrice;
+        double taxPrice = (subTotalPrice * restaurantTax) / 100;
+        double totalPrice = subTotalPrice + taxPrice;
 
-
-        newRestaurantOrder.setMenuLists(orderItems);
         newRestaurantOrder.setOrderTime(ZonedDateTime.now());
         newRestaurantOrder.setIsActive(true);
-
-
-        // Area setting up numbers for price
         newRestaurantOrder.setSubTotal(subTotalPrice);
         newRestaurantOrder.setTaxPrice(taxPrice);
         newRestaurantOrder.setTotalPrice(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
-        newRestaurantOrder.setQuotas(request.getQuotas());
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
 
-        orderRepository.save(newRestaurantOrder);
+        UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 
-        return newRestaurantOrder;
+        for (OrderItem item : orderItems) {
+            item.setOrderId(savedOrder);
+        }
+
+        orderItemRepository.addMenuItems(orderItems);
+
+        return savedOrder;
     }
-
 }

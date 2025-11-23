@@ -74,7 +74,7 @@ public class AuthController {
         try {
             User user = userService.findByEmail(request.getEmail());
 
-            if (!user.isActive()) {
+            if (!user.getIsActive()) {
                 return ResponseEntity.status(UNAUTHORIZED)
                         .body(new ApiResponse("Account not activated. Please confirm your email.", null));
             }

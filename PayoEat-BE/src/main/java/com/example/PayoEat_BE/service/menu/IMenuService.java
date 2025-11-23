@@ -13,14 +13,10 @@ import java.util.UUID;
 
 public interface IMenuService {
     CartMenuDto getMenuByCode(UUID[] menuCodes);
-    Menu addMenu(AddMenuRequest request, MultipartFile menuImage);
+    UUID addMenu(AddMenuRequest request);
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);
     List<Menu> getMenusByRestaurantId(UUID restaurantId);
-    void deleteMenu(UUID menuCode);
-    Menu updateMenu(UUID menuCode, UpdateMenuRequest request, MultipartFile menuImage);
     List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException;
-
     List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException;
-    String getRestaurantNameByMenuCode(UUID menuCode);
 }

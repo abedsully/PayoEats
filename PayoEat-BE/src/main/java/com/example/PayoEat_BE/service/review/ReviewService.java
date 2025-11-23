@@ -1,30 +1,21 @@
 package com.example.PayoEat_BE.service.review;
 
 import com.example.PayoEat_BE.dto.ReviewDto;
-import com.example.PayoEat_BE.enums.UserRoles;
-import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
-import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.Review;
-import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.ReviewRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.review.AddReviewRequest;
-import com.example.PayoEat_BE.service.image.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,40 +24,19 @@ public class ReviewService implements IReviewService{
     private final RestaurantRepository restaurantRepository;
     private final ReviewRepository reviewRepository;
     private final ModelMapper modelMapper;
-    private final ImageService imageService;
 
 
     @Override
-    public Review addReview(AddReviewRequest request, MultipartFile reviewImage, Long userId) {
-        return reviewRepository.save(createReview(request, reviewImage, userId));
+    public void addReview(AddReviewRequest request, Long userId) {
+        createReview(request, userId);
     }
 
     @Override
     public List<ReviewDto> getReviewsByRestaurantId(UUID restaurantId) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaruant not found with id: " + restaurantId));
+        List<ReviewDto> reviewDtoList = reviewRepository.findReviewsByRestaurantId(restaurantId);
 
-        List<Review> reviewList = reviewRepository.findByRestaurantId(restaurant.getId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
-
-        List<ReviewDto> reviewDtoList = new ArrayList<>();
-
-        for (Review review : reviewList) {
-            Long userId = review.getUserId();
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new NotFoundException("User not found with id " + userId));
-
-            ReviewDto reviewDto = new ReviewDto();
-            reviewDto.setRating(review.getRating());
-            reviewDto.setReviewContent(review.getReviewContent());
-            reviewDto.setUsername(user.getUsername());
-            reviewDto.setRestaurantId(review.getRestaurantId());
-            reviewDto.setCreatedAt(review.getCreatedAt());
-            reviewDto.setUserId(user.getId());
-            reviewDto.setImageId(review.getImageId());
-
-            reviewDtoList.add(reviewDto);
+        if (reviewDtoList.isEmpty()) {
+            throw new NotFoundException("No reviews found for restaurant id: " + restaurantId);
         }
 
         return reviewDtoList;
@@ -74,11 +44,8 @@ public class ReviewService implements IReviewService{
 
     @Override
     public List<Review> getReviewsByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        return reviewRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new NotFoundException("Review not found with user id: " + userId));
+        return reviewRepository.findByUserId(userId);
     }
 
     @Override
@@ -91,21 +58,9 @@ public class ReviewService implements IReviewService{
         return reviewList.stream().map(this::convertToDto).toList();
     }
 
-    private Review createReview(AddReviewRequest request, MultipartFile reviewImage, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        if (!user.getRoles().equals(UserRoles.CUSTOMER)) {
-            throw new ForbiddenException("You can't review a restaurant, if you're not a customer");
-        }
-
-        Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
-
-        if(restaurant.getUserId().equals(user.getId())) {
-            throw new ForbiddenException("Sorry, you can't review your own restaurant");
-        }
-
+    private void createReview(AddReviewRequest request, Long userId) {
+        Restaurant restaurant = restaurantRepository.getDetail(request.getRestaurantId(), Boolean.TRUE)
+                .orElseThrow(() -> new NotFoundException("as"));
         if (request.getReviewContent().isEmpty()) {
             throw new InvalidException("Please enter the review");
         }
@@ -115,27 +70,22 @@ public class ReviewService implements IReviewService{
         }
 
         Double currentRestaurantRating = restaurant.getRating();
-        Long totalRating = restaurant.getTotalRating() + 1;
+        Long totalRating = restaurant.getTotalRatingCount() + 1;
 
-        restaurant.setRating((currentRestaurantRating + request.getRating()) / totalRating);
-        restaurant.setTotalRating(totalRating);
+
+        Double ratingRestaurant = (currentRestaurantRating + request.getRating() / totalRating);
 
         Review review = new Review();
         review.setReviewContent(request.getReviewContent());
-        review.setUserId(user.getId());
+        review.setUserId(userId);
         review.setRestaurantId(restaurant.getId());
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(null);
         review.setIsActive(true);
         review.setRating(request.getRating());
 
-        Image imageReview = imageService.saveReviewImage(reviewImage, review.getId());
-        imageReview.setReviewId(review.getId());
-        review.setImageId(imageReview.getId());
-
-        restaurantRepository.save(restaurant);
-
-        return review;
+        reviewRepository.insertReview(review, userId);
+        restaurantRepository.addReview(restaurant.getId(), ratingRestaurant, totalRating);
     }
 }
 

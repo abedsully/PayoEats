@@ -13,15 +13,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IRestaurantService {
-    Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage);
-    Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request);
-    void deleteRestaurant(UUID restaurantId);
+    UUID addRestaurant(RegisterRestaurantRequest request);
     Restaurant getRestaurantById(UUID id);
     List<Restaurant> getAllRestaurants();
-    List<Restaurant> findRestaurantByName(String name);
     RestaurantDto convertToDto(Restaurant restaurant);
     List<RestaurantDto> getConvertedRestaurants (List<Restaurant> restaurants);
-    RestaurantApproval addRestaurantApproval(ReviewRestaurantRequest request);
+    void addRestaurantApproval(UUID restaurantId);
     RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval);
     Restaurant getRestaurantDetailForApproval(UUID id);
     List<Restaurant> getSimilarRestaurant(UUID id);

@@ -10,7 +10,7 @@ public class ConfirmedOrderDto {
     private UUID restaurantId;
     private UUID orderId;
     private List<MenuListDto> menuLists;
-    private UUID paymentImage;
+    private String paymentImageUrl;
     private Double totalPrice;
     private Double subTotal;
     private Double taxPrice;

@@ -35,16 +35,12 @@ public class ReviewController {
     public ResponseEntity<ApiResponse> addReview(@RequestParam("content") String reviewContent,
                                                  @RequestParam("restaurantId") UUID restaurantId,
                                                  @RequestParam("rating") Double rating,
-                                                 @RequestParam("file") MultipartFile reviewImage) {
+                                                 @RequestParam("reviewImageUrl") String reviewImageUrl) {
         try {
-            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating);
+            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, reviewImageUrl);
             User user = userService.getAuthenticatedUser();
-
-
-            Review newReview = reviewService.addReview(request, reviewImage, user.getId());
-            ReviewDto convertedReview = reviewService.convertToDto(newReview);
-
-            return ResponseEntity.ok(new ApiResponse("Review added successfully", convertedReview));
+            reviewService.addReview(request, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Review added successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

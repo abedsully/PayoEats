@@ -9,38 +9,23 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Set;
+import java.util.UUID;
 
-@Table(name = "users")
-@Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String username;
     private String email;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role")
-    private UserRoles roles;
-
-    @Column(name = "password", length = 256)
+    private Long roleId;
     private String password;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    @Column(name = "is_active")
-    private boolean isActive = false;
-
-    @Column(name = "confirmation_token")
+    private ZonedDateTime createdAt;
+    private ZonedDateTime updatedAt;
     private String confirmationToken;
-
-    private String restaurantName;
-
+    private Boolean isActive;
 }
 

@@ -1,9 +1,7 @@
 package com.example.PayoEat_BE.dto;
 
-import com.example.PayoEat_BE.model.Image;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 

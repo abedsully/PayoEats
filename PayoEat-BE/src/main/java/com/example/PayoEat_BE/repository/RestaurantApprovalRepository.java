@@ -1,11 +1,89 @@
 package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.model.RestaurantApproval;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-public interface RestaurantApprovalRepository extends JpaRepository<RestaurantApproval, UUID> {
-    List<RestaurantApproval> findByIsActiveTrueAndIsApprovedFalse();
+@Repository
+@RequiredArgsConstructor
+public class RestaurantApprovalRepository {
+    private final JdbcClient jdbcClient;
+
+    public Integer addRestaurantApproval(RestaurantApproval request) {
+        try {
+            String sql = """
+                    INSERT INTO restaurant_approval (
+                        restaurant_id,
+                        restaurant_name,
+                        restaurant_image_url,
+                        user_id,
+                        reason,
+                        requested_at,
+                        processed_at,
+                        is_approved,
+                        is_active
+                    ) VALUES (
+                        :restaurant_id,
+                        :restaurant_name,
+                        :restaurant_image_url,
+                        :user_id,
+                        :requested_at,
+                        :is_approved,
+                        :is_active
+                    )
+                    RETURNING id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", request.getRestaurantId())
+                    .param("restaurant_name", request.getRestaurantName())
+                    .param("restaurant_image_url", request.getRestaurantImageUrl())
+                    .param("user_id", request.getUserId())
+                    .param("requested_at", ZonedDateTime.now())
+                    .param("is_approved", Boolean.FALSE)
+                    .param("is_active", Boolean.TRUE)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Optional<RestaurantApproval> findById(UUID id) {
+        try {
+            String sql = """
+                    select * from restaurant_approval where id = :id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("id", id)
+                    .query(RestaurantApproval.class)
+                    .optional();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<RestaurantApproval> getAllRestaurantApproval() {
+        try {
+            String sql = """
+                    select * from restaurant_approval;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .query(RestaurantApproval.class)
+                    .stream().toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 }

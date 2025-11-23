@@ -8,15 +8,11 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "restaurant_category")
 public class RestaurantCategory {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String categoryName;
     private LocalDateTime addedAt;

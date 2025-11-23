@@ -23,11 +23,11 @@ public class AuthUserDetails implements UserDetails {
     private Long id;
     private String email;
     private String password;
-    private UserRoles roles;
+    private Long roleId;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(roles.name()));
+        return Collections.singletonList(new SimpleGrantedAuthority(roleId.toString()));
     }
 
 
@@ -36,7 +36,7 @@ public class AuthUserDetails implements UserDetails {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                user.getRoles()
+                user.getRoleId()
         );
     }
 

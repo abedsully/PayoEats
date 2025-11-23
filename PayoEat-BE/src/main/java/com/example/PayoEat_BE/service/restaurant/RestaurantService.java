@@ -1,7 +1,7 @@
 package com.example.PayoEat_BE.service.restaurant;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
-import com.example.PayoEat_BE.enums.UserRoles;
+import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
@@ -9,21 +9,19 @@ import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.ReviewRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.service.EmailService;
-import com.example.PayoEat_BE.service.image.IImageService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,44 +29,29 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class RestaurantService implements IRestaurantService {
-    private final RestaurantRepository restaurantRepository;
     private final ModelMapper modelMapper;
     private final RestaurantApprovalRepository restaurantApprovalRepository;
-    private final IImageService imageService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
-    private final RestaurantRepositoryy restaurantRepositoryy;
+    private final RestaurantRepository restaurantRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestaurantService.class);
 
     @Override
-    public Restaurant addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
+    public UUID addRestaurant(RegisterRestaurantRequest request) {
         if (restaurantExists(request.getRestaurantName())) {
             throw new AlreadyExistException(request.getRestaurantName() + " already exists");
         }
 
-        if (!request.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("Sorry you can't create a restaurant with this roles: " + request.getRoles());
+        if (!request.getRoleId().equals(2L)) {
+            throw new ForbiddenException("Sorry you can't create a restaurant with that role");
         }
 
-        Restaurant newRestaurant = restaurantRepository.save(createRestaurant(request, restaurantImage, qrisImage));
-
-        if (restaurantRepository.existsByUserIdAndIsActiveTrue(newRestaurant.getUserId())) {
-            throw new ForbiddenException("Sorry you have already created a restaurant");
-        }
-
-        return newRestaurant;
+        return createRestaurant(request);
     }
 
-    @Override
-    public Restaurant updateRestaurant(UUID restaurantId, UpdateRestaurantRequest request) {
-        return restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .map(existingRestaurant -> updateExistingRestaurant(existingRestaurant, request))
-                .map(restaurantRepository::save)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found!"));
-    }
 
     private Restaurant updateExistingRestaurant(Restaurant existingRestaurant, UpdateRestaurantRequest request) {
         if ((request.getName() == null || request.getName().isEmpty()) &&
@@ -94,16 +77,6 @@ public class RestaurantService implements IRestaurantService {
         return existingRestaurant;
     }
 
-    @Override
-    public void deleteRestaurant(UUID restaurantId) {
-        restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .map(currentRestaurant -> {
-                    deleteExistingRestaurant(currentRestaurant);
-                    return restaurantRepository.save(currentRestaurant);
-                })
-                .orElseThrow(() -> new NotFoundException("Restaurant not found!"));
-    }
-
     private void deleteExistingRestaurant(Restaurant existingRestaurant) {
         existingRestaurant.setUpdatedAt(LocalDateTime.now());
         existingRestaurant.setIsActive(false);
@@ -113,7 +86,7 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
-    private Restaurant createRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImage, MultipartFile qrisImage) {
+    private UUID createRestaurant(RegisterRestaurantRequest request) {
         if (!isValidEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email not valid");
         }
@@ -147,80 +120,41 @@ public class RestaurantService implements IRestaurantService {
         }
 
 
-        Restaurant restaurant = new Restaurant(
-                request.getRestaurantName(),
-                0.0,
-                0L,
-                request.getDescription(),
-                request.getOpeningHour(),
-                request.getClosingHour(),
-                request.getLocation(),
-                request.getTelephoneNumber(),
-                request.getColor(),
-                request.getTax(),
-                ""
-        );
-
         User user = new User();
-        user.setRoles(request.getRoles());
-        if (request.getRoles().equals(UserRoles.RESTAURANT)) {
+        user.setRoleId(request.getRoleId());
+        if (request.getRoleId().equals(2L)) {
             user.setUsername(null);
-            user.setRestaurantName(request.getRestaurantName());
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(ZonedDateTime.now());
         user.setUpdatedAt(null);
-        user.setActive(false);
+        user.setIsActive(false);
 
-        User savedUser = userRepository.save(user);
-
-
-        restaurant.setLocation(request.getLocation());
-        restaurant.setRestaurantCategory(request.getRestaurantCategory());
-        restaurant.setUserId(user.getId());
-        restaurant.setCreatedAt(LocalDateTime.now());
-        restaurant.setUpdatedAt(null);
-        restaurant.setIsActive(false);
-
-        Image image = imageService.saveRestaurantImage(restaurantImage, restaurant.getId());
-        image.setRestaurantId(restaurant.getId());
-        restaurant.setRestaurantImage(image.getId());
-
-        Image imageQris = imageService.saveQrisImage(qrisImage, restaurant.getId());
-        imageQris.setRestaurantId(restaurant.getId());
-        restaurant.setQrisImage(imageQris.getId());
-
+        Long userId = userRepository.addUser(user);
 
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
-        verificationToken.setUserId(savedUser.getId());
-        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setUserId(userId);
+        verificationToken.setExpiryDate(ZonedDateTime.now().plusDays(1));
         verificationToken.setType('1');
-        verificationTokenRepository.save(verificationToken);
+        verificationTokenRepository.add(verificationToken);
 
-        emailService.sendConfirmationEmail(savedUser.getEmail(), token);
+        emailService.sendConfirmationEmail(request.getEmail(), token);
 
-        return restaurant;
+        return restaurantRepository.addRestaurant(request, userId);
     }
 
     @Override
     public Restaurant getRestaurantById(UUID id) {
-        return restaurantRepository.findByIdAndIsActiveTrue(id)
+        return restaurantRepository.getDetail(id, Boolean.TRUE)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }
 
     @Override
     public List<Restaurant> getAllRestaurants() {
-        LOGGER.info("Masuk request all restaurants");
-
-        return restaurantRepository.findByIsActiveTrue();
-    }
-
-    @Override
-    public List<Restaurant> findRestaurantByName(String name) {
-        return restaurantRepository.findByNameContainingIgnoreCase(name);
+        return restaurantRepository.getAllRestaurant();
     }
 
     @Override
@@ -234,20 +168,20 @@ public class RestaurantService implements IRestaurantService {
     }
 
     @Override
-    public RestaurantApproval addRestaurantApproval(ReviewRestaurantRequest request) {
+    public void addRestaurantApproval(UUID restaurantId) {
+        Restaurant restaurant = restaurantRepository.getDetail(restaurantId, Boolean.FALSE)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
+
         RestaurantApproval restaurantApproval = new RestaurantApproval();
-        restaurantApproval.setRestaurantId(request.getRestaurantId());
-        restaurantApproval.setRestaurantName(request.getRestaurantName());
-        restaurantApproval.setRestaurantImage(request.getRestaurantImage());
-        restaurantApproval.setUserId(request.getUserId());
-        restaurantApproval.setRequestedAt(LocalDateTime.now());
+        restaurantApproval.setRestaurantId(restaurant.getId());
+        restaurantApproval.setRestaurantName(restaurant.getName());
+        restaurantApproval.setRestaurantImageUrl(restaurant.getRestaurantImageUrl());
+        restaurantApproval.setUserId(restaurant.getUserId());
+        restaurantApproval.setRequestedAt(ZonedDateTime.now());
         restaurantApproval.setIsApproved(false);
         restaurantApproval.setIsActive(true);
 
-
-        restaurantApprovalRepository.save(restaurantApproval);
-
-        return restaurantApproval;
+        restaurantApprovalRepository.addRestaurantApproval(restaurantApproval);
     }
 
     @Override
@@ -257,28 +191,39 @@ public class RestaurantService implements IRestaurantService {
 
     @Override
     public Restaurant getRestaurantDetailForApproval(UUID id) {
-        return restaurantRepository.findByIdAndIsActiveFalse(id)
+        return restaurantRepository.getDetail(id, false)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }
 
     @Override
     public List<Restaurant> getSimilarRestaurant(UUID id) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(id)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
+        checkIfRestaurantExists(id);
 
-        return restaurantRepository.findByRestaurantCategoryAndIsActiveTrueAndIdNot(restaurant.getRestaurantCategory(), id);
+        Long restaurantCategoryCode = restaurantRepository.getRestaurantCategory(id);
+
+        return restaurantRepository.getSimilarRestaurant(restaurantCategoryCode, id);
     }
 
     @Override
     public UUID getRestaurantByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+        return restaurantRepository.getRestaurantId(user.getUserId());
+    }
 
-        if (!user.getRoles().equals(UserRoles.RESTAURANT)) {
-            throw new ForbiddenException("User does not have access to access this menu");
+    private void checkIfRestaurantExists(UUID restaurantId) {
+        restaurantRepository.findRestaurantByIdAndIsActiveTrue(restaurantId)
+                .orElseThrow(() -> new NotFoundException("Restaurant is not found"));
+    }
+
+    private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
+        CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
+
+        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
         }
 
-        return restaurantRepositoryy.getRestaurantId(userId);
+        return result;
     }
 
 

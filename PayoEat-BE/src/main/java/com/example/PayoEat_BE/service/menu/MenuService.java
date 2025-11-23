@@ -2,19 +2,10 @@ package com.example.PayoEat_BE.service.menu;
 
 import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
-import com.example.PayoEat_BE.enums.UserRoles;
-import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
-import com.example.PayoEat_BE.model.Image;
 import com.example.PayoEat_BE.model.Menu;
-import com.example.PayoEat_BE.model.Restaurant;
-import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.MenuRepository;
-import com.example.PayoEat_BE.repository.RestaurantRepository;
-import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
-import com.example.PayoEat_BE.request.menu.UpdateMenuRequest;
-import com.example.PayoEat_BE.service.image.ImageService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -28,57 +19,39 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.time.ZonedDateTime;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
 @Transactional
 public class MenuService implements IMenuService{
     private final MenuRepository menuRepository;
-    private final RestaurantRepository restaurantRepository;
-    private final ImageService imageService;
     private final ModelMapper modelMapper;
-    private final UserRepository userRepository;
 
     @Override
     public CartMenuDto getMenuByCode(UUID[] menuCodes) {
 
-        CartMenuDto cartMenuDto = new CartMenuDto();
+        List<MenuDto> menuDtoList = menuRepository.findMenuDtosByCodes(Arrays.asList(menuCodes));
 
-        List<MenuDto> menuDtoList = new ArrayList<>();
-        String restaurantName = "";
-        UUID restaurantId = null;
-        for (UUID menuCode : menuCodes) {
-            Menu menu =  menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
-                    .orElseThrow(() -> new NotFoundException("Menu not found with id: " + menuCode));
-
-            if (restaurantName.isEmpty()) {
-                restaurantName = menu.getRestaurant().getName();
-            }
-
-            if (restaurantId == null) {
-                restaurantId = menu.getRestaurant().getId();
-            }
-
-            MenuDto convertedMenu = convertToDto(menu);
-
-            menuDtoList.add(convertedMenu);
+        if (menuDtoList.isEmpty()) {
+            throw new NotFoundException("No menus found");
         }
 
-        cartMenuDto.setMenuDtos(menuDtoList);
-        cartMenuDto.setRestaurantName(restaurantName);
-        cartMenuDto.setRestaurantId(restaurantId);
+        CartMenuDto dto = new CartMenuDto();
 
-        return cartMenuDto;
+        MenuDto firstMenu = menuDtoList.get(0);
+        dto.setRestaurantName(firstMenu.getRestaurantName());
+        dto.setRestaurantId(firstMenu.getRestaurantId());
+        dto.setMenuDtos(menuDtoList);
+
+        return dto;
     }
 
+
     @Override
-    public Menu addMenu(AddMenuRequest request, MultipartFile menuImage) {
-        return menuRepository.save(createMenu(request, menuImage));
+    public UUID addMenu(AddMenuRequest request) {
+        return createMenu(request);
     }
 
     @Override
@@ -93,49 +66,12 @@ public class MenuService implements IMenuService{
 
     @Override
     public List<Menu> getMenusByRestaurantId(UUID restaurantId) {
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(restaurantId)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + restaurantId));
-
-        return menuRepository.findByRestaurantId(restaurant.getId());
+        return menuRepository.getMenusByRestaurantId(restaurantId);
     }
 
-    @Override
-    public void deleteMenu(UUID menuCode) {
-        menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
-                .map(currentMenu -> {
-                    deleteExistingMenu(currentMenu);
-                    return menuRepository.save(currentMenu);
-                })
-                .orElseThrow(() -> new NotFoundException("Menu not found"));
-    }
-
-    private void deleteExistingMenu(Menu existingMenu) {
-        existingMenu.setUpdatedAt(LocalDateTime.now());
-        existingMenu.setIsActive(false);
-    }
-
-
-    @Override
-    public Menu updateMenu(UUID menuCode, UpdateMenuRequest request, MultipartFile menuImage) {
-       return menuRepository.findByMenuCodeAndIsActiveTrue(menuCode)
-                .map(existingMenu -> updateExistingMenu(existingMenu, request, menuImage))
-                .map(menuRepository::save)
-                .orElseThrow(() -> new NotFoundException("Menu not found with code: " + menuCode));
-
-    }
 
     @Override
     public List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Restaurant restaurant = restaurantRepository.findByUserIdAndIsActiveTrue(user.getId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with user id: " + userId));
-
-        if (!user.getRoles().equals(UserRoles.RESTAURANT) || !user.getId().equals(restaurant.getUserId())) {
-            throw new ForbiddenException("Unauthorized request");
-        }
-
         String returnMessage = "";
         long totalRecords = 0L;
 
@@ -160,8 +96,8 @@ public class MenuService implements IMenuService{
                 menu.setMenuDetail(getCellValue(row.getCell(2)));
                 menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
                 menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
-                menu.setRestaurant(restaurant);
+                menu.setCreatedAt(ZonedDateTime.now());
+                menu.setRestaurantId(UUID.randomUUID());
 
                 menuList.add(menu);
             }
@@ -174,16 +110,6 @@ public class MenuService implements IMenuService{
 
     @Override
     public List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        Restaurant restaurant = restaurantRepository.findByUserIdAndIsActiveTrue(user.getId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with user id: " + userId));
-
-        if (!user.getRoles().equals(UserRoles.RESTAURANT) || !user.getId().equals(restaurant.getUserId())) {
-            throw new ForbiddenException("Unauthorized request");
-        }
-
         String returnMessage = "";
         long totalRecords = 0L;
 
@@ -208,13 +134,13 @@ public class MenuService implements IMenuService{
                 menu.setMenuDetail(getCellValue(row.getCell(2)));
                 menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
                 menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
-                menu.setRestaurant(restaurant);
+                menu.setCreatedAt(ZonedDateTime.now());
+                menu.setRestaurantId(UUID.randomUUID());
                 menu.setIsActive(true);
                 menuList.add(menu);
             }
 
-            menuRepository.saveAll(menuList);
+            menuRepository.addMenus(menuList);
 
             return getConvertedMenus(menuList);
         } catch (IOException e) {
@@ -222,67 +148,18 @@ public class MenuService implements IMenuService{
         }
     }
 
-    @Override
-    public String getRestaurantNameByMenuCode(UUID menuCode) {
-        return "";
-    }
 
-    private Menu updateExistingMenu(Menu existingMenu, UpdateMenuRequest request, MultipartFile menuImage) {
-
-        if ((request.getMenuName() == null || request.getMenuName().isEmpty()) &&
-                request.getMenuPrice() == null &&
-                (request.getMenuDetail() == null || request.getMenuDetail().isEmpty()) &&
-                menuImage == null) {
-            throw new IllegalArgumentException("No valid fields provided to update the menu.");
-        }
-
-        if (request.getMenuName() != null && !request.getMenuName().isEmpty()) {
-            existingMenu.setMenuName(request.getMenuName());
-        }
-
-        if (request.getMenuPrice() != null) {
-            existingMenu.setMenuPrice(request.getMenuPrice());
-        }
-
-        if (request.getMenuDetail() != null && !request.getMenuDetail().isEmpty()) {
-            existingMenu.setMenuDetail(request.getMenuDetail());
-        }
-
-        if (menuImage != null) {
-            imageService.updateImage(menuImage, existingMenu.getMenuCode());
-        }
-
-        existingMenu.setUpdatedAt(LocalDateTime.now());
-
-        return existingMenu;
-    }
-
-    private Menu createMenu(AddMenuRequest request, MultipartFile menuImage) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + request.getUserId()));
-
-        Restaurant restaurant = restaurantRepository.findByIdAndIsActiveTrue(request.getRestaurantId())
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + request.getRestaurantId()));
-
-        if (!user.getRoles().equals(UserRoles.RESTAURANT) || !user.getId().equals(restaurant.getUserId())) {
-            throw new ForbiddenException("Unauthorized request");
-        }
-
-        Menu menu = new Menu(
-                request.getMenuName(),
-                request.getMenuDetail(),
-                request.getMenuPrice()
-        );
-
-        menu.setCreatedAt(LocalDateTime.now());
+    private UUID createMenu(AddMenuRequest request) {
+        Menu menu = new Menu();
+        menu.setMenuName(request.getMenuName());
+        menu.setMenuDetail(request.getMenuDetail());
+        menu.setMenuPrice(request.getMenuPrice());
+        menu.setCreatedAt(ZonedDateTime.now());
         menu.setIsActive(true);
-        menu.setRestaurant(restaurant);
+        menu.setRestaurantId(request.getRestaurantId());
+        menu.setMenuImageUrl(request.getMenuImageUrl());
 
-        Image image = imageService.saveMenuImage(menuImage, menu.getMenuCode());
-        image.setMenuCode(menu.getMenuCode());
-        menu.setMenuImage(image.getId());
-
-        return menuRepository.save(menu);
+        return menuRepository.addMenu(menu);
     }
 
     private String getCellValue(Cell cell) {

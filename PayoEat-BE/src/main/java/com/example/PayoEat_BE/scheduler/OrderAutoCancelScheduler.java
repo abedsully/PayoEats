@@ -1,9 +1,6 @@
 package com.example.PayoEat_BE.scheduler;
 
-import com.example.PayoEat_BE.enums.OrderStatus;
-import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.repository.OrderRepository;
-import com.example.PayoEat_BE.repository.OrderRepositoryy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,7 +13,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderAutoCancelScheduler {
 
-    private final OrderRepositoryy orderRepository;
+    private final OrderRepository orderRepository;
 
     @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {

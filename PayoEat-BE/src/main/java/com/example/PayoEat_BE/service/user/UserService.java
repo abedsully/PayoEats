@@ -1,7 +1,6 @@
 package com.example.PayoEat_BE.service.user;
 
 
-import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.User;
@@ -19,7 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -53,30 +52,29 @@ public class UserService implements IUserService{
         }
 
         return Optional.of(request)
-                .filter(user -> !userRepository.existsByEmail(request.getEmail()))
                 .map(req -> {
                     User user = new User();
                     user.setUsername(request.getUsername());
                     user.setEmail(request.getEmail());
                     user.setPassword(passwordEncoder.encode(request.getPassword()));
-                    user.setCreatedAt(LocalDateTime.now());
+                    user.setCreatedAt(ZonedDateTime.now());
                     user.setUpdatedAt(null);
-                    user.setActive(false);
-                    user.setRoles(UserRoles.CUSTOMER);
+                    user.setIsActive(false);
+                    user.setRoleId(3L);
 
-                    User savedUser = userRepository.save(user);
+                    Long userId = userRepository.addUser(user);
 
                     String token = UUID.randomUUID().toString();
                     VerificationToken verificationToken = new VerificationToken();
                     verificationToken.setToken(token);
-                    verificationToken.setUserId(savedUser.getId());
-                    verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+                    verificationToken.setUserId(userId);
+                    verificationToken.setExpiryDate(ZonedDateTime.now().plusDays(1));
                     verificationToken.setType('1');
-                    tokenRepository.save(verificationToken);
+                    tokenRepository.add(verificationToken);
 
-                    emailService.sendConfirmationEmail(savedUser.getEmail(), token);
+                    emailService.sendConfirmationEmail(request.getEmail(), token);
 
-                    return savedUser;
+                    return user;
                 })
                 .orElseThrow(() -> new UsernameNotFoundException("Oops! " + request.getEmail() + " already exists!"));
     }
@@ -90,16 +88,16 @@ public class UserService implements IUserService{
 
         VerificationToken verificationToken = optionalToken.get();
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (verificationToken.getExpiryDate().isBefore(ZonedDateTime.now())) {
             return "Token has expired.";
         }
 
         User user = userRepository.findById(verificationToken.getUserId())
                         .orElseThrow(() -> new NotFoundException("User not found with id: " + verificationToken.getUserId()));
 
-        user.setActive(true);
-        userRepository.save(user);
-        tokenRepository.delete(verificationToken);
+        user.setIsActive(true);
+        userRepository.addUser(user);
+        tokenRepository.delete(verificationToken.getId());
 
         return "User confirmed successfully.";
     }
@@ -127,10 +125,10 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(user.getId());
-        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setExpiryDate(ZonedDateTime.now().plusDays(1));
         verificationToken.setType('1');
 
-        tokenRepository.save(verificationToken);
+        tokenRepository.add(verificationToken);
 
         emailService.sendConfirmationEmail(user.getEmail(), token);
 
@@ -142,7 +140,7 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, '2')
                 .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (verificationToken.getExpiryDate().isBefore(ZonedDateTime.now())) {
             throw new InvalidException("Token already expired");
         }
 
@@ -151,8 +149,8 @@ public class UserService implements IUserService{
 
         user.setPassword(passwordEncoder.encode(password));
 
-        userRepository.save(user);
-        tokenRepository.delete(verificationToken);
+        userRepository.addUser(user);
+        tokenRepository.delete(verificationToken.getId());
 
         return "Your password is changed successfully";
 

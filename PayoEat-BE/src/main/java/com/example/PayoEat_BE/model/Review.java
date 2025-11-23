@@ -11,13 +11,9 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
 @Getter
 @Setter
-@NoArgsConstructor
 public class Review {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     private String reviewContent;
     private Long userId;
@@ -26,5 +22,5 @@ public class Review {
     private Boolean isActive;
     private UUID restaurantId;
     private Double rating;
-    private UUID imageId;
+    private String reviewImageUrl;
 }

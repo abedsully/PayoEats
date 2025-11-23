@@ -12,8 +12,7 @@ import java.time.LocalTime;
 public class RegisterRestaurantRequest {
     private String email;
     private String password;
-    private UserRoles roles;
-    @NotBlank(message = "Restaurant name cannot be blank")
+    private Long roleId;
     private String restaurantName;
     private String description;
     private LocalTime openingHour;
@@ -24,4 +23,5 @@ public class RegisterRestaurantRequest {
     private String color;
     private Long tax;
     private String restaurantImageUrl;
+    private String qrisImageUrl;
 }
