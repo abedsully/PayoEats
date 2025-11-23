@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.enums.PaymentStatus;
 import lombok.Data;
 
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Data

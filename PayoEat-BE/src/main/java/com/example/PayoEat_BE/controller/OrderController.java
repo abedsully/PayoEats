@@ -47,17 +47,8 @@ public class OrderController {
     private final SimpMessagingTemplate messagingTemplate;
     private final List<UUID> trackedOrderIds = new CopyOnWriteArrayList<>();
     private final List<UUID> trackedRestaurantIds = new CopyOnWriteArrayList<>();
+    private final List<UUID> trackedProgressOrderIds = new CopyOnWriteArrayList<>();
     private final RestaurantService restaurantService;
-
-    @GetMapping("/progress")
-    public ResponseEntity<ApiResponse> getOrder(@RequestParam UUID orderId) {
-        try {
-            ProgressOrderDto result = orderService.getProgressOrder(orderId);
-            return ResponseEntity.ok(new ApiResponse("Success viewing order progress", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
 
     @GetMapping("/get")
     @Operation(summary = "Getting orders of a restaurant", description = "Returning list of orders of a restaurant")
@@ -391,7 +382,25 @@ public class OrderController {
     }
 
 
+    @Scheduled(fixedRate = 5000)
+    public void sendOrderProgress() {
+        for (UUID restaurantId : trackedProgressOrderIds) {
+            try {
+                List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId);
+                List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
+                List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
 
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("incoming", incoming);
+                payload.put("confirmed", confirmed);
+                payload.put("active", active);
 
+                messagingTemplate.convertAndSend("/topic/restaurant-orders/" + restaurantId, payload);
 
+            } catch (Exception e) {
+                System.err.println("Failed to send restaurant order update for: " + restaurantId);
+                e.printStackTrace();
+            }
+        }
+    }
 }

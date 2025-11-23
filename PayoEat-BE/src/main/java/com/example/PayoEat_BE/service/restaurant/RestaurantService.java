@@ -157,7 +157,8 @@ public class RestaurantService implements IRestaurantService {
                 request.getLocation(),
                 request.getTelephoneNumber(),
                 request.getColor(),
-                request.getTax()
+                request.getTax(),
+                ""
         );
 
         User user = new User();

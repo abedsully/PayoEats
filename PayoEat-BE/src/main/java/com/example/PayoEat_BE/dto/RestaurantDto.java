@@ -23,4 +23,5 @@ public class RestaurantDto {
     private String categoryName;
     private LocalTime closingHour;
     private LocalTime openingHour;
+    private String restaurantImageUrl;
 }

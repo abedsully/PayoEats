@@ -18,10 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -481,7 +478,7 @@ public class OrderService implements IOrderService {
             dto.setTotalPrice(orderTotalPrice);
             dto.setSubTotal(subtotal);
             dto.setTaxPrice(tax);
-
+            dto.setReceivedAt(o.getOrderTime());
             dto.setMenuLists(menuDtos);
             incomingOrders.add(dto);
         }
@@ -627,8 +624,7 @@ public class OrderService implements IOrderService {
 
 
         newRestaurantOrder.setMenuLists(orderItems);
-        newRestaurantOrder.setCreatedDate(LocalDate.now());
-        newRestaurantOrder.setCreatedTime(LocalTime.now());
+        newRestaurantOrder.setOrderTime(ZonedDateTime.now());
         newRestaurantOrder.setIsActive(true);
 
 
@@ -636,10 +632,10 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setSubTotal(subTotalPrice);
         newRestaurantOrder.setTaxPrice(taxPrice);
         newRestaurantOrder.setTotalPrice(totalPrice);
-
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setQuotas(request.getQuotas());
         newRestaurantOrder.setDineInTime(null);
+        newRestaurantOrder.setCreatedDate(LocalDate.now());
 
         orderRepository.save(newRestaurantOrder);
 

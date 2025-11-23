@@ -11,6 +11,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +27,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     private LocalDate createdDate;
-    private LocalTime createdTime;
+    private ZonedDateTime orderTime;
     private String orderMessage;
     private Boolean isActive;
 
@@ -39,11 +40,8 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> menuLists = new ArrayList<>();
 
-    // Sub total price dari items
     private Double subTotal;
-    // Total price setelah ditambah subtotal & tax price
     private Double totalPrice;
-    // Tax price diambil dari harga subTotal * tax price %
     private Double taxPrice;
 
     private UUID paymentImage;
