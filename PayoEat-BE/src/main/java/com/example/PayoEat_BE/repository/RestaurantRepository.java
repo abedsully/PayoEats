@@ -266,13 +266,12 @@ public class RestaurantRepository {
     public Integer approveRestaurant(UUID restaurantId) {
         try {
             String sql = """
-                    update restaurant set is_active = true where id = restaurantId;
+                    update restaurant set is_active = true where id = :restaurantId;
                     """;
 
             return jdbcClient.sql(sql)
                     .param("restaurantId", restaurantId)
-                    .query(Integer.class)
-                    .single();
+                    .update();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

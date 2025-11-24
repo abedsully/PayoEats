@@ -1,9 +1,5 @@
 package com.example.PayoEat_BE.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +7,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -34,7 +29,7 @@ public class Restaurant {
     private String location;
     private String telephoneNumber;
     private String restaurantImageUrl;
-    private String qrisImagUrl;
+    private String qrisImageUrl;
     private String color;
     private Long restaurantCategory;
 }

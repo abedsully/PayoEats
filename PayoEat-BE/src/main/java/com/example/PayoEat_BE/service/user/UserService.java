@@ -80,24 +80,25 @@ public class UserService implements IUserService{
     }
 
     public String confirmToken(String token) {
-        Optional<VerificationToken> optionalToken = tokenRepository.findByTokenAndType(token, '1');
+        VerificationToken optionalToken = tokenRepository.findByTokenAndType(token, '1')
+                .orElseThrow(() -> new NotFoundException("test"));
 
-        if (optionalToken.isEmpty()) {
+        if (optionalToken.getToken().isEmpty()) {
             return "Invalid token.";
         }
 
-        VerificationToken verificationToken = optionalToken.get();
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (optionalToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             return "Token has expired.";
         }
 
-        User user = userRepository.findById(verificationToken.getUserId())
-                        .orElseThrow(() -> new NotFoundException("User not found with id: " + verificationToken.getUserId()));
+        User user = userRepository.findById(optionalToken.getUserId())
+                        .orElseThrow(() -> new NotFoundException("User not found with id: " + optionalToken.getUserId()));
 
         user.setIsActive(true);
-        userRepository.addUser(user);
-        tokenRepository.delete(verificationToken.getId());
+
+        userRepository.activateUser(user.getId());
+        tokenRepository.delete(optionalToken.getId());
 
         return "User confirmed successfully.";
     }

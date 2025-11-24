@@ -54,6 +54,18 @@ public class UserRepository {
         }
     }
 
+    public Integer activateUser(Long userId) {
+        try {
+            String sql = "update users set is_active = true where id = :id";
+
+            return jdbcClient.sql(sql)
+                    .param("id", userId)
+                    .update();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
     public Optional<User> findById(Long userId) {
         try {
             String sql = "select * from users where id = :user_id";

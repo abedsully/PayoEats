@@ -219,7 +219,7 @@ public class OrderController {
                     <script>
                       // Redirect after 1 second
                       setTimeout(() => {
-                        window.location.href = 'http://localhost:5173/dashboard';
+                        window.location.href = 'http://localhost:5173/';
                       }, 1000);
                     </script>
                   </head>

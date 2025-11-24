@@ -20,7 +20,7 @@ public class VerificationTokenRepository {
 
             return jdbcClient.sql(sql)
                     .param("token", token)
-                    .param("type", type.toString())
+                    .param("type", type)
                     .query(VerificationToken.class)
                     .optional();
 
