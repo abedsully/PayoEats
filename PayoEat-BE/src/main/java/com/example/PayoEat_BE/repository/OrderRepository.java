@@ -11,10 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 @Repository
@@ -42,7 +42,7 @@ public class OrderRepository {
                         payment_image_rejection_count,
                         payment_status
                     ) VALUES (
-                        :date
+                        :date,
                         :order_time,
                         :order_message,
                         TRUE,
@@ -63,7 +63,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("date", LocalDate.now())
-                    .param("order_time", ZonedDateTime.now())
+                    .param("order_time", LocalDateTime.now())
                     .param("order_message", newRestaurantOrder.getOrderMessage())
                     .param("order_status", OrderStatus.RECEIVED.toString())
                     .param("restaurant_id", newRestaurantOrder.getRestaurantId())
@@ -81,101 +81,106 @@ public class OrderRepository {
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
         try {
             String sql = """
-                    select 
-                        o.id as order_id,
-                        o.order_time,
-                        oi.menu_code,
-                        oi.quantity,
-                        m.menu_name,
-                        m.menu_price,
-                        m.menu_image_url
-                    from orders o
-                    join order_items oi on oi.order_id = o.id
-                    join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                    where o.restaurant_id = :restaurantId
-                      and o.is_active = true
-                      and o.order_status = :status
-                      and o.created_date = :date
-                    order by o.order_time asc
-            """;
+                select 
+                    o.id as order_id,
+                    o.order_time,
+                    oi.menu_code,
+                    oi.quantity,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url
+                from orders o
+                join order_items oi on oi.order_id = o.id
+                join menu m on m.menu_code = oi.menu_code and m.is_active = true
+                where o.restaurant_id = :restaurant_id
+                  and o.is_active = true
+                  and o.order_status = :status
+                  and o.created_date::date = :date
+                order by o.order_time asc
+        """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("date", LocalDate.now())
                     .param("status", OrderStatus.RECEIVED.toString())
                     .query(IncomingOrderRow.class)
-                    .stream().toList();
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
+
     public List<ConfirmedOrderRow> getConfirmedOrderRow(UUID restaurantId) {
         try {
             String sql = """
-                    select 
-                        o.id as order_id,
-                        o.order_time,
-                        oi.menu_code,
-                        oi.quantity,
-                        m.menu_name,
-                        m.menu_price,
-                        m.menu_image_url,
-                        o.payment_image
-                    from orders o
-                    join order_items oi on oi.order_id = o.id
-                    join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                    where o.restaurant_id = :restaurantId
-                      and o.is_active = true
-                      and o.order_status = :status
-                      and o.created_date = :date
-                    order by o.order_time asc
-            """;
+                select 
+                    o.id as order_id,
+                    o.order_time,
+                    oi.menu_code,
+                    oi.quantity,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url,
+                    o.payment_image_url
+                from orders o
+                join order_items oi on oi.order_id = o.id
+                join menu m on m.menu_code = oi.menu_code and m.is_active = true
+                where o.restaurant_id = :restaurant_id
+                  and o.is_active = true
+                  and o.order_status = :status
+                  and o.created_date::date = :date
+                order by o.order_time asc
+        """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("date", LocalDate.now())
                     .param("status", OrderStatus.PAYMENT.toString())
                     .query(ConfirmedOrderRow.class)
-                    .stream().toList();
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
     }
+
 
     public List<ActiveOrderRow> getActiveOrderRows(UUID restaurantId) {
         try {
             String sql = """
-                    select 
-                        o.id as order_id,
-                        o.order_time,
-                        oi.menu_code,
-                        oi.quantity,
-                        m.menu_name,
-                        m.menu_price,
-                        m.menu_image_url,
-                        o.dine_in_time
-                    from orders o
-                    join order_items oi on oi.order_id = o.id
-                    join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                    where o.restaurant_id = :restaurantId
-                      and o.is_active = true
-                      and o.order_status = in (:status, :status2) 
-                      and o.created_date = :date
-                    order by o.order_time asc
-            """;
+                select 
+                    o.id as order_id,
+                    o.order_time,
+                    oi.menu_code,
+                    oi.quantity,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url,
+                    o.dine_in_time
+                from orders o
+                join order_items oi on oi.order_id = o.id
+                join menu m on m.menu_code = oi.menu_code and m.is_active = true
+                where o.restaurant_id = :restaurant_id
+                  and o.is_active = true
+                  and o.order_status in (:statuses)
+                  and o.created_date::date = :date
+                order by o.order_time asc
+        """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("date", LocalDate.now())
-                    .param("status", OrderStatus.ACTIVE.toString())
-                    .param("status2", OrderStatus.CONFIRMED.toString())
+                    .param("statuses", List.of(
+                            OrderStatus.ACTIVE.toString(),
+                            OrderStatus.CONFIRMED.toString()
+                    ))
                     .query(ActiveOrderRow.class)
-                    .stream().toList();
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
     }
+
 
     public OrderDetailResponseDto getOrderDetails(UUID orderId) {
         try {
@@ -195,7 +200,7 @@ public class OrderRepository {
 
                 m.menu_name,
                 m.menu_price,
-                m.menu_image AS menu_image_url
+                m.menu_image_url AS menu_image_url
 
             FROM orders o
             JOIN order_items oi ON oi.order_id = o.id
@@ -228,12 +233,39 @@ public class OrderRepository {
 
             if (dto.getOrderId() == null) {
                 dto.setOrderId((UUID) row.get("order_id"));
-                dto.setCreatedDate((LocalDate) row.get("created_at"));
-                dto.setOrderTime((ZonedDateTime) row.get("order_time"));
+                Object createdDateObj = row.get("created_date");
+                if (createdDateObj instanceof java.sql.Date sqlDate) {
+                    dto.setCreatedDate(sqlDate.toLocalDate());
+                }
+
+                Object orderTimeObj = row.get("order_time");
+                if (orderTimeObj instanceof java.sql.Timestamp ts) {
+                    dto.setOrderTime(ts.toLocalDateTime());
+                }
                 dto.setOrderMessage((String) row.get("order_message"));
-                dto.setSubTotal((Double) row.get("sub_total"));
-                dto.setTotalPrice((Double) row.get("total_price"));
-                dto.setTaxPrice((Double) row.get("tax_price"));
+
+                Object subTotalObj = row.get("sub_total");
+                if (subTotalObj instanceof BigDecimal bd) {
+                    dto.setSubTotal(bd.doubleValue());
+                } else if (subTotalObj instanceof Double d) {
+                    dto.setSubTotal(d);
+                }
+
+                Object totalPriceObj = row.get("total_price");
+                if (totalPriceObj instanceof BigDecimal bd) {
+                    dto.setTotalPrice(bd.doubleValue());
+                } else if (totalPriceObj instanceof Double d) {
+                    dto.setTotalPrice(d);
+                }
+
+                Object taxPriceObj = row.get("tax_price");
+                if (taxPriceObj instanceof BigDecimal bd) {
+                    dto.setTaxPrice(bd.doubleValue());
+                } else if (taxPriceObj instanceof Double d) {
+                    dto.setTaxPrice(d);
+                }
+
+
             }
 
             OrderItemDetailDto item = new OrderItemDetailDto();
@@ -241,7 +273,14 @@ public class OrderRepository {
             item.setMenuCode((UUID) row.get("menu_code"));
             item.setQuantity(((Number) row.get("quantity")).longValue());
             item.setMenuName((String) row.get("menu_name"));
-            item.setMenuPrice((Double) row.get("menu_price"));
+            Object menuPriceObj = row.get("menu_price");
+            if (menuPriceObj instanceof BigDecimal bd) {
+                item.setMenuPrice(bd.doubleValue());
+            } else if (menuPriceObj instanceof Double d) {
+                item.setMenuPrice(d);
+            } else {
+                item.setMenuPrice(null);
+            }
             item.setMenuImageUrl((String) row.get("menu_image_url"));
 
             items.add(item);
@@ -261,7 +300,7 @@ public class OrderRepository {
                         orders o
                     where
                         o.restaurant_id = :restaurant_id 
-                        and cast(o.created_date as date) = :date 
+                        and DATE(o.created_date) = :date 
                         and o.order_status in (:order_status) 
                         and o.is_active = :is_active 
                     """;
@@ -269,7 +308,11 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("date", LocalDate.now())
-                    .param("order_status", orderStatuses)
+                    .param("order_status",
+                            orderStatuses.stream()
+                                    .map(OrderStatus::name)
+                                    .toList()
+                    )
                     .param("is_active", isActive)
                     .query(TodayRestaurantStatusDto.class)
                     .single();
@@ -344,7 +387,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("dine_in_time", LocalTime.now())
-                    .param("order_status", OrderStatus.FINISHED.toString())
+                    .param("order_status", OrderStatus.ACTIVE.toString())
                     .param("order_id", orderId)
                     .update();
 
@@ -398,7 +441,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("reason", rejectionReason)
-                    .param("begin_at", ZonedDateTime.now())
+                    .param("begin_at", LocalDateTime.now())
                     .param("count", count)
                     .param("order_status", OrderStatus.PAYMENT.toString())
                     .param("order_id", orderId)
@@ -424,7 +467,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.APPROVED.toString())
-                    .param("order_status", OrderStatus.CANCELLED.toString())
+                    .param("order_status", OrderStatus.CONFIRMED.toString())
                     .param("order_id", orderId)
                     .update();
 
@@ -449,7 +492,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("order_status", OrderStatus.PAYMENT.toString())
-                    .param("payment_begin_at", ZonedDateTime.now())
+                    .param("payment_begin_at", LocalDateTime.now())
                     .param("order_id", orderId)
                     .update();
         } catch (Exception e) {
@@ -478,27 +521,26 @@ public class OrderRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
-
     public List<UUID> findExpiredOrders(LocalDateTime cutOffTime) {
-        try {
-            String sql = """
-            SELECT id FROM order o
-            WHERE DATE(o.created_date) = :date 
-              AND o.payment_begin_at < :cutOffTime
-              AND o.payment_image IS NULL 
-              AND o.order_status = :status 
-              AND o.is_active = TRUE
-              AND o.payment_status = :payment_status
-        """;
+        String sql = """
+        SELECT id FROM orders o
+        WHERE DATE(o.created_date) = :date
+          AND o.payment_begin_at < :cutOffTime
+          AND o.payment_image_url IS NULL
+          AND o.order_status = :status
+          AND o.is_active = TRUE
+          AND o.payment_status = :payment_status
+    """;
+        try (var stream = jdbcClient.sql(sql)
+                .param("date", LocalDate.now())
+                .param("cutOffTime", cutOffTime)
+                .param("status", OrderStatus.PAYMENT.name())
+                .param("payment_status", PaymentStatus.PENDING.name())
+                .query(UUID.class)
+                .stream()) {
 
-            return jdbcClient.sql(sql)
-                    .param("date", LocalDate.now())
-                    .param("cutOffTime", cutOffTime)
-                    .param("status", OrderStatus.PAYMENT.name())
-                    .param("payment_status", PaymentStatus.PENDING.name())
-                    .query(UUID.class)
-                    .stream()
-                    .toList();
+            return stream.toList();
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch expired orders", e);
         }
@@ -510,7 +552,7 @@ public class OrderRepository {
             UPDATE orders 
             SET order_status = :order_status,
                 cancellation_reason = :reason,
-                payment_status = :payment_status
+                payment_status = :payment_status,
                 is_active = FALSE
             WHERE id = :order_id AND is_active = TRUE
         """;

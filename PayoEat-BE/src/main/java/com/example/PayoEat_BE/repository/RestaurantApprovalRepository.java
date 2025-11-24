@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,10 +16,14 @@ import java.util.UUID;
 public class RestaurantApprovalRepository {
     private final JdbcClient jdbcClient;
 
-    public Integer addRestaurantApproval(RestaurantApproval request) {
+    public UUID addRestaurantApproval(RestaurantApproval request) {
         try {
+            UUID approvalId = UUID.randomUUID();
+
+
             String sql = """
                     INSERT INTO restaurant_approval (
+                        id,
                         restaurant_id,
                         restaurant_name,
                         restaurant_image_url,
@@ -30,26 +34,33 @@ public class RestaurantApprovalRepository {
                         is_approved,
                         is_active
                     ) VALUES (
+                        :id,
                         :restaurant_id,
                         :restaurant_name,
                         :restaurant_image_url,
                         :user_id,
+                        :reason,
                         :requested_at,
+                        :processed_at,
                         :is_approved,
                         :is_active
                     )
-                    RETURNING id;
                     """;
 
-            return jdbcClient.sql(sql)
+            jdbcClient.sql(sql)
+                    .param("id", approvalId)
                     .param("restaurant_id", request.getRestaurantId())
                     .param("restaurant_name", request.getRestaurantName())
                     .param("restaurant_image_url", request.getRestaurantImageUrl())
                     .param("user_id", request.getUserId())
-                    .param("requested_at", ZonedDateTime.now())
+                    .param("requested_at", LocalDateTime.now())
+                    .param("reason", null)
+                    .param("processed_at", null)
                     .param("is_approved", Boolean.FALSE)
                     .param("is_active", Boolean.TRUE)
                     .update();
+
+            return approvalId;
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -80,7 +91,7 @@ public class RestaurantApprovalRepository {
 
             return jdbcClient.sql(sql)
                     .query(RestaurantApproval.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

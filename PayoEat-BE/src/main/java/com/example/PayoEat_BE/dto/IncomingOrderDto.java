@@ -3,8 +3,6 @@ package com.example.PayoEat_BE.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +14,6 @@ public class IncomingOrderDto {
     private Double totalPrice;
     private Double subTotal;
     private Double taxPrice;
-    private ZonedDateTime receivedAt;
+    private LocalDateTime receivedAt;
 }
 

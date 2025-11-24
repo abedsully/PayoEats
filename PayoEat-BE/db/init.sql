@@ -1,3 +1,75 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_date DATE,
+    order_time TIMESTAMPTZ,
+    order_message VARCHAR(255),
+    is_active BOOLEAN,
+    order_status VARCHAR(255),
+    restaurant_id UUID,
+    payment_begin_at TIMESTAMPTZ,
+    sub_total DOUBLE PRECISION,
+    total_price DOUBLE PRECISION,
+    tax_price DOUBLE PRECISION,
+    cancellation_reason VARCHAR(255),
+    dine_in_time TIME,
+    payment_image_url TEXT,
+    payment_image_rejection_reason VARCHAR(255),
+    payment_image_rejection_count BIGINT,
+    payment_status VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    menu_code UUID NOT NULL,
+    quantity BIGINT,
+    order_id UUID NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS restaurant_approval (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    restaurant_id UUID NOT NULL,
+    restaurant_name VARCHAR(255),
+    restaurant_image_url VARCHAR(255),
+    user_id BIGINT,
+    reason TEXT,
+    requested_at TIMESTAMPTZ,
+    processed_at TIMESTAMPTZ,
+    is_approved BOOLEAN,
+    is_active BOOLEAN
+);
+
+
+CREATE TABLE IF NOT EXISTS review (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    review_content TEXT,
+    user_id BIGINT,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    is_active BOOLEAN,
+    restaurant_id UUID,
+    rating DOUBLE PRECISION,
+    review_image_url VARCHAR(255)
+);
+
+
+CREATE TABLE IF NOT EXISTS user_roles (
+    role_id BIGINT PRIMARY KEY,
+    role_name VARCHAR(255)
+);
+
+
+CREATE TABLE IF NOT EXISTS verification_token (
+    id BIGINT PRIMARY KEY,
+    token VARCHAR(255),
+    user_id BIGINT,
+    expiry_date TIMESTAMPTZ,
+    type CHAR(1)
+);
+
+
 CREATE TABLE IF NOT EXISTS restaurant_category (
     id SERIAL PRIMARY KEY,
     category_name VARCHAR(100) NOT NULL,

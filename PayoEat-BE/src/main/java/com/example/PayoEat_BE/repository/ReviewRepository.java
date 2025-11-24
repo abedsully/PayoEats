@@ -2,14 +2,13 @@ package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.dto.ReviewDto;
 import com.example.PayoEat_BE.model.Review;
-import com.example.PayoEat_BE.request.review.AddReviewRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +32,7 @@ public class ReviewRepository {
             return jdbcClient.sql(sql)
                     .param("reviewContent", review.getReviewContent())
                     .param("userId", userId)
-                    .param("createdAt", ZonedDateTime.now())
+                    .param("createdAt", LocalDateTime.now())
                     .param("updatedAt", null)
                     .param("isActive", true)
                     .param("restaurantId", review.getRestaurantId())
@@ -55,7 +54,7 @@ public class ReviewRepository {
             return jdbcClient.sql(sql)
                     .param("user_id", userId)
                     .query(Review.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -76,7 +75,7 @@ public class ReviewRepository {
         return jdbcClient.sql(sql)
                 .param("restaurantId", restaurantId)
                 .query(this::mapRowToReviewDto)
-                .stream().toList();
+                .list();
     }
 
     private ReviewDto mapRowToReviewDto(ResultSet rs, int rowNum) throws SQLException {

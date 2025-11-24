@@ -74,9 +74,9 @@ public class OrderController {
 
     @PostMapping(value = "/add-payment-proof", consumes = {"multipart/form-data"})
     @Operation(summary = "Adding payment proof to an order id", description = "Paying for order")
-    public ResponseEntity<ApiResponse> sendPayment(@RequestParam UUID orderId, @RequestParam String url) {
+    public ResponseEntity<ApiResponse> sendPayment(@RequestParam UUID orderId, @RequestParam MultipartFile paymentProof) {
         try {
-            orderService.addPaymentProof(orderId, url);
+            orderService.addPaymentProof(orderId, paymentProof);
             return ResponseEntity.ok(new ApiResponse("Payment proof received, please wait", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -124,7 +124,6 @@ public class OrderController {
 
     @PostMapping("/confirm")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> confirmOrder(@RequestParam UUID orderId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -137,7 +136,6 @@ public class OrderController {
 
     @PostMapping("/confirm-payment")
     @Operation(summary = "Confirming an order payment of user", description = "Confirming order payment of user")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> confirmOrderPayment(@RequestParam UUID orderId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -150,7 +148,6 @@ public class OrderController {
 
     @PostMapping("/reject")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> rejectOrder(@RequestBody CancelOrderRequest request) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -163,7 +160,6 @@ public class OrderController {
 
     @PostMapping("/reject-payment")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> rejectOrderPayment(@RequestBody RejectOrderPaymentDto request) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -176,7 +172,6 @@ public class OrderController {
 
     @PostMapping("/finish")
     @Operation(summary = "Finishing an order", description = "Finishing user's order, done by restaurant")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> finishOrder(@RequestParam UUID orderId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -290,6 +285,17 @@ public class OrderController {
         messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
     }
 
+    @GetMapping("/incoming")
+    @Operation(summary = "Checking order payment", description = "Checking order payment")
+    public ResponseEntity<ApiResponse> incoming(@RequestParam UUID restaurantId) {
+        try {
+            List<IncomingOrderDto>  result = orderService.getIncomingOrder(restaurantId);
+            return ResponseEntity.ok(new ApiResponse("Order payment result: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     /**
      * Scheduled task to push updates every 5 seconds
      */
@@ -324,6 +330,8 @@ public class OrderController {
     }
 
 
+
+
     @MessageMapping("/restaurant-orders/request")
     public void handleRestaurantOrderRequest(@Payload String restaurantIdStr) {
         try {
@@ -334,7 +342,7 @@ public class OrderController {
             }
 
             // Immediate push
-            List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId); // assuming restaurantId == userId
+            List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId);
             List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
             List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
 

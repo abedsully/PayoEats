@@ -10,7 +10,6 @@ public class MenuDto {
     private String menuName;
     private String menuDetail;
     private Double menuPrice;
-    private UUID menuImage;
     private String menuImageUrl;
     private UUID restaurantId;
     private String restaurantName;

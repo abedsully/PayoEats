@@ -12,16 +12,18 @@ import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.service.EmailService;
+import com.example.PayoEat_BE.service.UploadService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,11 +38,12 @@ public class RestaurantService implements IRestaurantService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final EmailService emailService;
     private final RestaurantRepository restaurantRepository;
+    private final UploadService uploadService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestaurantService.class);
 
     @Override
-    public UUID addRestaurant(RegisterRestaurantRequest request) {
+    public UUID addRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImageUrl, MultipartFile qrisImageUrl) {
         if (restaurantExists(request.getRestaurantName())) {
             throw new AlreadyExistException(request.getRestaurantName() + " already exists");
         }
@@ -49,7 +52,7 @@ public class RestaurantService implements IRestaurantService {
             throw new ForbiddenException("Sorry you can't create a restaurant with that role");
         }
 
-        return createRestaurant(request);
+        return createRestaurant(request, restaurantImageUrl, qrisImageUrl);
     }
 
 
@@ -86,7 +89,7 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
-    private UUID createRestaurant(RegisterRestaurantRequest request) {
+    private UUID createRestaurant(RegisterRestaurantRequest request, MultipartFile restaurantImageUrl, MultipartFile qrisImageUrl) {
         if (!isValidEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email not valid");
         }
@@ -127,7 +130,7 @@ public class RestaurantService implements IRestaurantService {
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setCreatedAt(ZonedDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(null);
         user.setIsActive(false);
 
@@ -137,13 +140,16 @@ public class RestaurantService implements IRestaurantService {
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(userId);
-        verificationToken.setExpiryDate(ZonedDateTime.now().plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
         verificationToken.setType('1');
         verificationTokenRepository.add(verificationToken);
 
         emailService.sendConfirmationEmail(request.getEmail(), token);
 
-        return restaurantRepository.addRestaurant(request, userId);
+        String url1 = uploadService.upload(restaurantImageUrl);
+        String url2 = uploadService.upload(qrisImageUrl);
+
+        return restaurantRepository.addRestaurant(request, userId, url1, url2);
     }
 
     @Override
@@ -177,7 +183,7 @@ public class RestaurantService implements IRestaurantService {
         restaurantApproval.setRestaurantName(restaurant.getName());
         restaurantApproval.setRestaurantImageUrl(restaurant.getRestaurantImageUrl());
         restaurantApproval.setUserId(restaurant.getUserId());
-        restaurantApproval.setRequestedAt(ZonedDateTime.now());
+        restaurantApproval.setRequestedAt(LocalDateTime.now());
         restaurantApproval.setIsApproved(false);
         restaurantApproval.setIsActive(true);
 

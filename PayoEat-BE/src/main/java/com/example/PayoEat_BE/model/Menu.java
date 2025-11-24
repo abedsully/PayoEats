@@ -1,10 +1,8 @@
 package com.example.PayoEat_BE.model;
 
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Getter
@@ -16,8 +14,8 @@ public class Menu {
     private String menuName;
     private String menuDetail;
     private Double menuPrice;
-    private ZonedDateTime createdAt;
-    private ZonedDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Boolean isActive;
     private UUID restaurantId;
     private String menuImageUrl;

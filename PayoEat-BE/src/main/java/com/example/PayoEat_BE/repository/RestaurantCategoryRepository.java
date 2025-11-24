@@ -36,7 +36,7 @@ public class RestaurantCategoryRepository {
 
             return jdbcClient.sql(sql)
                     .query(RestaurantCategory.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

@@ -7,6 +7,7 @@ import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
+import com.example.PayoEat_BE.service.UploadService;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
@@ -17,6 +18,7 @@ import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.utils.UserAccessValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.*;
 import java.util.*;
@@ -31,6 +33,7 @@ public class OrderService implements IOrderService {
     private final MenuRepository menuRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
+    private final UploadService uploadService;
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
@@ -61,12 +64,14 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public void addPaymentProof(UUID orderId, String url) {
+    public void addPaymentProof(UUID orderId, MultipartFile file) {
         CheckOrderDto order = checkOrderExistance(orderId);
 
         if (order.getOrderStatus() != OrderStatus.PAYMENT) {
             throw new InvalidException("Unable to add payment proof as the order status is not PAYMENT");
         }
+
+        String url = uploadService.upload(file);
 
         orderRepository.addPaymentProof(order.getId(), url);
     }
@@ -89,7 +94,6 @@ public class OrderService implements IOrderService {
     // Flow tambahan order
     @Override
     public void confirmOrderPayment(UUID orderId, Long userId) {
-        checkUserRestaurant(userId);
         CheckOrderDto order = checkOrderExistance(orderId);
         checkIfRestaurantExists(order.getRestaurantId());
 
@@ -181,9 +185,6 @@ public class OrderService implements IOrderService {
         CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
-            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
-        }
 
         return result;
     }
@@ -424,7 +425,7 @@ public class OrderService implements IOrderService {
         double taxPrice = (subTotalPrice * restaurantTax) / 100;
         double totalPrice = subTotalPrice + taxPrice;
 
-        newRestaurantOrder.setOrderTime(ZonedDateTime.now());
+        newRestaurantOrder.setOrderTime(LocalDateTime.now());
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
         newRestaurantOrder.setTaxPrice(taxPrice);

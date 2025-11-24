@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface IOrderService {
     String generateOrderIdQrCode(UUID orderId);
     UUID addOrder(AddOrderRequest request);
-    void addPaymentProof(UUID orderId, String url);
+    void addPaymentProof(UUID orderId, MultipartFile file);
     void confirmOrder(UUID orderId, Long userId);
     void confirmOrderPayment(UUID orderId, Long userId);
     void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId);

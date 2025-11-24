@@ -6,12 +6,12 @@ import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
+import jakarta.mail.Multipart;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,55 +21,45 @@ import java.util.UUID;
 public class RestaurantRepository {
     private final JdbcClient jdbcClient;
 
-    public UUID addRestaurant(RegisterRestaurantRequest request, Long userId) {
+    public UUID addRestaurant(RegisterRestaurantRequest request, Long userId, String url1, String url2) {
         try {
+            UUID restaurantId = UUID.randomUUID();
+
             String sql = """
-            INSERT INTO restaurant (
-                name,
-                rating,
-                total_rating_count,
-                description,
-                created_at,
-                updated_at,
-                is_active,
-                tax,
-                user_id,
-                opening_hour,
-                closing_hour,
-                location,
-                telephone_number,
-                restaurant_image_url,
-                qris_image_url,
-                color,
-                restaurant_category
-            ) VALUES (
-                :name,
-                :rating,
-                :total_rating_count,
-                :description,
-                :created_at,
-                :updated_at,
-                :is_active,
-                :tax,
-                :user_id,
-                :opening_hour,
-                :closing_hour,
-                :location,
-                :telephone_number,
-                :restaurant_image_url,
-                :qris_image_url,
-                :color,
-                :restaurant_category
-            )
-            RETURNING id;
+        INSERT INTO restaurant (
+            id,
+            name,
+            rating,
+            total_rating,
+            description,
+            created_at,
+            updated_at,
+            is_active,
+            tax,
+            user_id,
+            opening_hour,
+            closing_hour,
+            location,
+            telephone_number,
+            restaurant_image_url,
+            qris_image_url,
+            color,
+            restaurant_category
+        ) VALUES (
+            :id, :name, :rating, :total_rating_count, :description,
+            :created_at, :updated_at, :is_active, :tax, :user_id,
+            :opening_hour, :closing_hour, :location, :telephone_number,
+            :restaurant_image_url, :qris_image_url, :color, :restaurant_category
+        )
         """;
 
-            return jdbcClient.sql(sql)
+            jdbcClient.sql(sql)
+                    .param("id", restaurantId)
                     .param("name", request.getRestaurantName())
                     .param("rating", 0.0)
                     .param("total_rating_count", 0L)
                     .param("description", request.getDescription())
-                    .param("created_at", ZonedDateTime.now())
+                    .param("created_at", LocalDateTime.now())
                     .param("updated_at", null)
                     .param("is_active", false)
                     .param("tax", request.getTax())
@@ -78,12 +68,13 @@ public class RestaurantRepository {
                     .param("closing_hour", request.getClosingHour())
                     .param("location", request.getLocation())
                     .param("telephone_number", request.getTelephoneNumber())
-                    .param("restaurant_image_url", request.getRestaurantImageUrl())
-                    .param("qris_image_url", request.getQrisImageUrl())
+                    .param("restaurant_image_url", url1)
+                    .param("qris_image_url", url2)
                     .param("color", request.getColor())
                     .param("restaurant_category", request.getRestaurantCategory())
-                    .query(UUID.class)
-                    .single();
+                    .update();
+
+            return restaurantId;
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -91,16 +82,17 @@ public class RestaurantRepository {
     }
 
 
+
     public Optional<CheckUserRestaurantDto> checkUserRestaurant(Long userId) {
         try {
             String sql = """
-                    	SELECT r.id, user_id, u.role_id from restaurant r\s
+                    	SELECT r.id, user_id, u.role_id from restaurant r
                     	join users u on r.user_id  = u.id
                     	where u.id = :id
                     """;
 
             return jdbcClient.sql(sql)
-                    .param("user_id", userId)
+                    .param("id", userId)
                     .query(CheckUserRestaurantDto.class)
                     .optional();
         } catch (Exception e) {
@@ -168,24 +160,20 @@ public class RestaurantRepository {
     }
 
     public List<Restaurant> getAllRestaurant() {
-        try {
-            String sql = """
-                    select
-                    	*
-                    from
-                    	restaurant
-                    where
-                    	and is_active = true
-                    """;
+        String sql = """
+        SELECT *
+        FROM restaurant
+        WHERE is_active = true
+    """;
 
-            return jdbcClient.sql(sql)
-                    .query(Restaurant.class)
-                    .stream().toList();
+        try (var stream = jdbcClient.sql(sql)
+                .query(Restaurant.class)
+                .stream()) {
 
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            return stream.toList();
         }
     }
+
 
     public List<Restaurant> getSimilarRestaurant(Long categoryCode, UUID restaurantId) {
         try {
@@ -197,14 +185,14 @@ public class RestaurantRepository {
                     where
                     	restaurant_category = :category_code
                     	and is_active = true
-                    	and id <> =:id;
+                    	and id <> :id
                     """;
 
             return jdbcClient.sql(sql)
                     .param("category_code", categoryCode)
                     .param("id", restaurantId)
                     .query(Restaurant.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -231,7 +219,7 @@ public class RestaurantRepository {
     public Boolean existsByNameAndIsActiveTrue(String name) {
         try {
             String sql = """
-                    select exists(select 1 from restaurants where name = :name and is_active = true);
+                    select exists(select 1 from restaurant where name = :name and is_active = true);
                     """;
 
             return jdbcClient.sql(sql)
@@ -269,7 +257,7 @@ public class RestaurantRepository {
             return jdbcClient.sql(sql)
                     .param("name", name)
                     .query(Restaurant.class)
-                    .stream().toList();
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

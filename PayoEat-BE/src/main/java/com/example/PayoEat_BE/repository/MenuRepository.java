@@ -28,7 +28,7 @@ public class MenuRepository {
             return jdbcClient.sql(sql)
                     .param("menuCodes", menuCodes)
                     .query(Menu.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -37,12 +37,10 @@ public class MenuRepository {
 
     public List<MenuDto> findMenuDtosByCodes(List<UUID> menuCodes) {
         String sql = """
-        SELECT m.menu_code, m.menu_name, m.menu_detail, m.menu_price, 
-               m.menu_image AS menu_image_id, mi.image_url AS menu_image_url,
+        SELECT m.menu_code, m.menu_name, m.menu_detail, m.menu_price, m.menu_image_url AS menu_image_url,
                r.id AS restaurant_id, r.name AS restaurant_name
         FROM menu m
         JOIN restaurant r ON m.restaurant_id = r.id
-        LEFT JOIN menu_image mi ON m.menu_image = mi.id
         WHERE m.menu_code IN (:menuCodes)
     """;
 
@@ -54,14 +52,13 @@ public class MenuRepository {
                     menuDto.setMenuName(rs.getString("menu_name"));
                     menuDto.setMenuDetail(rs.getString("menu_detail"));
                     menuDto.setMenuPrice(rs.getDouble("menu_price"));
-                    menuDto.setMenuImage(UUID.fromString(rs.getString("menu_image_id")));
                     menuDto.setMenuImageUrl(rs.getString("menu_image_url"));
 
                     menuDto.setRestaurantId(UUID.fromString(rs.getString("restaurant_id")));
                     menuDto.setRestaurantName(rs.getString("restaurant_name"));
 
                     return menuDto;
-                }).stream().toList();
+                }).list();
     }
 
     public Optional<Menu> findByMenuCodeAndRestaurantId(UUID menuCode, UUID restaurantId) {
@@ -178,7 +175,7 @@ public class MenuRepository {
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .query(Menu.class)
-                    .stream().toList();
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -193,7 +190,7 @@ public class MenuRepository {
                     .param("restaurant_id", restaurantId)
                     .param("name", name)
                     .query(Menu.class)
-                    .stream().toList();
+                    .list();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

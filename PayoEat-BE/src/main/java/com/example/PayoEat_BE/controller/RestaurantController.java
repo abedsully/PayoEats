@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -92,14 +93,14 @@ public class RestaurantController {
                                                      @RequestParam("restaurantCategoryCode") Long restaurantCategoryCode,
                                                      @RequestParam("restaurantColor") String restaurantColor,
                                                      @RequestParam("tax") String tax,
-                                                     @RequestParam("restaurantImageUrl") String restaurantImageUrl,
-                                                     @RequestParam("qrisImageUrl") String qrisImageUrl
+                                                     @RequestParam("restaurantImageUrl") MultipartFile restaurantImageUrl,
+                                                     @RequestParam("qrisImageUrl") MultipartFile qrisImageUrl
                                                      ) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax), restaurantImageUrl, qrisImageUrl
+                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax)
             );
-            UUID restaurantId = restaurantService.addRestaurant(request);
+            UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
             restaurantService.addRestaurantApproval(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
         } catch (Exception e) {

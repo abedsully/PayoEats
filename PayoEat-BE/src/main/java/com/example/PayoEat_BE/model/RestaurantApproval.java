@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -19,8 +19,8 @@ public class RestaurantApproval {
     private String restaurantImageUrl;
     private Long userId;
     private String reason;
-    private ZonedDateTime requestedAt;
-    private ZonedDateTime processedAt;
+    private LocalDateTime requestedAt;
+    private LocalDateTime processedAt;
     private Boolean isApproved;
     private Boolean isActive;
 }

@@ -22,6 +22,4 @@ public class RegisterRestaurantRequest {
     private Long restaurantCategory;
     private String color;
     private Long tax;
-    private String restaurantImageUrl;
-    private String qrisImageUrl;
 }

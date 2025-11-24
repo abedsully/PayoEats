@@ -3,7 +3,7 @@ package com.example.PayoEat_BE.dto.orders;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,7 +12,7 @@ import java.util.UUID;
 public class OrderDetailResponseDto {
     private UUID orderId;
     private LocalDate createdDate;
-    private ZonedDateTime orderTime;
+    private LocalDateTime orderTime;
     private String orderMessage;
 
     private Double subTotal;
