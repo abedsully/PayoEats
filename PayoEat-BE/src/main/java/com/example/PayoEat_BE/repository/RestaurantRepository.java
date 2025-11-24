@@ -255,7 +255,7 @@ public class RestaurantRepository {
             String sql = "SELECT * from restaurant where LOWER(name) LIKE LOWER(:name)";
 
             return jdbcClient.sql(sql)
-                    .param("name", name)
+                    .param("name", "%" + name + "%")
                     .query(Restaurant.class)
                     .list();
         } catch (Exception e) {
