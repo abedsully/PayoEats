@@ -331,7 +331,6 @@ public class OrderController {
 
 
 
-
     @MessageMapping("/restaurant-orders/request")
     public void handleRestaurantOrderRequest(@Payload String restaurantIdStr) {
         try {
@@ -356,29 +355,6 @@ public class OrderController {
         } catch (Exception e) {
             System.err.println("Error in handleRestaurantOrderRequest: " + e.getMessage());
             e.printStackTrace();
-        }
-    }
-
-
-    @Scheduled(fixedRate = 5000)
-    public void sendOrderProgress() {
-        for (UUID restaurantId : trackedProgressOrderIds) {
-            try {
-                List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId);
-                List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
-                List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
-
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("incoming", incoming);
-                payload.put("confirmed", confirmed);
-                payload.put("active", active);
-
-                messagingTemplate.convertAndSend("/topic/restaurant-orders/" + restaurantId, payload);
-
-            } catch (Exception e) {
-                System.err.println("Failed to send restaurant order update for: " + restaurantId);
-                e.printStackTrace();
-            }
         }
     }
 }

@@ -2,10 +2,15 @@ package com.example.PayoEat_BE.service.menu;
 
 import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
+import com.example.PayoEat_BE.dto.TopMenusDto;
+import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.repository.MenuRepository;
+import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
+import com.example.PayoEat_BE.service.UploadService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -28,6 +33,9 @@ import java.util.*;
 public class MenuService implements IMenuService{
     private final MenuRepository menuRepository;
     private final ModelMapper modelMapper;
+    private final RestaurantRepository restaurantRepository;
+    private final UploadService uploadService;
+
 
     @Override
     public CartMenuDto getMenuByCode(UUID[] menuCodes) {
@@ -50,8 +58,23 @@ public class MenuService implements IMenuService{
 
 
     @Override
-    public UUID addMenu(AddMenuRequest request) {
-        return createMenu(request);
+    public UUID addMenu(AddMenuRequest request, MultipartFile file, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        String menuImageUrl = uploadService.upload(file);
+
+        Menu menu = new Menu();
+        if (!menuImageUrl.isEmpty() || !menuImageUrl.isBlank()) {
+            menu.setMenuImageUrl(menuImageUrl);
+        }
+
+        menu.setMenuName(request.getMenuName());
+        menu.setMenuDetail(request.getMenuDetail());
+        menu.setMenuPrice(request.getMenuPrice());
+        menu.setIsActive(request.getIsActive());
+        menu.setRestaurantId(user.getId());
+
+        return menuRepository.addMenu(menu);
     }
 
     @Override
@@ -62,6 +85,11 @@ public class MenuService implements IMenuService{
     @Override
     public List<MenuDto> getConvertedMenus(List<Menu> menus) {
         return menus.stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    public List<Menu> getAllActiveMenu(UUID restaurantId) {
+        return menuRepository.getAllActiveMenu(restaurantId);
     }
 
     @Override
@@ -148,18 +176,25 @@ public class MenuService implements IMenuService{
         }
     }
 
+    @Override
+    public List<TopMenusDto> getTop5Menu(UUID restaurantId, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-    private UUID createMenu(AddMenuRequest request) {
-        Menu menu = new Menu();
-        menu.setMenuName(request.getMenuName());
-        menu.setMenuDetail(request.getMenuDetail());
-        menu.setMenuPrice(request.getMenuPrice());
-        menu.setCreatedAt(LocalDateTime.now());
-        menu.setIsActive(true);
-        menu.setRestaurantId(request.getRestaurantId());
-        menu.setMenuImageUrl(request.getMenuImageUrl());
+        return menuRepository.getTop5MenusFromRestaurant(restaurantId);
+    }
 
-        return menuRepository.addMenu(menu);
+    @Override
+    public void editMenuAvailability(UUID menuCode, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        menuRepository.editMenuAvailability(menuCode);
+    }
+
+    @Override
+    public Menu getMenuDetail(UUID menuCode, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        return menuRepository.getMenuDetail(menuCode);
     }
 
     private String getCellValue(Cell cell) {
@@ -175,4 +210,16 @@ public class MenuService implements IMenuService{
                 return "";
         }
     }
+
+    private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
+        CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
+
+        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
+        }
+
+        return result;
+    }
+
 }
