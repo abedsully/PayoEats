@@ -12,15 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AddMenuRequest {
     private String menuName;
-
     private String menuDetail;
-
     private Double menuPrice;
-
-    private UUID restaurantId;
-
-    private Long userId;
-
-    private String menuImageUrl;
-
+    private Boolean isActive;
 }
