@@ -100,6 +100,25 @@ public class MenuRepository {
         }
     }
 
+    public Integer updateAllMenuAvailability(UUID restaurantId, Boolean activate) {
+        try {
+            String sql = """
+            UPDATE menu
+            SET is_active = :availability
+            WHERE restaurant_id = :restaurantId
+        """;
+
+            return jdbcClient.sql(sql)
+                    .param("availability", activate)
+                    .param("restaurantId", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+
     public List<MenuDto> findMenuDtosByCodes(List<UUID> menuCodes) {
         String sql = """
         SELECT m.menu_code, m.menu_name, m.menu_detail, m.menu_price, m.menu_image_url AS menu_image_url,
@@ -188,6 +207,38 @@ public class MenuRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public UUID updateMenu(Menu request, UUID menuCode) {
+        try {
+            String sql = """
+            UPDATE menu
+            SET
+                menu_name = :menu_name,
+                menu_detail = :menu_detail,
+                menu_price = :menu_price,
+                updated_at = :updated_at,
+                is_active = :is_active,
+                menu_image_url = :menu_image_url
+            WHERE menu_code = :menu_code
+            RETURNING menu_code;
+            """;
+
+            return jdbcClient.sql(sql)
+                    .param("menu_code", menuCode)
+                    .param("menu_name", request.getMenuName())
+                    .param("menu_detail", request.getMenuDetail())
+                    .param("menu_price", request.getMenuPrice())
+                    .param("updated_at", LocalDateTime.now())
+                    .param("is_active", request.getIsActive())
+                    .param("menu_image_url", request.getMenuImageUrl())
+                    .query(UUID.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
 
     public List<UUID> addMenus(List<Menu> menuList) {
         try {

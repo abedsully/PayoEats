@@ -15,6 +15,7 @@ import java.util.UUID;
 public interface IMenuService {
     CartMenuDto getMenuByCode(UUID[] menuCodes);
     UUID addMenu(AddMenuRequest request, MultipartFile file, Long userId);
+    UUID editMenu(AddMenuRequest request, MultipartFile file, Long userId, UUID menuCode);
     MenuDto convertToDto(Menu menu);
     List<MenuDto> getConvertedMenus(List<Menu> menus);
     List<Menu> getAllActiveMenu(UUID restaurantId);
@@ -23,5 +24,6 @@ public interface IMenuService {
     List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException;
     List<TopMenusDto> getTop5Menu(UUID restaurantId, Long userId);
     void editMenuAvailability(UUID menuCode, Long userId);
+    void editAllMenuAvailability(UUID restaurantId, Long userId, Boolean activate);
     Menu getMenuDetail(UUID menuCode, Long userId);
 }

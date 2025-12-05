@@ -50,6 +50,25 @@ public class MenuController {
         }
     }
 
+    @PostMapping(value = "/edit-menu", consumes = {"multipart/form-data"})
+    @Operation(summary = "Edit Menu in Restaurant", description = "API for edit menu in restaurant")
+    public ResponseEntity<ApiResponse> editMenu(
+            @RequestParam("menuCode") UUID menuCode,
+            @RequestParam("menuName") String menuName,
+            @RequestParam("menuDetail") String menuDetail,
+            @RequestParam("menuPrice") double menuPrice,
+            @RequestParam("isActive") boolean isActive,
+            @RequestParam(value = "menuImageFile", required = false) MultipartFile menuImageFile) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            AddMenuRequest request = new AddMenuRequest(menuName, menuDetail, menuPrice, isActive);
+            UUID id = menuService.editMenu(request, menuImageFile, user.getId(), menuCode);
+            return ResponseEntity.ok(new ApiResponse("Menu successfully added", id));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
     @PostMapping(value = "/preview-upload", consumes = {"multipart/form-data"})
     @Operation(summary = "Preview upload restaurant menu", description = "API for previewing uploaded restaurant menu")
     public ResponseEntity<ApiResponse> previewUploadMenu(@RequestParam MultipartFile file) {
@@ -75,10 +94,21 @@ public class MenuController {
     }
 
     @PostMapping(value = "/edit-availability")
-    public ResponseEntity<ApiResponse> uploadMenu(@RequestParam UUID menuCode) {
+    public ResponseEntity<ApiResponse> editAvailability(@RequestParam UUID menuCode) {
         try {
             User user = userService.getAuthenticatedUser();
             menuService.editMenuAvailability(menuCode, user.getId());
+            return ResponseEntity.ok(new ApiResponse("List Menu: ", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @PostMapping(value = "/edit-all-availability")
+    public ResponseEntity<ApiResponse> editAllAvailability(@RequestParam UUID restaurantId, @RequestParam boolean activate) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            menuService.editAllMenuAvailability(restaurantId, user.getId(), activate);
             return ResponseEntity.ok(new ApiResponse("List Menu: ", null));
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));

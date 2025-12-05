@@ -78,6 +78,55 @@ public class MenuService implements IMenuService{
     }
 
     @Override
+    public UUID editMenu(AddMenuRequest request, MultipartFile file, Long userId, UUID menuCode) {
+
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        Menu existing = menuRepository.getMenuDetail(menuCode);
+
+        boolean changed = false;
+
+        String menuImageUrl = existing.getMenuImageUrl();
+
+        if (file != null && !file.isEmpty()) {
+            menuImageUrl = uploadService.upload(file);
+            changed = true;
+        }
+
+        // Cek setiap field satu per satu
+        if (!existing.getMenuName().equals(request.getMenuName())) {
+            changed = true;
+        }
+
+        if (!existing.getMenuDetail().equals(request.getMenuDetail())) {
+            changed = true;
+        }
+
+        if (!existing.getMenuPrice().equals(request.getMenuPrice())) {
+            changed = true;
+        }
+
+        if (!existing.getIsActive().equals(request.getIsActive())) {
+            changed = true;
+        }
+
+        if (!changed) {
+            return existing.getMenuCode();
+        }
+
+        Menu menu = new Menu();
+        menu.setMenuName(request.getMenuName());
+        menu.setMenuDetail(request.getMenuDetail());
+        menu.setMenuPrice(request.getMenuPrice());
+        menu.setIsActive(request.getIsActive());
+        menu.setRestaurantId(user.getId());
+        menu.setMenuImageUrl(menuImageUrl);
+
+        return menuRepository.updateMenu(menu, menuCode);
+    }
+
+
+    @Override
     public MenuDto convertToDto(Menu menu) {
         return modelMapper.map(menu, MenuDto.class);
     }
@@ -188,6 +237,13 @@ public class MenuService implements IMenuService{
         CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
         menuRepository.editMenuAvailability(menuCode);
+    }
+
+    @Override
+    public void editAllMenuAvailability(UUID restaurantId, Long userId, Boolean activate) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        menuRepository.updateAllMenuAvailability(restaurantId, activate);
     }
 
     @Override
