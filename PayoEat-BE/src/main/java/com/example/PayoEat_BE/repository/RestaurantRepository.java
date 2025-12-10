@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -283,7 +284,7 @@ public class RestaurantRepository {
     public List<UUID> getRestaurantUUIDLists() {
         try {
             String sql = """
-                    select uuid from restaurant where is_active = true;
+                    select id from restaurant where is_active = true;
                     """;
 
             return jdbcClient.sql(sql)
@@ -332,7 +333,7 @@ public class RestaurantRepository {
         try {
             RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
 
-            LocalTime now = LocalTime.now();
+            LocalTime now = LocalTime.now(ZoneId.of("Asia/Jakarta"));
             LocalTime openingTime = restaurant.getOpeningHour();
             LocalTime closingTime = restaurant.getClosingHour();
 
@@ -340,13 +341,15 @@ public class RestaurantRepository {
 
             if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
 
-                // update DB
                 setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
 
                 System.out.println("[Scheduler] Restaurant " + restaurantId +
                         " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
 
             } else {
+
+                System.out.println("Time now: " + LocalTime.now(ZoneId.of("Asia/Jakarta")));
+
                 System.out.println("[Scheduler] Restaurant " + restaurantId +
                         " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
             }
