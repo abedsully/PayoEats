@@ -90,7 +90,6 @@ public class AuthController {
         } catch (AuthenticationException e) {
             return ResponseEntity.status(UNAUTHORIZED).body(new ApiResponse(e.getMessage(), null));
         }
-
     }
 
     @GetMapping("/user")

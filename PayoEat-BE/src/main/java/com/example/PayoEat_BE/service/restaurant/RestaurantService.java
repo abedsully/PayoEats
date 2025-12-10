@@ -216,6 +216,8 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.getRestaurantId(user.getUserId());
     }
 
+
+
     private void checkIfRestaurantExists(UUID restaurantId) {
         restaurantRepository.findRestaurantByIdAndIsActiveTrue(restaurantId)
                 .orElseThrow(() -> new NotFoundException("Restaurant is not found"));
@@ -231,6 +233,8 @@ public class RestaurantService implements IRestaurantService {
 
         return result;
     }
+
+
 
 
 }
