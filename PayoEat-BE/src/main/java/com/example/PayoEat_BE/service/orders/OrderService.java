@@ -426,7 +426,7 @@ public class OrderService implements IOrderService {
         double taxPrice = (subTotalPrice * restaurantTax) / 100;
         double totalPrice = subTotalPrice + taxPrice;
 
-        newRestaurantOrder.setOrderTime(LocalDateTime.now());
+        newRestaurantOrder.setOrderTime(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
         newRestaurantOrder.setTaxPrice(taxPrice);

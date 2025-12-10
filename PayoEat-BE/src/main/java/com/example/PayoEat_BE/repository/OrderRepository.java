@@ -64,7 +64,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("date", LocalDate.now())
-                    .param("order_time", LocalDateTime.now())
+                    .param("order_time", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_message", newRestaurantOrder.getOrderMessage())
                     .param("order_status", OrderStatus.RECEIVED.toString())
                     .param("restaurant_id", newRestaurantOrder.getRestaurantId())
@@ -443,7 +443,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("reason", rejectionReason)
-                    .param("begin_at", LocalDateTime.now())
+                    .param("begin_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("count", count)
                     .param("order_status", OrderStatus.PAYMENT.toString())
                     .param("order_id", orderId)
