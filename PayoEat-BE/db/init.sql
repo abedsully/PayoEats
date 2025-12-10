@@ -111,7 +111,8 @@ CREATE TABLE IF NOT EXISTS restaurant (
     restaurant_category INTEGER,
     FOREIGN KEY (restaurant_category) REFERENCES restaurant_category(id),
     tax INTEGER,
-    restaurant_image_url TEXT
+    restaurant_image_url TEXT,
+    is_open BOOLEAN DEFAULT TRUE
 );
 
 INSERT INTO restaurant (id, name, rating, total_rating, description, created_at, updated_at, is_active, user_id, opening_hour, closing_hour, location, telephone_number, qris_image_url, color, restaurant_category, tax, restaurant_image_url)

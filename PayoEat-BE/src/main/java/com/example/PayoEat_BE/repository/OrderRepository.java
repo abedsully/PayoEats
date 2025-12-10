@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Repository
@@ -387,7 +388,7 @@ public class OrderRepository {
                     """;
 
             return jdbcClient.sql(sql)
-                    .param("dine_in_time", LocalTime.now())
+                    .param("dine_in_time", LocalTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_status", OrderStatus.ACTIVE.toString())
                     .param("order_id", orderId)
                     .update();
