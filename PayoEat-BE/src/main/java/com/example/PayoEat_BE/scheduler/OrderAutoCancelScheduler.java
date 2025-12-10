@@ -1,6 +1,8 @@
 package com.example.PayoEat_BE.scheduler;
 
+import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.repository.OrderRepository;
+import com.example.PayoEat_BE.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -12,8 +14,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class OrderAutoCancelScheduler {
-
     private final OrderRepository orderRepository;
+    private final RestaurantRepository restaurantRepository;
 
     @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {
@@ -29,4 +31,18 @@ public class OrderAutoCancelScheduler {
             orderRepository.updateOrderStatus(orderId);
         }
     }
+
+    @Scheduled(fixedRate = 60000)
+    public void updateRestaurantOpenStatusScheduler() {
+        List<UUID> restaurantUUIDLists = restaurantRepository.getRestaurantUUIDLists();
+
+        for (UUID restaurantId : restaurantUUIDLists) {
+            try {
+                restaurantRepository.updateOpenStatusForRestaurant(restaurantId);
+            } catch (Exception e) {
+                System.out.println("[Scheduler] Error updating restaurant ");
+            }
+        }
+    }
+
 }

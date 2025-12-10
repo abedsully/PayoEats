@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.dto.RestaurantOpenStatusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.enums.OrderStatus;
@@ -12,7 +13,9 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -276,6 +279,85 @@ public class RestaurantRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public List<UUID> getRestaurantUUIDLists() {
+        try {
+            String sql = """
+                    select uuid from restaurant where is_active = true;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .query(UUID.class).list();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public RestaurantOpenStatusDto getRestaurantOpenStatus(UUID restaurantId) {
+        try {
+            String sql = """
+                    select id, opening_hour, closing_hour, is_open from restaurant where id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(RestaurantOpenStatusDto.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private Integer setRestaurantIsOpenStatus(UUID restaurantId, Boolean status) {
+        try {
+            String sql = """
+                UPDATE restaurant
+                SET is_open = :status
+                WHERE id = :restaurant_id
+                """;
+
+            return jdbcClient.sql(sql)
+                    .param("status", status)
+                    .param("restaurant_id", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update restaurant open status: " + e.getMessage());
+        }
+    }
+
+    public Integer updateOpenStatusForRestaurant(UUID restaurantId) {
+        try {
+            RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
+
+            LocalTime now = LocalTime.now();
+            LocalTime openingTime = restaurant.getOpeningHour();
+            LocalTime closingTime = restaurant.getClosingHour();
+
+            boolean shouldBeOpen = now.isAfter(openingTime) && now.isBefore(closingTime);
+
+            if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
+
+                // update DB
+                setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
+
+                System.out.println("[Scheduler] Restaurant " + restaurantId +
+                        " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
+
+            } else {
+                System.out.println("[Scheduler] Restaurant " + restaurantId +
+                        " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
+            }
+
+            return 1;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update open status: " + e.getMessage());
+        }
+    }
+
 
 
 }

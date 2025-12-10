@@ -32,4 +32,5 @@ public class Restaurant {
     private String qrisImageUrl;
     private String color;
     private Long restaurantCategory;
+    private Boolean isOpen;
 }
