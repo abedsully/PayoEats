@@ -63,7 +63,7 @@ public class RestaurantRepository {
                     .param("rating", 0.0)
                     .param("total_rating_count", 0L)
                     .param("description", request.getDescription())
-                    .param("created_at", LocalDateTime.now())
+                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("updated_at", null)
                     .param("is_active", false)
                     .param("tax", request.getTax())

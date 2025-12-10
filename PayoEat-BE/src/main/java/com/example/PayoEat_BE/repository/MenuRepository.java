@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -197,7 +198,7 @@ public class MenuRepository {
                     .param("menu_detail", request.getMenuDetail())
                     .param("menu_price", request.getMenuPrice())
                     .param("is_active", request.getIsActive())
-                    .param("created_at", LocalDateTime.now())
+                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("restaurant_id", request.getRestaurantId())
                     .param("menu_image_url", request.getMenuImageUrl())
                     .query(UUID.class)
@@ -228,7 +229,7 @@ public class MenuRepository {
                     .param("menu_name", request.getMenuName())
                     .param("menu_detail", request.getMenuDetail())
                     .param("menu_price", request.getMenuPrice())
-                    .param("updated_at", LocalDateTime.now())
+                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("is_active", request.getIsActive())
                     .param("menu_image_url", request.getMenuImageUrl())
                     .query(UUID.class)

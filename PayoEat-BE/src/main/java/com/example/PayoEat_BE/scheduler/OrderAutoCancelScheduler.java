@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public class OrderAutoCancelScheduler {
 
     @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {
-        System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now());
+        System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
         List<UUID> expiredOrders = orderRepository.findExpiredOrders(cutoffTime);
