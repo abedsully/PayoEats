@@ -38,4 +38,5 @@ public class Order {
     private Long paymentImageRejectionCount;
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
+    private String customerName;
 }
