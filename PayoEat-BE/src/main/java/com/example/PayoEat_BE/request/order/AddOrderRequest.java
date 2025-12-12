@@ -17,4 +17,5 @@ public class AddOrderRequest {
     private String orderMessage;
     private LocalTime dineInTime;
     private Long quotas;
+    private String customerName;
 }

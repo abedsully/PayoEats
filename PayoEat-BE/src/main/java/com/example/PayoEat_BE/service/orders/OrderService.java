@@ -432,6 +432,8 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setTotalPrice(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setDineInTime(null);
+        newRestaurantOrder.setOrderMessage(request.getOrderMessage());
+        newRestaurantOrder.setCustomerName(request.getCustomerName());
         newRestaurantOrder.setCreatedDate(LocalDate.now());
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);

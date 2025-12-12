@@ -41,7 +41,8 @@ public class OrderRepository {
                         dine_in_time,
                         payment_image_rejection_reason,
                         payment_image_rejection_count,
-                        payment_status
+                        payment_status,
+                        customer_name
                     ) VALUES (
                         :date,
                         :order_time,
@@ -57,7 +58,8 @@ public class OrderRepository {
                         NULL,
                         NULL,
                         0,
-                        NULL
+                        NULL,
+                        :customer_name
                     )
                     RETURNING id;
                     """;
@@ -71,6 +73,7 @@ public class OrderRepository {
                     .param("sub_total", newRestaurantOrder.getSubTotal())
                     .param("total_price", newRestaurantOrder.getTotalPrice())
                     .param("tax_price", newRestaurantOrder.getTaxPrice())
+                    .param("customer_name", newRestaurantOrder.getCustomerName())
                     .query(UUID.class)
                     .single();
 
