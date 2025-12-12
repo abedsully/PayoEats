@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.restaurant;
 
 import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
@@ -146,8 +147,8 @@ public class RestaurantService implements IRestaurantService {
 
         emailService.sendConfirmationEmail(request.getEmail(), token);
 
-        String url1 = uploadService.upload(restaurantImageUrl);
-        String url2 = uploadService.upload(qrisImageUrl);
+        String url1 = uploadService.upload(restaurantImageUrl, UploadType.RESTAURANT);
+        String url2 = uploadService.upload(qrisImageUrl, UploadType.QR);
 
         return restaurantRepository.addRestaurant(request, userId, url1, url2);
     }

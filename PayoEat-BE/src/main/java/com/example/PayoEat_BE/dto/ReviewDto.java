@@ -10,8 +10,8 @@ public class ReviewDto {
     private String reviewContent;
     private LocalDateTime createdAt;
     private UUID restaurantId;
-    private Long userId;
-    private String username;
+    private String customerName;
     private Double rating;
     private String reviewImageUrl;
+    private String reviewOrderLists;
 }

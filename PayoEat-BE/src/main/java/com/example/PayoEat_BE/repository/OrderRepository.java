@@ -190,6 +190,8 @@ public class OrderRepository {
         try {
             String sql = """
             SELECT 
+                o.customer_name,
+                o.restaurant_id,
                 o.id AS order_id,
                 o.created_date,
                 o.order_time,
@@ -197,15 +199,12 @@ public class OrderRepository {
                 o.sub_total,
                 o.total_price,
                 o.tax_price,
-
                 oi.id AS order_item_id,
                 oi.menu_code,
                 oi.quantity,
-
                 m.menu_name,
                 m.menu_price,
                 m.menu_image_url AS menu_image_url
-
             FROM orders o
             JOIN order_items oi ON oi.order_id = o.id
             JOIN menu m ON m.menu_code = oi.menu_code
@@ -247,6 +246,7 @@ public class OrderRepository {
                     dto.setOrderTime(ts.toLocalDateTime());
                 }
                 dto.setOrderMessage((String) row.get("order_message"));
+                dto.setCustomerName((String) row.get("customer_name"));
 
                 Object subTotalObj = row.get("sub_total");
                 if (subTotalObj instanceof BigDecimal bd) {

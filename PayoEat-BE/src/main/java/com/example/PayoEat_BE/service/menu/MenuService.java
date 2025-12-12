@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
 import com.example.PayoEat_BE.dto.TopMenusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Menu;
@@ -61,7 +62,7 @@ public class MenuService implements IMenuService{
     public UUID addMenu(AddMenuRequest request, MultipartFile file, Long userId) {
         CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-        String menuImageUrl = uploadService.upload(file);
+        String menuImageUrl = uploadService.upload(file, UploadType.MENU);
 
         Menu menu = new Menu();
         if (!menuImageUrl.isEmpty() || !menuImageUrl.isBlank()) {
@@ -89,7 +90,7 @@ public class MenuService implements IMenuService{
         String menuImageUrl = existing.getMenuImageUrl();
 
         if (file != null && !file.isEmpty()) {
-            menuImageUrl = uploadService.upload(file);
+            menuImageUrl = uploadService.upload(file, UploadType.MENU);
             changed = true;
         }
 

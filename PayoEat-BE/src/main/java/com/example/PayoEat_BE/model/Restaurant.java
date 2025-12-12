@@ -17,7 +17,7 @@ public class Restaurant {
     private UUID id;
     private String name;
     private Double rating;
-    private Long totalRatingCount;
+    private Long totalRating;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

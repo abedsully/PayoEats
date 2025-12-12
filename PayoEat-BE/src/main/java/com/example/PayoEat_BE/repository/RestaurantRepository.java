@@ -239,7 +239,7 @@ public class RestaurantRepository {
     public Integer addReview(UUID id, Double rating, Long total) {
         try {
             String sql = """
-                    UPDATE restaurant set rating = :rating, total_rating_count = :count
+                    UPDATE restaurant set rating = :rating, total_rating = :total
                     where id = :id;
                     """;
 
