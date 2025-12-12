@@ -8,16 +8,16 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-
 public class OrderDetailResponseDto {
     private UUID orderId;
+    private UUID restaurantId;
     private LocalDate createdDate;
     private LocalDateTime orderTime;
     private String orderMessage;
-
     private Double subTotal;
     private Double totalPrice;
     private Double taxPrice;
+    private String customerName;
 
     private List<OrderItemDetailDto> items;
 }

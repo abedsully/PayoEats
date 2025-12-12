@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.*;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
@@ -71,7 +72,7 @@ public class OrderService implements IOrderService {
             throw new InvalidException("Unable to add payment proof as the order status is not PAYMENT");
         }
 
-        String url = uploadService.upload(file);
+        String url = uploadService.upload(file, UploadType.PAYMENT);
 
         orderRepository.addPaymentProof(order.getId(), url);
     }
