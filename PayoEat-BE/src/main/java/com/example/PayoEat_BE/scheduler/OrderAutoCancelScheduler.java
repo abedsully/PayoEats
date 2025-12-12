@@ -22,7 +22,7 @@ public class OrderAutoCancelScheduler {
     public void cancelExpiredOrders() {
         System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
+        LocalDateTime cutoffTime = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).minusMinutes(10);
         List<UUID> expiredOrders = orderRepository.findExpiredOrders(cutoffTime);
 
         System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired orders.");

@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -174,7 +175,7 @@ public class MenuService implements IMenuService{
                 menu.setMenuDetail(getCellValue(row.getCell(2)));
                 menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
                 menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
+                menu.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
                 menu.setRestaurantId(UUID.randomUUID());
 
                 menuList.add(menu);
@@ -212,7 +213,7 @@ public class MenuService implements IMenuService{
                 menu.setMenuDetail(getCellValue(row.getCell(2)));
                 menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
                 menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
+                menu.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
                 menu.setRestaurantId(UUID.randomUUID());
                 menu.setIsActive(true);
                 menuList.add(menu);

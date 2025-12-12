@@ -30,4 +30,5 @@ public interface IOrderService {
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
     ProgressOrderDto getProgressOrder(UUID orderId);
     Boolean checkPayment(UUID orderId);
+    List<RecentOrderDto> getRecentOrderLists(UUID restaurantId);
 }

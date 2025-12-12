@@ -230,6 +230,12 @@ public class OrderService implements IOrderService {
         return orderRepository.checkPayment(order.getId());
     }
 
+    @Override
+    public List<RecentOrderDto> getRecentOrderLists(UUID restaurantId) {
+
+        return orderRepository.getRecentOrder(restaurantId);
+    }
+
     private CheckOrderDto checkOrderExistance(UUID orderId) {
         return orderRepository.checkOrderExistance(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
@@ -435,7 +441,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setOrderMessage(request.getOrderMessage());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
-        newRestaurantOrder.setCreatedDate(LocalDate.now());
+        newRestaurantOrder.setCreatedDate(LocalDate.now(ZoneId.of("Asia/Jakarta")));
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 

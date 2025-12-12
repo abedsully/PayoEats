@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,7 +54,7 @@ public class RestaurantApprovalRepository {
                     .param("restaurant_name", request.getRestaurantName())
                     .param("restaurant_image_url", request.getRestaurantImageUrl())
                     .param("user_id", request.getUserId())
-                    .param("requested_at", LocalDateTime.now())
+                    .param("requested_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("reason", null)
                     .param("processed_at", null)
                     .param("is_approved", Boolean.FALSE)
