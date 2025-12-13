@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Data
 public class ProgressOrderDto {
+    private UUID restaurantId;
     private UUID orderId;
     private String restaurantName;
     private Double totalPrice;
