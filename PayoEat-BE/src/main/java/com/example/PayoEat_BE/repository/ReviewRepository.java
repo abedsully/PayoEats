@@ -86,7 +86,7 @@ public class ReviewRepository {
             left join menu m on
                 m.menu_code = oi.menu_code
             where
-                r.restaurant_id = restaurantId
+                r.restaurant_id = :restaurantId
                 and r.is_active = true
             group by
                 r.review_content,

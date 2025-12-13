@@ -221,8 +221,8 @@ public class OrderRepository {
             String sql = """
             SELECT 
                 o.customer_name,
-                o.restaurant_id,
                 o.id AS order_id,
+                o.restaurant_id,
                 o.created_date,
                 o.order_time,
                 o.order_message,
@@ -266,6 +266,7 @@ public class OrderRepository {
 
             if (dto.getOrderId() == null) {
                 dto.setOrderId((UUID) row.get("order_id"));
+                dto.setRestaurantId((UUID) row.get("restaurant_id"));
                 Object createdDateObj = row.get("created_date");
                 if (createdDateObj instanceof java.sql.Date sqlDate) {
                     dto.setCreatedDate(sqlDate.toLocalDate());
@@ -357,7 +358,7 @@ public class OrderRepository {
 
     public ProgressOrderDto getProgressOrder(UUID orderId) {
         try {
-            String sql = "SELECT o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
+            String sql = "SELECT o.restaurant_id, o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
                     "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo " +
                     "FROM orders o join restaurant r on o.restaurant_id  = r.id " +
                     "WHERE o.id = :orderId";

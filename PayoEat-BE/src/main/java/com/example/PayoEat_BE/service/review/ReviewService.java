@@ -71,6 +71,10 @@ public class ReviewService implements IReviewService{
         OrderDetailResponseDto order = orderRepository.getOrderDetails(request.getOrderId());
 
         if (!request.getRestaurantId().equals(order.getRestaurantId())) {
+            System.out.println(request.getRestaurantId());
+            System.out.println(request.getOrderId());
+            System.out.println(order.getRestaurantId());
+
             throw new IllegalArgumentException("Sorry, it seems that you never dine in this restaurant");
         }
 
