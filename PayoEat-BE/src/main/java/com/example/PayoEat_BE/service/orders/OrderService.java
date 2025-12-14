@@ -8,6 +8,7 @@ import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.service.UploadService;
+import com.example.PayoEat_BE.service.user.IUserService;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
@@ -34,6 +35,7 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
     private final UploadService uploadService;
+    private final IUserService userService;
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
@@ -53,7 +55,16 @@ public class OrderService implements IOrderService {
 
         validateMenuCodes(request.getItems(), request.getRestaurantId());
 
-        return createOrder(request);
+        // Get customer ID if authenticated, otherwise null for guest orders
+        Long customerId = null;
+        try {
+            User user = userService.getAuthenticatedUser();
+            customerId = user.getId();
+        } catch (Exception e) {
+            // Guest user - customer_id will be null
+        }
+
+        return createOrder(request, customerId);
     }
 
     private void validateMenuCodes(List<OrderItemRequest> orderItems, UUID restaurantId) {
@@ -380,13 +391,14 @@ public class OrderService implements IOrderService {
         return new ArrayList<>(orderMap.values());
     }
 
-    private UUID createOrder(AddOrderRequest request) {
+    private UUID createOrder(AddOrderRequest request, Long customerId) {
         checkIfRestaurantExists(request.getRestaurantId());
 
         Long restaurantTax = restaurantRepository.getRestaurantTax(request.getRestaurantId());
 
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setRestaurantId(request.getRestaurantId());
+        newRestaurantOrder.setCustomerId(customerId);
 
         String orderMessage = request.getOrderMessage();
         newRestaurantOrder.setOrderMessage(

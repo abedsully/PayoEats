@@ -32,6 +32,7 @@ public class OrderRepository {
                         is_active,
                         order_status,
                         restaurant_id,
+                        customer_id,
                         payment_begin_at,
                         sub_total,
                         total_price,
@@ -48,6 +49,7 @@ public class OrderRepository {
                         TRUE,
                         :order_status,
                         :restaurant_id,
+                        :customer_id,
                         NULL,
                         :sub_total,
                         :total_price,
@@ -67,6 +69,7 @@ public class OrderRepository {
                     .param("order_message", newRestaurantOrder.getOrderMessage())
                     .param("order_status", OrderStatus.RECEIVED.toString())
                     .param("restaurant_id", newRestaurantOrder.getRestaurantId())
+                    .param("customer_id", newRestaurantOrder.getCustomerId())
                     .param("sub_total", newRestaurantOrder.getSubTotal())
                     .param("total_price", newRestaurantOrder.getTotalPrice())
                     .param("tax_price", newRestaurantOrder.getTaxPrice())
