@@ -360,6 +360,7 @@ public class OrderService implements IOrderService {
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
                 dto.setDineInTime(r.getDineInTime());
+                dto.setPaymentBeginAt(r.getPaymentBeginAt());
                 return dto;
             });
 
@@ -443,5 +444,54 @@ public class OrderService implements IOrderService {
         orderItemRepository.addMenuItems(orderItems);
 
         return savedOrder;
+    }
+
+    @Override
+    public List<OrderHistoryDto> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status) {
+        List<OrderHistoryRow> rows = orderRepository.getCustomerOrderHistory(customerId, startDate, endDate, status);
+        return groupOrderHistoryRows(rows);
+    }
+
+    @Override
+    public List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status) {
+        List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(restaurantId, startDate, endDate, status);
+        return groupOrderHistoryRows(rows);
+    }
+
+    private List<OrderHistoryDto> groupOrderHistoryRows(List<OrderHistoryRow> rows) {
+        Map<UUID, OrderHistoryDto> orderMap = new LinkedHashMap<>();
+
+        for (OrderHistoryRow row : rows) {
+            orderMap.computeIfAbsent(row.getOrderId(), id -> {
+                OrderHistoryDto dto = new OrderHistoryDto();
+                dto.setOrderId(id);
+                dto.setRestaurantId(row.getRestaurantId());
+                dto.setRestaurantName(row.getRestaurantName());
+                dto.setOrderTime(row.getOrderTime());
+                dto.setOrderStatus(row.getOrderStatus());
+                dto.setPaymentStatus(row.getPaymentStatus());
+                dto.setSubTotal(row.getSubTotal());
+                dto.setTotalPrice(row.getTotalPrice());
+                dto.setTaxPrice(row.getTaxPrice());
+                dto.setItemCount(0L);
+                dto.setMenuLists(new ArrayList<>());
+                return dto;
+            });
+
+            OrderHistoryDto dto = orderMap.get(row.getOrderId());
+
+            MenuListDto menu = new MenuListDto();
+            menu.setMenuCode(row.getMenuCode());
+            menu.setMenuName(row.getMenuName());
+            menu.setMenuPrice(row.getMenuPrice());
+            menu.setMenuImageUrl(row.getMenuImageUrl());
+            menu.setQuantity(row.getQuantity());
+            menu.setTotalPrice(row.getMenuPrice() * row.getQuantity());
+
+            dto.getMenuLists().add(menu);
+            dto.setItemCount(dto.getItemCount() + row.getQuantity());
+        }
+
+        return new ArrayList<>(orderMap.values());
     }
 }

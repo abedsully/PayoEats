@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.OrderDetailResponseDto;
+import com.example.PayoEat_BE.dto.orders.OrderHistoryDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.OrderRepository;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -355,6 +357,60 @@ public class OrderController {
         } catch (Exception e) {
             System.err.println("Error in handleRestaurantOrderRequest: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    @GetMapping("/history/customer")
+    @Operation(summary = "Get customer order history", description = "Retrieve order history for authenticated customer")
+    public ResponseEntity<ApiResponse> getCustomerOrderHistory(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String status
+    ) {
+        try {
+            User user = userService.getAuthenticatedUser();
+
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
+
+            List<OrderHistoryDto> history = orderService.getCustomerOrderHistory(
+                user.getId(),
+                start,
+                end,
+                status
+            );
+
+            return ResponseEntity.ok(new ApiResponse("Order history retrieved successfully", history));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/history/restaurant")
+    @Operation(summary = "Get restaurant order history", description = "Retrieve order history for restaurant")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> getRestaurantOrderHistory(
+            @RequestParam UUID restaurantId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String status
+    ) {
+        try {
+            User user = userService.getAuthenticatedUser();
+
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
+
+            List<OrderHistoryDto> history = orderService.getRestaurantOrderHistory(
+                restaurantId,
+                start,
+                end,
+                status
+            );
+
+            return ResponseEntity.ok(new ApiResponse("Order history retrieved successfully", history));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 }

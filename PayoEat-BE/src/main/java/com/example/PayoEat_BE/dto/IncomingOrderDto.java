@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class IncomingOrderDto {
     private Double totalPrice;
     private Double subTotal;
     private Double taxPrice;
+
     private LocalDateTime receivedAt;
 }
 

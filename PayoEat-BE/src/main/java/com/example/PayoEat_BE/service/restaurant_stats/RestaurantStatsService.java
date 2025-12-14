@@ -38,12 +38,17 @@ public class RestaurantStatsService implements IRestaurantStatsService {
 
     @Override
     public DashboardResponseDto getCompleteDashboard(UUID restaurantId, Long userId,
-                                                      LocalDate startDate, LocalDate endDate, Integer days) {
+                                                      LocalDate startDate, LocalDate endDate, Integer days, Boolean allTime) {
         // If no date range provided, use defaults
         LocalDate effectiveEndDate;
         LocalDate effectiveStartDate;
 
-        if (startDate == null && endDate == null) {
+        // Handle all-time request
+        if (allTime != null && allTime) {
+            effectiveEndDate = LocalDate.now();
+            // Query from year 2000 to capture all historical data
+            effectiveStartDate = LocalDate.of(2000, 1, 1);
+        } else if (startDate == null && endDate == null) {
             effectiveEndDate = LocalDate.now();
             effectiveStartDate = effectiveEndDate.minusDays(days != null ? days - 1 : 6);
         } else if (startDate != null && endDate != null) {

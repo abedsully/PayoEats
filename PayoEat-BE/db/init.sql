@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS orders (
     is_active BOOLEAN,
     order_status VARCHAR(255),
     restaurant_id UUID,
+    customer_id BIGINT,
     payment_begin_at TIMESTAMPTZ,
     sub_total DOUBLE PRECISION,
     total_price DOUBLE PRECISION,
@@ -19,6 +20,8 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_image_rejection_count BIGINT,
     payment_status VARCHAR(255)
 );
+
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
 
 CREATE TABLE IF NOT EXISTS order_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -146,8 +149,19 @@ CREATE TABLE IF NOT EXISTS menu (
 );
 
 INSERT INTO menu (menu_code, menu_name, menu_detail, menu_price, created_at, updated_at, is_active, restaurant_id, menu_image_url) VALUES
+-- Sunset Grill Menus (10 total)
 ('a0010000-0000-0000-0000-000000000001', 'Grilled Ribeye', 'Juicy ribeye steak grilled to perfection.', 25.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092'),
 ('a0010000-0000-0000-0000-000000000002', 'BBQ Chicken', 'Charcoal grilled chicken with BBQ sauce.', 14.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://cheflindseyfarr.com/wp-content/uploads/2013/04/baked-bbq-chicken-balck-skillet.jpg'),
+('a0010000-0000-0000-0000-000000000030', 'Grilled Lamb Chops', 'Tender lamb chops with rosemary.', 28.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143'),
+('a0010000-0000-0000-0000-000000000031', 'Smoked Brisket', 'Slow-smoked beef brisket.', 22.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1544025162-d76694265947'),
+('a0010000-0000-0000-0000-000000000032', 'Grilled Salmon', 'Fresh Atlantic salmon with herbs.', 21.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1467003909585-2f8a72700288'),
+('a0010000-0000-0000-0000-000000000033', 'BBQ Ribs', 'Fall-off-the-bone pork ribs.', 19.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1544025162-d76694265947'),
+('a0010000-0000-0000-0000-000000000034', 'Grilled Shrimp Skewers', 'Marinated shrimp on skewers.', 18.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1565557623262-b51c2513a641'),
+('a0010000-0000-0000-0000-000000000035', 'Sunset Burger', 'Premium beef burger with special sauce.', 16.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd'),
+('a0010000-0000-0000-0000-000000000036', 'Grilled Veggie Platter', 'Assorted grilled vegetables.', 13.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1540420773420-3366772f4999'),
+('a0010000-0000-0000-0000-000000000037', 'Chicken Wings', 'Spicy buffalo wings.', 12.99, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440000', 'https://images.unsplash.com/photo-1608039755401-742074f0548d'),
+
+-- Other Restaurant Menus
 ('a0010000-0000-0000-0000-000000000003', 'Vegan Buddha Bowl', 'Quinoa, tofu, and fresh vegetables.', 12.50, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', 'https://www.crazyvegankitchen.com/wp-content/uploads/2023/11/buddha-bowl-recipe.jpg'),
 ('a0010000-0000-0000-0000-000000000004', 'Avocado Toast', 'Whole grain bread with smashed avocado.', 9.75, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440001', 'https://www.allrecipes.com/thmb/8NccFzsaq0_OZPDKmf7Yee-aG78=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/AvocadoToastwithEggFranceC4x3-bb87e3bbf1944657b7db35f1383fabdb.jpg'),
 ('a0010000-0000-0000-0000-000000000005', 'Grilled Salmon', 'Fresh salmon with lemon butter.', 22.00, NOW(), NOW(), true, '550e8400-e29b-41d4-a716-446655440002', 'https://www.pccmarkets.com/wp-content/uploads/2017/08/pcc-rosemary-grilled-salmon-flo.jpg'),
@@ -194,124 +208,186 @@ INSERT INTO users (id, username, email, role_id, password, created_at, updated_a
 (110, NULL, 'bbqbrothers@example.com', 2, 'hashed_password_10', '2024-01-12T15:00:00', '2025-05-01T17:00:00', true, 'token_10', 'BBQ Brothers'),
 (111, 'admin', 'test@gmail.com', 1, 'hashed_test1234', '2024-01-01T10:00:00', '2025-05-01T09:30:00', true, 'admin_token', NULL);
 
-INSERT INTO orders (id, created_date, order_time, is_active, order_status, restaurant_id, sub_total, total_price, tax_price, payment_status) VALUES
-('d0000001', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000002', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000003', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 44.97, 49.47, 4.50, 'PAID'),
-('d0000004', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID'),
-('d0000005', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 77.97, 85.77, 7.80, 'PAID'),
-('d0000006', CURRENT_DATE, CURRENT_TIMESTAMP, true, 'CANCELLED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'REFUNDED'),
-('d0000007', CURRENT_DATE - 1, CURRENT_TIMESTAMP - INTERVAL '1 day', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000008', CURRENT_DATE - 1, CURRENT_TIMESTAMP - INTERVAL '1 day', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 29.98, 32.98, 3.00, 'PAID'),
-('d0000009', CURRENT_DATE - 1, CURRENT_TIMESTAMP - INTERVAL '1 day', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000010', CURRENT_DATE - 1, CURRENT_TIMESTAMP - INTERVAL '1 day', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000011', CURRENT_DATE - 1, CURRENT_TIMESTAMP - INTERVAL '1 day', true, 'CANCELLED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'REFUNDED'),
-('d0000012', CURRENT_DATE - 2, CURRENT_TIMESTAMP - INTERVAL '2 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 66.96, 73.66, 6.70, 'PAID'),
-('d0000013', CURRENT_DATE - 2, CURRENT_TIMESTAMP - INTERVAL '2 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID'),
-('d0000014', CURRENT_DATE - 3, CURRENT_TIMESTAMP - INTERVAL '3 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000015', CURRENT_DATE - 3, CURRENT_TIMESTAMP - INTERVAL '3 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000016', CURRENT_DATE - 3, CURRENT_TIMESTAMP - INTERVAL '3 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000017', CURRENT_DATE - 4, CURRENT_TIMESTAMP - INTERVAL '4 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 29.98, 32.98, 3.00, 'PAID'),
-('d0000018', CURRENT_DATE - 4, CURRENT_TIMESTAMP - INTERVAL '4 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 77.97, 85.77, 7.80, 'PAID'),
-('d0000019', CURRENT_DATE - 4, CURRENT_TIMESTAMP - INTERVAL '4 days', true, 'CANCELLED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'REFUNDED'),
-('d0000020', CURRENT_DATE - 5, CURRENT_TIMESTAMP - INTERVAL '5 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000021', CURRENT_DATE - 5, CURRENT_TIMESTAMP - INTERVAL '5 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID'),
-('d0000022', CURRENT_DATE - 5, CURRENT_TIMESTAMP - INTERVAL '5 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000023', CURRENT_DATE - 6, CURRENT_TIMESTAMP - INTERVAL '6 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000024', CURRENT_DATE - 6, CURRENT_TIMESTAMP - INTERVAL '6 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 66.96, 73.66, 6.70, 'PAID'),
-('d0000025', CURRENT_DATE - 7, CURRENT_TIMESTAMP - INTERVAL '7 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000026', CURRENT_DATE - 7, CURRENT_TIMESTAMP - INTERVAL '7 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 29.98, 32.98, 3.00, 'PAID'),
-('d0000027', CURRENT_DATE - 8, CURRENT_TIMESTAMP - INTERVAL '8 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 77.97, 85.77, 7.80, 'PAID'),
-('d0000028', CURRENT_DATE - 8, CURRENT_TIMESTAMP - INTERVAL '8 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000029', CURRENT_DATE - 14, CURRENT_TIMESTAMP - INTERVAL '14 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000030', CURRENT_DATE - 14, CURRENT_TIMESTAMP - INTERVAL '14 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000031', CURRENT_DATE - 20, CURRENT_TIMESTAMP - INTERVAL '20 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 66.96, 73.66, 6.70, 'PAID'),
-('d0000032', CURRENT_DATE - 20, CURRENT_TIMESTAMP - INTERVAL '20 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID'),
-('d0000033', CURRENT_DATE - 20, CURRENT_TIMESTAMP - INTERVAL '20 days', true, 'CANCELLED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'REFUNDED'),
-('d0000034', CURRENT_DATE - 25, CURRENT_TIMESTAMP - INTERVAL '25 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000035', CURRENT_DATE - 25, CURRENT_TIMESTAMP - INTERVAL '25 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 29.98, 32.98, 3.00, 'PAID'),
-('d0000036', CURRENT_DATE - 29, CURRENT_TIMESTAMP - INTERVAL '29 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000037', CURRENT_DATE - 29, CURRENT_TIMESTAMP - INTERVAL '29 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000038', CURRENT_DATE - 31, CURRENT_TIMESTAMP - INTERVAL '31 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 77.97, 85.77, 7.80, 'PAID'),
-('d0000039', CURRENT_DATE - 31, CURRENT_TIMESTAMP - INTERVAL '31 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000040', CURRENT_DATE - 35, CURRENT_TIMESTAMP - INTERVAL '35 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000041', CURRENT_DATE - 35, CURRENT_TIMESTAMP - INTERVAL '35 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 66.96, 73.66, 6.70, 'PAID'),
-('d0000042', CURRENT_DATE - 40, CURRENT_TIMESTAMP - INTERVAL '40 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 29.98, 32.98, 3.00, 'PAID'),
-('d0000043', CURRENT_DATE - 40, CURRENT_TIMESTAMP - INTERVAL '40 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID'),
-('d0000044', CURRENT_DATE - 45, CURRENT_TIMESTAMP - INTERVAL '45 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000045', CURRENT_DATE - 45, CURRENT_TIMESTAMP - INTERVAL '45 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000046', CURRENT_DATE - 45, CURRENT_TIMESTAMP - INTERVAL '45 days', true, 'CANCELLED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'REFUNDED'),
-('d0000047', CURRENT_DATE - 50, CURRENT_TIMESTAMP - INTERVAL '50 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 77.97, 85.77, 7.80, 'PAID'),
-('d0000048', CURRENT_DATE - 50, CURRENT_TIMESTAMP - INTERVAL '50 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 25.99, 28.59, 2.60, 'PAID'),
-('d0000049', CURRENT_DATE - 55, CURRENT_TIMESTAMP - INTERVAL '55 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 66.96, 73.66, 6.70, 'PAID'),
-('d0000050', CURRENT_DATE - 55, CURRENT_TIMESTAMP - INTERVAL '55 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 51.98, 57.18, 5.20, 'PAID'),
-('d0000051', CURRENT_DATE - 59, CURRENT_TIMESTAMP - INTERVAL '59 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 40.98, 45.08, 4.10, 'PAID'),
-('d0000052', CURRENT_DATE - 59, CURRENT_TIMESTAMP - INTERVAL '59 days', true, 'FINISHED', '550e8400-e29b-41d4-a716-446655440000', 14.99, 16.49, 1.50, 'PAID');
+DO $$
+DECLARE
+    sunset_grill_id UUID := '550e8400-e29b-41d4-a716-446655440000';
+    customer_id BIGINT := 111;
+    menu_codes UUID[] := ARRAY[
+        'a0010000-0000-0000-0000-000000000001'::UUID,
+        'a0010000-0000-0000-0000-000000000002'::UUID,
+        'a0010000-0000-0000-0000-000000000030'::UUID,
+        'a0010000-0000-0000-0000-000000000031'::UUID,
+        'a0010000-0000-0000-0000-000000000032'::UUID,
+        'a0010000-0000-0000-0000-000000000033'::UUID,
+        'a0010000-0000-0000-0000-000000000034'::UUID,
+        'a0010000-0000-0000-0000-000000000035'::UUID,
+        'a0010000-0000-0000-0000-000000000036'::UUID,
+        'a0010000-0000-0000-0000-000000000037'::UUID
+    ];
+    menu_prices DECIMAL[] := ARRAY[25.99, 14.99, 28.99, 22.50, 21.99, 19.99, 18.50, 16.99, 13.99, 12.99];
+    days_back INT;
+    order_uuid UUID;
+    order_date DATE;
+    order_timestamp TIMESTAMPTZ;
+    order_status TEXT;
+    payment_status TEXT;
+    menu_items INT;
+    menu_code UUID;
+    menu_idx INT;
+    quantity INT;
+    subtotal DECIMAL;
+    tax DECIMAL;
+    total DECIMAL;
+    is_active BOOLEAN;
+    order_count INT := 0;
+    received_count INT := 0;
+    payment_count INT := 0;
+    active_count INT := 0;
+BEGIN
+    -- First, create exactly 2 RECEIVED, 2 PAYMENT, and 2 ACTIVE orders for today
+    FOR i IN 1..6 LOOP
+        order_uuid := gen_random_uuid();
+        order_date := CURRENT_DATE;
+        order_timestamp := order_date + (RANDOM() * INTERVAL '14 hours') + INTERVAL '7 hours';
 
-INSERT INTO order_items (id, menu_code, quantity, order_id) VALUES
-('i0000001', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000001'),
-('i0000002', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000002'),
-('i0000003', 'a0010000-0000-0000-0000-000000000002', 3, 'd0000003'),
-('i0000004', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000004'),
-('i0000005', 'a0010000-0000-0000-0000-000000000001', 3, 'd0000005'),
-('i0000006', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000006'),
-('i0000007', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000007'),
-('i0000008', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000007'),
-('i0000009', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000008'),
-('i0000010', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000009'),
-('i0000011', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000010'),
-('i0000012', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000011'),
-('i0000013', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000012'),
-('i0000014', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000012'),
-('i0000015', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000013'),
-('i0000016', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000014'),
-('i0000017', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000014'),
-('i0000018', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000015'),
-('i0000019', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000015'),
-('i0000020', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000016'),
-('i0000021', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000017'),
-('i0000022', 'a0010000-0000-0000-0000-000000000001', 3, 'd0000018'),
-('i0000023', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000019'),
-('i0000024', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000020'),
-('i0000025', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000021'),
-('i0000026', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000022'),
-('i0000027', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000023'),
-('i0000028', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000023'),
-('i0000029', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000024'),
-('i0000030', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000024'),
-('i0000031', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000025'),
-('i0000032', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000026'),
-('i0000033', 'a0010000-0000-0000-0000-000000000001', 3, 'd0000027'),
-('i0000034', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000028'),
-('i0000035', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000028'),
-('i0000036', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000029'),
-('i0000037', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000030'),
-('i0000038', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000031'),
-('i0000039', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000031'),
-('i0000040', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000032'),
-('i0000041', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000033'),
-('i0000042', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000034'),
-('i0000043', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000034'),
-('i0000044', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000035'),
-('i0000045', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000036'),
-('i0000046', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000037'),
-('i0000047', 'a0010000-0000-0000-0000-000000000001', 3, 'd0000038'),
-('i0000048', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000039'),
-('i0000049', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000039'),
-('i0000050', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000040'),
-('i0000051', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000041'),
-('i0000052', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000041'),
-('i0000053', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000042'),
-('i0000054', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000043'),
-('i0000055', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000044'),
-('i0000056', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000045'),
-('i0000057', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000045'),
-('i0000058', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000046'),
-('i0000059', 'a0010000-0000-0000-0000-000000000001', 3, 'd0000047'),
-('i0000060', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000048'),
-('i0000061', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000049'),
-('i0000062', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000049'),
-('i0000063', 'a0010000-0000-0000-0000-000000000001', 2, 'd0000050'),
-('i0000064', 'a0010000-0000-0000-0000-000000000002', 2, 'd0000051'),
-('i0000065', 'a0010000-0000-0000-0000-000000000001', 1, 'd0000051'),
-('i0000066', 'a0010000-0000-0000-0000-000000000002', 1, 'd0000052');
+        -- Assign status to ensure 2 of each type
+        IF i <= 2 THEN
+            order_status := 'RECEIVED';
+            payment_status := NULL;
+            is_active := TRUE;
+        ELSIF i <= 4 THEN
+            order_status := 'PAYMENT';
+            payment_status := 'PENDING';
+            is_active := TRUE;
+        ELSE
+            order_status := 'ACTIVE';
+            payment_status := 'APPROVED';
+            is_active := TRUE;
+        END IF;
+
+        subtotal := 0;
+        menu_items := 1 + (RANDOM() * 3)::INT;
+
+        FOR item_num IN 1..menu_items LOOP
+            menu_idx := 1 + (RANDOM() * 9)::INT;
+            menu_code := menu_codes[menu_idx];
+            quantity := 1 + (RANDOM() * 2)::INT;
+            subtotal := subtotal + (menu_prices[menu_idx] * quantity);
+        END LOOP;
+
+        tax := subtotal * 0.1;
+        total := subtotal + tax;
+
+        INSERT INTO orders (
+            id, created_date, order_time, order_message, is_active,
+            order_status, restaurant_id, customer_id, payment_begin_at,
+            sub_total, total_price, tax_price, cancellation_reason,
+            dine_in_time, payment_image_url, payment_status
+        ) VALUES (
+            order_uuid,
+            order_date,
+            order_timestamp,
+            CASE WHEN RANDOM() < 0.3 THEN 'Extra napkins please' ELSE NULL END,
+            is_active,
+            order_status,
+            sunset_grill_id,
+            customer_id,
+            CASE WHEN order_status IN ('PAYMENT', 'ACTIVE') THEN order_timestamp + INTERVAL '5 minutes' ELSE NULL END,
+            subtotal,
+            total,
+            tax,
+            NULL,
+            CASE WHEN order_status = 'ACTIVE' THEN (order_timestamp + INTERVAL '30 minutes')::TIME ELSE NULL END,
+            CASE WHEN order_status IN ('ACTIVE') THEN 'https://example.com/payment.jpg' ELSE NULL END,
+            payment_status
+        );
+
+        -- Re-calculate for order_items insertion
+        subtotal := 0;
+        FOR item_num IN 1..menu_items LOOP
+            menu_idx := 1 + (RANDOM() * 9)::INT;
+            menu_code := menu_codes[menu_idx];
+            quantity := 1 + (RANDOM() * 2)::INT;
+
+            INSERT INTO order_items (id, menu_code, quantity, order_id)
+            VALUES (gen_random_uuid(), menu_code, quantity, order_uuid);
+        END LOOP;
+    END LOOP;
+
+    -- Then generate historical orders (past 30 days)
+    FOR days_back IN 0..30 LOOP
+        FOR order_num IN 1..(3 + (RANDOM() * 5)::INT) LOOP
+            order_uuid := gen_random_uuid();
+            order_date := CURRENT_DATE - (days_back || ' days')::INTERVAL;
+            order_timestamp := order_date + (RANDOM() * INTERVAL '14 hours') + INTERVAL '7 hours';
+
+            IF days_back = 0 THEN
+                -- Skip today's random orders, we already created specific ones
+                CONTINUE;
+            ELSIF days_back <= 3 THEN
+                CASE (RANDOM() * 3)::INT
+                    WHEN 0 THEN order_status := 'CONFIRMED'; payment_status := 'APPROVED'; is_active := TRUE;
+                    WHEN 1 THEN order_status := 'FINISHED'; payment_status := 'APPROVED'; is_active := FALSE;
+                    ELSE order_status := 'CANCELLED'; payment_status := NULL; is_active := FALSE;
+                END CASE;
+            ELSE
+                IF RANDOM() < 0.9 THEN
+                    order_status := 'FINISHED';
+                    payment_status := 'APPROVED';
+                    is_active := FALSE;
+                ELSE
+                    order_status := 'CANCELLED';
+                    payment_status := NULL;
+                    is_active := FALSE;
+                END IF;
+            END IF;
+
+            subtotal := 0;
+            menu_items := 1 + (RANDOM() * 3)::INT;
+
+            FOR item_num IN 1..menu_items LOOP
+                menu_idx := 1 + (RANDOM() * 9)::INT;
+                menu_code := menu_codes[menu_idx];
+                quantity := 1 + (RANDOM() * 2)::INT;
+                subtotal := subtotal + (menu_prices[menu_idx] * quantity);
+            END LOOP;
+
+            tax := subtotal * 0.1;
+            total := subtotal + tax;
+
+            INSERT INTO orders (
+                id, created_date, order_time, order_message, is_active,
+                order_status, restaurant_id, customer_id, payment_begin_at,
+                sub_total, total_price, tax_price, cancellation_reason,
+                dine_in_time, payment_image_url, payment_status
+            ) VALUES (
+                order_uuid,
+                order_date,
+                order_timestamp,
+                CASE WHEN RANDOM() < 0.3 THEN 'Extra napkins please' ELSE NULL END,
+                is_active,
+                order_status,
+                sunset_grill_id,
+                customer_id,
+                CASE WHEN order_status IN ('CONFIRMED', 'FINISHED') THEN order_timestamp + INTERVAL '5 minutes' ELSE NULL END,
+                subtotal,
+                total,
+                tax,
+                CASE WHEN order_status = 'CANCELLED' THEN 'Customer cancelled' ELSE NULL END,
+                CASE WHEN order_status IN ('FINISHED') THEN (order_timestamp + INTERVAL '30 minutes')::TIME ELSE NULL END,
+                CASE WHEN order_status IN ('CONFIRMED', 'FINISHED') THEN 'https://example.com/payment.jpg' ELSE NULL END,
+                payment_status
+            );
+
+            -- Insert order items
+            FOR item_num IN 1..menu_items LOOP
+                menu_idx := 1 + (RANDOM() * 9)::INT;
+                menu_code := menu_codes[menu_idx];
+                quantity := 1 + (RANDOM() * 2)::INT;
+
+                INSERT INTO order_items (id, menu_code, quantity, order_id)
+                VALUES (gen_random_uuid(), menu_code, quantity, order_uuid);
+            END LOOP;
+        END LOOP;
+    END LOOP;
+END $$;

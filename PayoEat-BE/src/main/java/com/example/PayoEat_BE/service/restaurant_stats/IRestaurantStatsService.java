@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface IRestaurantStatsService {
     TodayRestaurantStatsDto getTodayRestaurantStats(UUID restaurantId, Long userId);
-    DashboardResponseDto getCompleteDashboard(UUID restaurantId, Long userId, LocalDate startDate, LocalDate endDate, Integer days);
+    DashboardResponseDto getCompleteDashboard(UUID restaurantId, Long userId, LocalDate startDate, LocalDate endDate, Integer days, Boolean allTime);
 }

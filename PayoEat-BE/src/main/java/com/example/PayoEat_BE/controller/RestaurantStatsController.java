@@ -42,17 +42,18 @@ public class RestaurantStatsController {
     }
 
     @GetMapping("/dashboard")
-    @Operation(summary = "Get Complete Dashboard Data", description = "Get all dashboard statistics including today vs yesterday, weekly comparison, and popular items. Supports custom date ranges.")
+    @Operation(summary = "Get Complete Dashboard Data", description = "Get all dashboard statistics including today vs yesterday, weekly comparison, and popular items. Supports custom date ranges and all-time stats.")
     public ResponseEntity<ApiResponse> getDashboard(
             @RequestParam UUID restaurantId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false, defaultValue = "7") Integer days
+            @RequestParam(required = false, defaultValue = "7") Integer days,
+            @RequestParam(required = false, defaultValue = "false") Boolean allTime
     ) {
         try {
             User user = userService.getAuthenticatedUser();
             DashboardResponseDto result = restaurantStatsService.getCompleteDashboard(
-                    restaurantId, user.getId(), startDate, endDate, days
+                    restaurantId, user.getId(), startDate, endDate, days, allTime
             );
             return ResponseEntity.ok(new ApiResponse("Success", result));
         } catch (Exception e) {

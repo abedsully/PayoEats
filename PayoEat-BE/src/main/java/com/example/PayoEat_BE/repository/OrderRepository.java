@@ -148,7 +148,7 @@ public class OrderRepository {
     public List<ActiveOrderRow> getActiveOrderRows(UUID restaurantId) {
         try {
             String sql = """
-                select 
+                select
                     o.id as order_id,
                     o.order_time,
                     oi.menu_code,
@@ -156,7 +156,8 @@ public class OrderRepository {
                     m.menu_name,
                     m.menu_price,
                     m.menu_image_url,
-                    o.dine_in_time
+                    o.dine_in_time,
+                    o.payment_begin_at
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -433,7 +434,7 @@ public class OrderRepository {
                         payment_status = :payment_status,
                         payment_begin_at = :begin_at,
                         payment_image_rejection_count = :count,
-                    	order_status = :order_status,
+                    	order_status = :order_status
                     where
                     	id = :order_id
                     """;
@@ -578,6 +579,112 @@ public class OrderRepository {
                      .param("order_id", orderId)
                      .query(Boolean.class)
                      .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<OrderHistoryRow> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status) {
+        try {
+            StringBuilder sql = new StringBuilder("""
+                SELECT
+                    o.id AS order_id,
+                    o.restaurant_id,
+                    r.name AS restaurant_name,
+                    o.order_time,
+                    o.order_status,
+                    o.payment_status,
+                    o.sub_total,
+                    o.total_price,
+                    o.tax_price,
+                    oi.menu_code,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url,
+                    oi.quantity
+                FROM orders o
+                JOIN restaurant r ON r.id = o.restaurant_id
+                JOIN order_items oi ON oi.order_id = o.id
+                JOIN menu m ON m.menu_code = oi.menu_code
+                WHERE o.customer_id = :customer_id
+                """);
+
+            if (startDate != null && endDate != null) {
+                sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                sql.append(" AND o.order_status = :status");
+            }
+
+            sql.append(" ORDER BY o.order_time DESC");
+
+            var query = jdbcClient.sql(sql.toString())
+                    .param("customer_id", customerId);
+
+            if (startDate != null && endDate != null) {
+                query = query.param("start_date", startDate)
+                           .param("end_date", endDate);
+            }
+
+            if (status != null && !status.isEmpty()) {
+                query = query.param("status", status);
+            }
+
+            return query.query(OrderHistoryRow.class).list();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<OrderHistoryRow> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status) {
+        try {
+            StringBuilder sql = new StringBuilder("""
+                SELECT
+                    o.id AS order_id,
+                    o.restaurant_id,
+                    r.name AS restaurant_name,
+                    o.order_time,
+                    o.order_status,
+                    o.payment_status,
+                    o.sub_total,
+                    o.total_price,
+                    o.tax_price,
+                    oi.menu_code,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url,
+                    oi.quantity
+                FROM orders o
+                JOIN restaurant r ON r.id = o.restaurant_id
+                JOIN order_items oi ON oi.order_id = o.id
+                JOIN menu m ON m.menu_code = oi.menu_code
+                WHERE o.restaurant_id = :restaurant_id
+                """);
+
+            if (startDate != null && endDate != null) {
+                sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                sql.append(" AND o.order_status = :status");
+            }
+
+            sql.append(" ORDER BY o.order_time DESC");
+
+            var query = jdbcClient.sql(sql.toString())
+                    .param("restaurant_id", restaurantId);
+
+            if (startDate != null && endDate != null) {
+                query = query.param("start_date", startDate)
+                           .param("end_date", endDate);
+            }
+
+            if (status != null && !status.isEmpty()) {
+                query = query.param("status", status);
+            }
+
+            return query.query(OrderHistoryRow.class).list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

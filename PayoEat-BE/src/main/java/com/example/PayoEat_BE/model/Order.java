@@ -26,6 +26,7 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
     private UUID restaurantId;
+    private Long customerId;
     private LocalDateTime paymentBeginAt;
     private Double subTotal;
     private Double totalPrice;

@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.OrderDetailResponseDto;
+import com.example.PayoEat_BE.dto.orders.OrderHistoryDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.OrderItem;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
@@ -30,4 +31,6 @@ public interface IOrderService {
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
     ProgressOrderDto getProgressOrder(UUID orderId);
     Boolean checkPayment(UUID orderId);
+    List<OrderHistoryDto> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status);
+    List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status);
 }

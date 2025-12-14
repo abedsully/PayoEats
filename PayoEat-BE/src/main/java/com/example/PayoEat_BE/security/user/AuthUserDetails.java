@@ -27,7 +27,18 @@ public class AuthUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(roleId.toString()));
+        String roleName = getRoleNameFromId(roleId);
+        return Collections.singletonList(new SimpleGrantedAuthority(roleName));
+    }
+
+    private String getRoleNameFromId(Long roleId) {
+        if (roleId == null) return "GUEST";
+        switch (roleId.intValue()) {
+            case 1: return "CUSTOMER";
+            case 2: return "RESTAURANT";
+            case 3: return "ADMIN";
+            default: return "GUEST";
+        }
     }
 
 
