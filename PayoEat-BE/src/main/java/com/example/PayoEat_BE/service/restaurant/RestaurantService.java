@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,13 +77,13 @@ public class RestaurantService implements IRestaurantService {
             existingRestaurant.setRating(request.getRating());
         }
 
-        existingRestaurant.setUpdatedAt(LocalDateTime.now());
+        existingRestaurant.setUpdatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
         return existingRestaurant;
     }
 
     private void deleteExistingRestaurant(Restaurant existingRestaurant) {
-        existingRestaurant.setUpdatedAt(LocalDateTime.now());
+        existingRestaurant.setUpdatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         existingRestaurant.setIsActive(false);
     }
 
@@ -131,7 +132,7 @@ public class RestaurantService implements IRestaurantService {
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         user.setUpdatedAt(null);
         user.setIsActive(false);
 
@@ -141,7 +142,7 @@ public class RestaurantService implements IRestaurantService {
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(userId);
-        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
         verificationToken.setType('1');
         verificationTokenRepository.add(verificationToken);
 
@@ -184,7 +185,7 @@ public class RestaurantService implements IRestaurantService {
         restaurantApproval.setRestaurantName(restaurant.getName());
         restaurantApproval.setRestaurantImageUrl(restaurant.getRestaurantImageUrl());
         restaurantApproval.setUserId(restaurant.getUserId());
-        restaurantApproval.setRequestedAt(LocalDateTime.now());
+        restaurantApproval.setRequestedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         restaurantApproval.setIsApproved(false);
         restaurantApproval.setIsActive(true);
 

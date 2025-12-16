@@ -48,7 +48,7 @@ public class OrderService implements IOrderService {
 
     // Flow pertama, user add order
     @Override
-    public UUID addOrder(AddOrderRequest request) {
+    public PlaceOrderDto addOrder(AddOrderRequest request) {
 
         checkIfRestaurantExists(request.getRestaurantId());
 
@@ -230,6 +230,12 @@ public class OrderService implements IOrderService {
         return orderRepository.checkPayment(order.getId());
     }
 
+    @Override
+    public List<RecentOrderDto> getRecentOrderLists(UUID restaurantId) {
+
+        return orderRepository.getRecentOrder(restaurantId);
+    }
+
     private CheckOrderDto checkOrderExistance(UUID orderId) {
         return orderRepository.checkOrderExistance(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
@@ -381,7 +387,7 @@ public class OrderService implements IOrderService {
         return new ArrayList<>(orderMap.values());
     }
 
-    private UUID createOrder(AddOrderRequest request) {
+    private PlaceOrderDto createOrder(AddOrderRequest request) {
         checkIfRestaurantExists(request.getRestaurantId());
 
         Long restaurantTax = restaurantRepository.getRestaurantTax(request.getRestaurantId());
@@ -393,6 +399,14 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setOrderMessage(
                 (orderMessage == null || orderMessage.isBlank()) ? null : orderMessage
         );
+
+        String customerId = "";
+
+        if (request.getCustomerId().isBlank() || request.getCustomerId().isEmpty()) {
+            customerId = QrCodeUtil.generateCustomerId();
+        } else {
+            customerId = request.getCustomerId();
+        }
 
         List<UUID> menuCodes = request.getItems()
                 .stream()
@@ -436,7 +450,8 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setOrderMessage(request.getOrderMessage());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
-        newRestaurantOrder.setCreatedDate(LocalDate.now());
+        newRestaurantOrder.setCreatedDate(LocalDate.now(ZoneId.of("Asia/Jakarta")));
+        newRestaurantOrder.setCustomerId(customerId);
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 
@@ -446,11 +461,19 @@ public class OrderService implements IOrderService {
 
         orderItemRepository.addMenuItems(orderItems);
 
-        return savedOrder;
+        if (savedOrder == null) {
+            throw new IllegalArgumentException("Error placing orders");
+        }
+
+        PlaceOrderDto result = new PlaceOrderDto();
+        result.setOrderId(savedOrder);
+        result.setCustomerId(customerId);
+
+        return result;
     }
 
     @Override
-    public List<OrderHistoryDto> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status) {
+    public List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status) {
         List<OrderHistoryRow> rows = orderRepository.getCustomerOrderHistory(customerId, startDate, endDate, status);
         return groupOrderHistoryRows(rows);
     }
@@ -468,6 +491,7 @@ public class OrderService implements IOrderService {
             orderMap.computeIfAbsent(row.getOrderId(), id -> {
                 OrderHistoryDto dto = new OrderHistoryDto();
                 dto.setOrderId(id);
+                dto.setCreatedDate(row.getCreatedDate());
                 dto.setRestaurantId(row.getRestaurantId());
                 dto.setRestaurantName(row.getRestaurantName());
                 dto.setOrderTime(row.getOrderTime());

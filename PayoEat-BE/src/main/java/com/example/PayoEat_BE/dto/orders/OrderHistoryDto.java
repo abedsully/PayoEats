@@ -5,6 +5,7 @@ import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.enums.PaymentStatus;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Data
 public class OrderHistoryDto {
     private UUID orderId;
+    private LocalDate createdDate;
     private UUID restaurantId;
     private String restaurantName;
     private LocalDateTime orderTime;

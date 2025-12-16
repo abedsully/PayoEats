@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.dto.ProgressOrderDto;
 
+import com.example.PayoEat_BE.dto.RecentOrderDto;
 import com.example.PayoEat_BE.dto.orders.*;
 import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.enums.OrderStatus;
@@ -42,7 +43,8 @@ public class OrderRepository {
                         payment_image_rejection_reason,
                         payment_image_rejection_count,
                         payment_status,
-                        customer_name
+                        customer_name,
+                        customer_id
                     ) VALUES (
                         :date,
                         :order_time,
@@ -59,13 +61,14 @@ public class OrderRepository {
                         NULL,
                         0,
                         NULL,
-                        :customer_name
+                        :customer_name,
+                        :customer_id
                     )
                     RETURNING id;
                     """;
 
             return jdbcClient.sql(sql)
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_time", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_message", newRestaurantOrder.getOrderMessage())
                     .param("order_status", OrderStatus.RECEIVED.toString())
@@ -74,6 +77,7 @@ public class OrderRepository {
                     .param("total_price", newRestaurantOrder.getTotalPrice())
                     .param("tax_price", newRestaurantOrder.getTaxPrice())
                     .param("customer_name", newRestaurantOrder.getCustomerName())
+                    .param("customer_id", newRestaurantOrder.getCustomerId())
                     .query(UUID.class)
                     .single();
 
@@ -105,7 +109,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("status", OrderStatus.RECEIVED.toString())
                     .query(IncomingOrderRow.class)
                     .list();
@@ -139,7 +143,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("status", OrderStatus.PAYMENT.toString())
                     .query(ConfirmedOrderRow.class)
                     .list();
@@ -174,13 +178,42 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("statuses", List.of(
                             OrderStatus.ACTIVE.toString(),
                             OrderStatus.CONFIRMED.toString()
                     ))
                     .query(ActiveOrderRow.class)
                     .list();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<RecentOrderDto> getRecentOrder(UUID restaurantId) {
+        try {
+            String sql = """
+                    SELECT\s
+                        o.id AS order_id,
+                        o.customer_name,
+                        COUNT(oi.id) AS item_count,
+                        o.total_price,
+                        o.order_status,
+                        o.created_date,
+                        o.order_time
+                    FROM public.orders o
+                    LEFT JOIN public.order_items oi ON o.id = oi.order_id
+                    WHERE o.restaurant_id = :restaurant_id
+                    GROUP BY o.id
+                    ORDER BY o.order_time DESC
+                    LIMIT 4;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(RecentOrderDto.class)
+                    .list();
+
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -312,7 +345,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_status",
                             orderStatuses.stream()
                                     .map(OrderStatus::name)
@@ -497,7 +530,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("order_status", OrderStatus.PAYMENT.toString())
-                    .param("payment_begin_at", LocalDateTime.now())
+                    .param("payment_begin_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("order_id", orderId)
                     .update();
         } catch (Exception e) {
@@ -537,7 +570,7 @@ public class OrderRepository {
           AND o.payment_status = :payment_status
     """;
         try (var stream = jdbcClient.sql(sql)
-                .param("date", LocalDate.now())
+                .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                 .param("cutOffTime", cutOffTime)
                 .param("status", OrderStatus.PAYMENT.name())
                 .param("payment_status", PaymentStatus.PENDING.name())
@@ -588,10 +621,11 @@ public class OrderRepository {
         }
     }
 
-    public List<OrderHistoryRow> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status) {
+    public List<OrderHistoryRow> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status) {
         try {
             StringBuilder sql = new StringBuilder("""
                 SELECT
+                    o.created_date,
                     o.id AS order_id,
                     o.restaurant_id,
                     r.name AS restaurant_name,

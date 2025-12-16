@@ -9,6 +9,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
+import java.util.UUID;
 import javax.imageio.ImageIO;
 
 
@@ -28,6 +29,16 @@ public class QrCodeUtil {
             return "data:image/png;base64," + Base64.getEncoder().encodeToString(qrBytes);
         } catch (WriterException | java.io.IOException e) {
             throw new RuntimeException("Failed to generate QR code", e);
+        }
+    }
+
+    public static String generateCustomerId() {
+        try {
+            UUID randomUUID = UUID.randomUUID();
+
+            return "CUS-".concat(String.valueOf(randomUUID));
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 }

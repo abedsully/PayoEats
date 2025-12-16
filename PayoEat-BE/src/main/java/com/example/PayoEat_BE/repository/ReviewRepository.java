@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class ReviewRepository {
             return jdbcClient.sql(sql)
                     .param("reviewContent", review.getReviewContent())
                     .param("customerName", customerName)
-                    .param("createdAt", LocalDateTime.now())
+                    .param("createdAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("updatedAt", null)
                     .param("isActive", true)
                     .param("restaurantId", review.getRestaurantId())

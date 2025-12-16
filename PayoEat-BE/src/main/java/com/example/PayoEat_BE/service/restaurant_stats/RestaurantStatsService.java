@@ -43,12 +43,7 @@ public class RestaurantStatsService implements IRestaurantStatsService {
         LocalDate effectiveEndDate;
         LocalDate effectiveStartDate;
 
-        // Handle all-time request
-        if (allTime != null && allTime) {
-            effectiveEndDate = LocalDate.now();
-            // Query from year 2000 to capture all historical data
-            effectiveStartDate = LocalDate.of(2000, 1, 1);
-        } else if (startDate == null && endDate == null) {
+        if (startDate == null && endDate == null) {
             effectiveEndDate = LocalDate.now();
             effectiveStartDate = effectiveEndDate.minusDays(days != null ? days - 1 : 6);
         } else if (startDate != null && endDate != null) {

@@ -48,6 +48,7 @@ public class OrderController {
     private final List<UUID> trackedOrderIds = new CopyOnWriteArrayList<>();
     private final List<UUID> trackedRestaurantIds = new CopyOnWriteArrayList<>();
     private final List<UUID> trackedProgressOrderIds = new CopyOnWriteArrayList<>();
+
     private final RestaurantService restaurantService;
 
     @GetMapping("/details-order-by-customer")
@@ -66,8 +67,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
 
         try {
-            UUID newOrder = orderService.addOrder(request);
-            return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", newOrder));
+            PlaceOrderDto result = orderService.addOrder(request);
+            return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", result));
 
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -275,6 +276,48 @@ public class OrderController {
         }
     }
 
+    @MessageMapping("/restaurant-recent-orders/request")
+    public void handleRecentOrdersRequest(@Payload String restaurantIdStr) {
+        try {
+            UUID restaurantId = UUID.fromString(restaurantIdStr);
+
+            // Track restaurantId for periodic updates
+            if (!trackedRestaurantIds.contains(restaurantId)) {
+                trackedRestaurantIds.add(restaurantId);
+            }
+
+            // Push initial data immediately
+            List<RecentOrderDto> recentOrders = orderService.getRecentOrderLists(restaurantId);
+            messagingTemplate.convertAndSend(
+                    "/topic/restaurant-recent-orders/" + restaurantIdStr,
+                    recentOrders
+            );
+
+        } catch (Exception e) {
+            System.err.println("Error in handleRecentOrdersRequest: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Scheduled task to periodically push recent orders to all subscribed restaurants
+     */
+    @Scheduled(fixedRate = 5000)
+    public void sendPeriodicRecentOrders() {
+        for (UUID restaurantId : trackedRestaurantIds) {
+            try {
+                List<RecentOrderDto> recentOrders = orderService.getRecentOrderLists(restaurantId);
+                messagingTemplate.convertAndSend(
+                        "/topic/restaurant-recent-orders/" + restaurantId,
+                        recentOrders
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send recent orders for: " + restaurantId);
+                e.printStackTrace();
+            }
+        }
+    }
+
     @MessageMapping("/order-progress/request")
     public void handleOrderRequest(UUID orderId) {
         // Save the orderId if not already tracked
@@ -331,8 +374,6 @@ public class OrderController {
         }
     }
 
-
-
     @MessageMapping("/restaurant-orders/request")
     public void handleRestaurantOrderRequest(@Payload String restaurantIdStr) {
         try {
@@ -363,18 +404,17 @@ public class OrderController {
     @GetMapping("/history/customer")
     @Operation(summary = "Get customer order history", description = "Retrieve order history for authenticated customer")
     public ResponseEntity<ApiResponse> getCustomerOrderHistory(
+            @RequestParam String customerId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String status
     ) {
         try {
-            User user = userService.getAuthenticatedUser();
-
             LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
             LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
             List<OrderHistoryDto> history = orderService.getCustomerOrderHistory(
-                user.getId(),
+                    customerId,
                 start,
                 end,
                 status

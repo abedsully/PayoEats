@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public interface IOrderService {
     String generateOrderIdQrCode(UUID orderId);
-    UUID addOrder(AddOrderRequest request);
+    PlaceOrderDto addOrder(AddOrderRequest request);
     void addPaymentProof(UUID orderId, MultipartFile file);
     void confirmOrder(UUID orderId, Long userId);
     void confirmOrderPayment(UUID orderId, Long userId);
@@ -31,6 +31,7 @@ public interface IOrderService {
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
     ProgressOrderDto getProgressOrder(UUID orderId);
     Boolean checkPayment(UUID orderId);
-    List<OrderHistoryDto> getCustomerOrderHistory(Long customerId, LocalDate startDate, LocalDate endDate, String status);
+    List<RecentOrderDto> getRecentOrderLists(UUID restaurantId);
+    List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status);
     List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status);
 }
