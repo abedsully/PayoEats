@@ -585,6 +585,26 @@ public class OrderRepository {
         }
     }
 
+    public List<UUID> findExpiredUnprocessedOrders(LocalDateTime cutOffTime) {
+        String sql = """
+        SELECT id FROM orders o
+        WHERE o.order_time < :cutOffTime
+          AND o.order_status = :status
+          AND o.is_active = TRUE
+    """;
+        try (var stream = jdbcClient.sql(sql)
+                .param("cutOffTime", cutOffTime)
+                .param("status", OrderStatus.RECEIVED.name())
+                .query(UUID.class)
+                .stream()) {
+
+            return stream.toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch expired orders", e);
+        }
+    }
+
     public void updateOrderStatus(UUID orderId) {
         try {
             String sql = """
@@ -600,6 +620,26 @@ public class OrderRepository {
                     .param("order_status", OrderStatus.CANCELLED.name())
                     .param("payment_status", PaymentStatus.EXPIRED.name())
                     .param("reason", "Payment time expired")
+                    .param("order_id", orderId)
+                    .update();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update order status: " + e.getMessage(), e);
+        }
+    }
+
+    public void updateOrderStatusToCancelled(UUID orderId) {
+        try {
+            String sql = """
+            UPDATE orders 
+            SET order_status = :order_status,
+                cancellation_reason = :reason,
+                is_active = FALSE
+            WHERE id = :order_id AND is_active = TRUE
+        """;
+
+            jdbcClient.sql(sql)
+                    .param("order_status", OrderStatus.CANCELLED.name())
+                    .param("reason", "Not processed by restaurant")
                     .param("order_id", orderId)
                     .update();
         } catch (Exception e) {

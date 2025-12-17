@@ -34,6 +34,26 @@ public class OrderAutoCancelScheduler {
     }
 
     @Scheduled(fixedRate = 60000)
+    public void cancelUnprocessedOrders() {
+        System.out.println("[Scheduler] Running cancelExpiredOrders() at " +
+                LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+
+        LocalDateTime cutoffTime =
+                LocalDateTime.now(ZoneId.of("Asia/Jakarta")).minusHours(1);
+
+        List<UUID> expiredOrders =
+                orderRepository.findExpiredUnprocessedOrders(cutoffTime);
+
+        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired orders.");
+
+        for (UUID orderId : expiredOrders) {
+            System.out.println("[Scheduler] Cancelling order: " + orderId);
+            orderRepository.updateOrderStatusToCancelled(orderId);
+        }
+    }
+
+
+    @Scheduled(fixedRate = 60000)
     public void updateRestaurantOpenStatusScheduler() {
         List<UUID> restaurantUUIDLists = restaurantRepository.getRestaurantUUIDLists();
 
