@@ -18,5 +18,4 @@ public class AddOrderRequest {
     private LocalTime dineInTime;
     private Long quotas;
     private String customerName;
-    private String customerId;
 }

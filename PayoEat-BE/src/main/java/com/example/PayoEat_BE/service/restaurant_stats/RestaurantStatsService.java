@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -44,7 +45,7 @@ public class RestaurantStatsService implements IRestaurantStatsService {
         LocalDate effectiveStartDate;
 
         if (startDate == null && endDate == null) {
-            effectiveEndDate = LocalDate.now();
+            effectiveEndDate = LocalDate.now(ZoneId.of("Asia/Jakarta"));
             effectiveStartDate = effectiveEndDate.minusDays(days != null ? days - 1 : 6);
         } else if (startDate != null && endDate != null) {
             effectiveStartDate = startDate;
@@ -105,7 +106,7 @@ public class RestaurantStatsService implements IRestaurantStatsService {
         response.setStats(stats);
         response.setWeeklyData(weeklyData);
         response.setPopularItems(popularItems);
-        response.setLastUpdated(LocalDateTime.now());
+        response.setLastUpdated(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
         return response;
     }
