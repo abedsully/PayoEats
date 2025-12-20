@@ -29,10 +29,10 @@ public class ReviewRepository {
             String sql = """
                             INSERT INTO review (
                                 review_content, customer_name, created_at, updated_at,
-                                is_active, restaurant_id, rating, review_image_url, order_id
+                                is_active, restaurant_id, rating, review_image_url, order_id, customer_id
                             ) VALUES (
                                 :reviewContent, :customerName, :createdAt, :updatedAt,
-                                :isActive, :restaurantId, :rating, :reviewImageUrl, :orderId
+                                :isActive, :restaurantId, :rating, :reviewImageUrl, :orderId, :customerId
                             )
                         """;
 
@@ -46,6 +46,7 @@ public class ReviewRepository {
                     .param("rating", review.getRating())
                     .param("reviewImageUrl", imageUrl)
                     .param("orderId", review.getOrderId())
+                    .param("customerId", review.getCustomerId())
                     .update();
 
         } catch (Exception e) {

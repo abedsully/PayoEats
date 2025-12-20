@@ -11,6 +11,8 @@ public class EmailService {
     private final JavaMailSender mailSender;
 
     public void sendConfirmationEmail(String to, String token) {
+
+
         String subject = "Confirm Your Registration - Payoeat";
         String confirmationUrl = "http://localhost:8080/api/auth/confirm?token=" + token;
 

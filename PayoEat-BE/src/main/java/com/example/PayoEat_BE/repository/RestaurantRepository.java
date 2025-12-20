@@ -361,6 +361,21 @@ public class RestaurantRepository {
         }
     }
 
+    public Integer setRestaurantToActive(Long userId) {
+        try {
+            String sql = """
+                    update restaurant set is_active = true where user_id = :user_id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("user_id", userId)
+                    .query(Integer.class)
+                    .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
 
 
 }

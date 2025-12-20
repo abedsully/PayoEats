@@ -64,6 +64,7 @@ public class ReviewService implements IReviewService{
         return reviewRepository.getRestaurantReviewStats(restaurantId);
     }
 
+
     private void createReview(AddReviewRequest request, MultipartFile file) {
         Restaurant restaurant = restaurantRepository.getDetail(request.getRestaurantId(), Boolean.TRUE)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
@@ -98,10 +99,16 @@ public class ReviewService implements IReviewService{
         review.setRestaurantId(restaurant.getId());
         review.setRating(request.getRating());
         review.setOrderId(request.getOrderId());
+        review.setCustomerId(request.getCustomerId());
 
+        Integer resultAddReview = 0;
 
-        reviewRepository.addReview(review, imageUrl, order.getCustomerName());
+        if (reviewRepository.addReview(review, imageUrl, order.getCustomerName()) == 0) {
+            throw new InvalidException("Error while adding review, please check your input");
+        };
+
         restaurantRepository.addReview(restaurant.getId(), ratingRestaurant, totalRating);
+
     }
 
 }

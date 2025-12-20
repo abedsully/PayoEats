@@ -44,17 +44,6 @@ public class RestaurantController {
         }
     }
 
-    @GetMapping("/detail-restaurant")
-    @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
-    public ResponseEntity<ApiResponse> getRestaurantDetailForApproval(@RequestParam UUID id) {
-        try {
-            Restaurant restaurant = restaurantService.getRestaurantDetailForApproval(id);
-            return ResponseEntity.ok(new ApiResponse("Restaurant found", restaurant));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
     @GetMapping("/similar-restaurants")
     @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
     public ResponseEntity<ApiResponse> getSimilarRestaurants(@RequestParam UUID id) {
@@ -101,7 +90,6 @@ public class RestaurantController {
                     email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax)
             );
             UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
-            restaurantService.addRestaurantApproval(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)

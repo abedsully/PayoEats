@@ -32,12 +32,13 @@ public class ReviewController {
     @PostMapping("/add")
     @Operation(summary = "Add Review", description = "Add a review to a restaurant")
     public ResponseEntity<ApiResponse> addReview(@RequestParam("reviewContent") String reviewContent,
+                                                 @RequestParam("customerId") String customerId,
                                                  @RequestParam("restaurantId") UUID restaurantId,
                                                  @RequestParam("rating") Double rating,
                                                  @RequestParam("orderId") UUID orderId,
                                                  @RequestParam("reviewImageUrl") MultipartFile file) {
         try {
-            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId);
+            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId, customerId);
             reviewService.addReview(request, file);
             return ResponseEntity.ok(new ApiResponse("Review added successfully", null));
         } catch (Exception e) {

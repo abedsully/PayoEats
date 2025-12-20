@@ -1,6 +1,5 @@
 package com.example.PayoEat_BE.service.restaurant;
 
-import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
@@ -34,7 +33,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RestaurantService implements IRestaurantService {
     private final ModelMapper modelMapper;
-    private final RestaurantApprovalRepository restaurantApprovalRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
@@ -173,34 +171,6 @@ public class RestaurantService implements IRestaurantService {
     @Override
     public List<RestaurantDto> getConvertedRestaurants(List<Restaurant> restaurants) {
         return restaurants.stream().map(this::convertToDto).toList();
-    }
-
-    @Override
-    public void addRestaurantApproval(UUID restaurantId) {
-        Restaurant restaurant = restaurantRepository.getDetail(restaurantId, Boolean.FALSE)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
-
-        RestaurantApproval restaurantApproval = new RestaurantApproval();
-        restaurantApproval.setRestaurantId(restaurant.getId());
-        restaurantApproval.setRestaurantName(restaurant.getName());
-        restaurantApproval.setRestaurantImageUrl(restaurant.getRestaurantImageUrl());
-        restaurantApproval.setUserId(restaurant.getUserId());
-        restaurantApproval.setRequestedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-        restaurantApproval.setIsApproved(false);
-        restaurantApproval.setIsActive(true);
-
-        restaurantApprovalRepository.addRestaurantApproval(restaurantApproval);
-    }
-
-    @Override
-    public RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval) {
-        return modelMapper.map(restaurantApproval, RestaurantApprovalDto.class);
-    }
-
-    @Override
-    public Restaurant getRestaurantDetailForApproval(UUID id) {
-        return restaurantRepository.getDetail(id, false)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }
 
     @Override
