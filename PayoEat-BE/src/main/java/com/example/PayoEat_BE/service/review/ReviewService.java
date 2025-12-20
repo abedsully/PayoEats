@@ -92,7 +92,7 @@ public class ReviewService implements IReviewService{
 
         String imageUrl = uploadService.upload(file, UploadType.REVIEW);
 
-        Double ratingRestaurant = (currentRestaurantRating + request.getRating() / totalRating);
+        Double ratingRestaurant = ((currentRestaurantRating + request.getRating()) / totalRating);
 
         AddReviewRequest review = new AddReviewRequest();
         review.setReviewContent(request.getReviewContent());

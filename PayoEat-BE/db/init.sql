@@ -116,8 +116,16 @@ CREATE TABLE IF NOT EXISTS user_roles (
     role_name VARCHAR(255)
 );
 
+INSERT INTO user_roles
+(role_id, role_name)
+VALUES(1, 'ADMIN');
+
+INSERT INTO user_roles
+(role_id, role_name)
+VALUES(2, 'RESTAURANT');
+
 CREATE TABLE IF NOT EXISTS verification_token (
-    id BIGINT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     token VARCHAR(255),
     user_id BIGINT,
     expiry_date TIMESTAMPTZ,

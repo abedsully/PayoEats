@@ -369,8 +369,7 @@ public class RestaurantRepository {
 
             return jdbcClient.sql(sql)
                     .param("user_id", userId)
-                    .query(Integer.class)
-                    .single();
+                    .update();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

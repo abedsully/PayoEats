@@ -45,9 +45,11 @@ public class AuthController {
 
     @GetMapping("/confirm")
     public ResponseEntity<String> confirmEmail(@RequestParam("token") String token) {
-        String result = userService.confirmToken(token);
 
-        String htmlResponse = """
+        try {
+            String result = userService.confirmToken(token);
+
+            String htmlResponse = """
         <html>
         <head>
             <meta http-equiv="refresh" content="5;url=http://localhost:5173/login" />
@@ -65,7 +67,12 @@ public class AuthController {
         </html>
         """.formatted(result);
 
-        return ResponseEntity.ok().body(htmlResponse);
+            return ResponseEntity.ok().body(htmlResponse);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+
     }
 
     @PostMapping("/login")
