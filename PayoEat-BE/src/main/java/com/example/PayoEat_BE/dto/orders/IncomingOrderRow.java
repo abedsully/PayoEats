@@ -11,6 +11,7 @@ public class IncomingOrderRow {
     private LocalDateTime orderTime;
     private UUID menuCode;
     private Long quantity;
+    private String orderMessage;
     private String menuName;
     private Double menuPrice;
     private String menuImageUrl;

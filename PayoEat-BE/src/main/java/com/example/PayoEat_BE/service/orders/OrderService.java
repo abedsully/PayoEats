@@ -277,7 +277,7 @@ public class OrderService implements IOrderService {
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
                 dto.setReceivedAt(r.getOrderTime());
-
+                dto.setOrderMessage(r.getOrderMessage());
                 dto.setSubTotal(0.0);
                 dto.setTaxPrice(0.0);
                 dto.setTotalPrice(0.0);
@@ -482,6 +482,11 @@ public class OrderService implements IOrderService {
     public List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status) {
         List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(restaurantId, startDate, endDate, status);
         return groupOrderHistoryRows(rows);
+    }
+
+    @Override
+    public PaymentModalDto getPaymentModalData(UUID orderId) {
+        return orderRepository.getPaymentModalData(orderId);
     }
 
     private List<OrderHistoryDto> groupOrderHistoryRows(List<OrderHistoryRow> rows) {

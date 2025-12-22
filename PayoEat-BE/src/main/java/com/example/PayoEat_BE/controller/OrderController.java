@@ -341,6 +341,17 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/payment-modal-data")
+    @Operation(summary = "Getting payment modal data", description = "Getting payment modal data")
+    public ResponseEntity<ApiResponse> getPaymentModalData(@RequestParam UUID orderId) {
+        try {
+            PaymentModalDto result = orderService.getPaymentModalData(orderId);
+            return ResponseEntity.ok(new ApiResponse("Payment modal data: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     /**
      * Scheduled task to push updates every 5 seconds
      */

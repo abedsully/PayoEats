@@ -48,16 +48,46 @@ CREATE TABLE IF NOT EXISTS restaurant (
 );
 
 INSERT INTO restaurant (id,name,rating,total_rating,description,created_at,updated_at,is_active,tax,user_id,opening_hour,closing_hour,location,telephone_number,restaurant_image_url,qris_image_url,color,restaurant_category,is_open) VALUES
-('550e8400-e29b-41d4-a716-446655440000','Sunset Grill',0.0,0,'Cozy rooftop grill with city views.','2024-01-01 10:00:00','2025-05-01 09:30:00',TRUE,10,101,'10:00:00','22:00:00','123 Skyline Ave','555-1234','https://images.unsplash.com/photo-1579599187352-8d76d8b39d48?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e160355f','#FF5733',1,TRUE),
-('550e8400-e29b-41d4-a716-446655440001','Green Garden',0.0,0,'Organic vegan restaurant.','2024-02-15 08:30:00','2025-04-20 14:00:00',TRUE,10,102,'09:00:00','21:00:00','456 Green St','555-5678','https://images.unsplash.com/photo-1543353071-873f17a7a084?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603552','#4CAF50',2,TRUE),
-('550e8400-e29b-41d4-a716-446655440002','Ocean Breeze',0.0,0,'Seafood by the bay.','2023-11-11 12:00:00','2025-03-30 11:00:00',TRUE,10,103,'11:00:00','23:00:00','789 Ocean Drive','555-8765','https://images.unsplash.com/photo-1555939221-a3f81e36398b?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603554','#00BCD4',3,TRUE),
-('550e8400-e29b-41d4-a716-446655440003','Night Owl Diner',0.0,0,'Open late for all-night cravings.','2024-05-01 19:00:00','2025-05-16 21:00:00',TRUE,10,104,'18:00:00','03:00:00','321 Moonlight Blvd','555-8765','https://images.unsplash.com/photo-1541737470557-0ce0c5d79905?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603556','#9C27B0',4,TRUE),
-('550e8400-e29b-41d4-a716-446655440004','The Burger Spot',0.0,0,'Burgers and fries all day.','2024-03-10 10:00:00','2025-05-10 18:00:00',TRUE,10,105,'10:00:00','22:00:00','987 Burger Lane','555-3333','https://images.unsplash.com/photo-1582234057962-d965e6d8a393?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603558','#FFC107',5,TRUE),
-('550e8400-e29b-41d4-a716-446655440005','Pasta Palace',0.0,0,'Authentic Italian pasta dishes.','2023-12-01 11:30:00','2025-05-01 12:00:00',TRUE,10,106,'11:30:00','22:30:00','111 Rome Ave','555-1122','https://images.unsplash.com/photo-1574765691475-430349479b12?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603550','#E91E63',1,TRUE),
-('550e8400-e29b-41d4-a716-446655440006','Taco Fiesta',0.0,0,'Mexican street food favorites.','2024-04-05 12:00:00','2025-04-25 15:00:00',TRUE,10,107,'12:00:00','20:00:00','222 Salsa St','555-4455','https://images.unsplash.com/photo-1552331584-383794b63e1e?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e160355b','#FF9800',2,TRUE),
-('550e8400-e29b-41d4-a716-446655440007','Sushi World',0.0,0,'Fresh sushi and sashimi.','2024-01-20 09:00:00','2025-05-10 14:00:00',TRUE,10,108,'09:00:00','21:30:00','333 Tokyo Lane','555-7788','https://images.unsplash.com/photo-1553621042-f6e147245786?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e160355d','#03A9F4',3,TRUE),
-('550e8400-e29b-41d4-a716-446655440008','Cafe Morning',0.0,0,'Perfect for breakfast and brunch.','2024-02-05 07:00:00','2025-03-15 10:30:00',TRUE,10,109,'07:00:00','14:00:00','444 Sunrise Way','555-7788','https://images.unsplash.com/photo-1533965902409-5435987a032f?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e160355f','#8BC34A',4,TRUE),
-('550e8400-e29b-41d4-a716-446655440009','BBQ Brothers',0.0,0,'Barbecue meats and smoked dishes.','2024-01-12 15:00:00','2025-05-01 17:00:00',TRUE,10,110,'15:00:00','23:00:00','555 Smokehouse Ave','555-5566','https://images.unsplash.com/photo-1610609384795-3c2890656001?w=900&auto=format&fit=crop&q=60','7fa459ea-ee8a-3ca4-894e-db77e1603552','#795548',5,TRUE);
+('550e8400-e29b-41d4-a716-446655440000','Sunset Grill',0.0,0,'Cozy rooftop grill with city views.','2024-01-01 10:00:00','2025-05-01 09:30:00',TRUE,10,101,'10:00:00','22:00:00','123 Skyline Ave','555-1234',
+'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmVzdGF1cmFudHxlbnwwfHwwfHx8MA%3D%3D',
+'7fa459ea-ee8a-3ca4-894e-db77e160355f','#FF5733',1,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440001','Green Garden',0.0,0,'Organic vegan restaurant.','2024-02-15 08:30:00','2025-04-20 14:00:00',TRUE,10,102,'09:00:00','21:00:00','456 Green St','555-5678',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJ0EqHI6h5QgFTXGG_1i2FADG1xulRbVtecA&s',
+'7fa459ea-ee8a-3ca4-894e-db77e1603552','#4CAF50',2,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440002','Ocean Breeze',0.0,0,'Seafood by the bay.','2023-11-11 12:00:00','2025-03-30 11:00:00',TRUE,10,103,'11:00:00','23:00:00','789 Ocean Drive','555-8765',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWYNFqbPNDfW6HsOhfMJ5de4XwuteI2sV4Hg&s',
+'7fa459ea-ee8a-3ca4-894e-db77e1603554','#00BCD4',3,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440003','Night Owl Diner',0.0,0,'Open late for all-night cravings.','2024-05-01 19:00:00','2025-05-16 21:00:00',TRUE,10,104,'18:00:00','03:00:00','321 Moonlight Blvd','555-8765',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJTot5NBFQBa7x7e7HXiWluJT2dEVvd7kzyg&s',
+'7fa459ea-ee8a-3ca4-894e-db77e1603556','#9C27B0',4,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440004','The Burger Spot',0.0,0,'Burgers and fries all day.','2024-03-10 10:00:00','2025-05-10 18:00:00',TRUE,10,105,'10:00:00','22:00:00','987 Burger Lane','555-3333',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKTqY5iJ0QxYi6QY-e0Ny1BS-i6-vD2BFSJw&s',
+'7fa459ea-ee8a-3ca4-894e-db77e1603558','#FFC107',5,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440005','Pasta Palace',0.0,0,'Authentic Italian pasta dishes.','2023-12-01 11:30:00','2025-05-01 12:00:00',TRUE,10,106,'11:30:00','22:30:00','111 Rome Ave','555-1122',
+'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/21/b8/eb/3a/tom-s.jpg',
+'7fa459ea-ee8a-3ca4-894e-db77e1603550','#E91E63',1,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440006','Taco Fiesta',0.0,0,'Mexican street food favorites.','2024-04-05 12:00:00','2025-04-25 15:00:00',TRUE,10,107,'12:00:00','20:00:00','222 Salsa St','555-4455',
+'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxOSozKIEG5lTTXV9DXCgv-NWGcWRbpePq8w&s',
+'7fa459ea-ee8a-3ca4-894e-db77e160355b','#FF9800',2,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440007','Sushi World',0.0,0,'Fresh sushi and sashimi.','2024-01-20 09:00:00','2025-05-10 14:00:00',TRUE,10,108,'09:00:00','21:30:00','333 Tokyo Lane','555-7788',
+'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/09/bb/94/caption.jpg?w=400&h=300&s=1',
+'7fa459ea-ee8a-3ca4-894e-db77e160355d','#03A9F4',3,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440008','Cafe Morning',0.0,0,'Perfect for breakfast and brunch.','2024-02-05 07:00:00','2025-03-15 10:30:00',TRUE,10,109,'07:00:00','14:00:00','444 Sunrise Way','555-7788',
+'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/22/a2/41/6e/caption.jpg?w=1200&h=1200&s=1',
+'7fa459ea-ee8a-3ca4-894e-db77e160355f','#8BC34A',4,TRUE),
+
+('550e8400-e29b-41d4-a716-446655440009','BBQ Brothers',0.0,0,'Barbecue meats and smoked dishes.','2024-01-12 15:00:00','2025-05-01 17:00:00',TRUE,10,110,'15:00:00','23:00:00','555 Smokehouse Ave','555-5566',
+'https://dynamic-media-cdn.tripadvisor.com/media/photo-o/25/d5/4e/f6/miss-thu-is-a-lady-of.jpg?w=900&h=500&s=1',
+'7fa459ea-ee8a-3ca4-894e-db77e1603552','#795548',5,TRUE);
+
 --
 
 CREATE TABLE IF NOT EXISTS orders (

@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.repository;
 
+import com.example.PayoEat_BE.dto.PaymentModalDto;
 import com.example.PayoEat_BE.dto.ProgressOrderDto;
 
 import com.example.PayoEat_BE.dto.RecentOrderDto;
@@ -94,6 +95,7 @@ public class OrderRepository {
                     o.order_time,
                     oi.menu_code,
                     oi.quantity,
+                    o.order_message,
                     m.menu_name,
                     m.menu_price,
                     m.menu_image_url
@@ -764,6 +766,23 @@ public class OrderRepository {
             }
 
             return query.query(OrderHistoryRow.class).list();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public PaymentModalDto getPaymentModalData(UUID orderId) {
+        try {
+            String sql = """
+                    select o.order_status, o.payment_status, r.name, r.qris_image_url, o.total_price, o.payment_begin_at
+                    from orders o
+                    inner join restaurant r on o.restaurant_id = r.id where o.id = :id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("id", orderId)
+                    .query(PaymentModalDto.class)
+                    .single();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
