@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantOpenStatusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
@@ -373,8 +374,22 @@ public class RestaurantRepository {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    };
+
+    public RestaurantManagementData getRestaurantManagementData(UUID restaurantId) {
+        try {
+            String sql = """
+                    select name from restaurant r where r.id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(RestaurantManagementData.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
-
-
 
 }

@@ -205,7 +205,7 @@ public class OrderRepository {
                         o.order_time
                     FROM public.orders o
                     LEFT JOIN public.order_items oi ON o.id = oi.order_id
-                    WHERE o.restaurant_id = :restaurant_id
+                    WHERE o.restaurant_id = :restaurant_id and o.created_date = :created_date
                     GROUP BY o.id
                     ORDER BY o.order_time DESC
                     LIMIT 4;
@@ -213,6 +213,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
+                    .param("created_date", LocalDate.now())
                     .query(RecentOrderDto.class)
                     .list();
 
@@ -247,7 +248,6 @@ public class OrderRepository {
             WHERE o.id = :orderId
             ORDER BY oi.id
         """;
-
             List<Map<String, Object>> rows = jdbcClient.sql(sql)
                     .param("orderId", orderId)
                     .query()

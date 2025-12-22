@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
@@ -135,6 +136,18 @@ public class RestaurantController {
         try {
             User user = userService.getAuthenticatedUser();
             UUID result = restaurantService.getRestaurantByUserId(user.getId());
+            return ResponseEntity.ok(new ApiResponse("Found", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @GetMapping("/get-management-data")
+    @Operation(summary = "Get restaurant management data", description = "Getting restaurant management data")
+    public ResponseEntity<ApiResponse> getRestaurantManagementData(@RequestParam UUID restaurantId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            RestaurantManagementData result = restaurantService.getRestaurantManagementData(restaurantId, user.getId());
             return ResponseEntity.ok(new ApiResponse("Found", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));

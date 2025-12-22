@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.service.restaurant;
 
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
@@ -188,6 +189,14 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.getRestaurantId(user.getUserId());
     }
 
+    @Override
+    public RestaurantManagementData getRestaurantManagementData(UUID restaurantId, Long userId) {
+        checkIfRestaurantExists(restaurantId);
+
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        return restaurantRepository.getRestaurantManagementData(restaurantId);
+    }
 
 
     private void checkIfRestaurantExists(UUID restaurantId) {
