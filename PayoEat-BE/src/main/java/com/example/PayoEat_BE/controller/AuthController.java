@@ -39,7 +39,7 @@ public class AuthController {
             User user = userService.createUser(request);
             return ResponseEntity.ok(new ApiResponse("Create User Success!", user));
         } catch (Exception e) {
-            return ResponseEntity.status(CONFLICT).body(new ApiResponse(e.getMessage(), null));
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 

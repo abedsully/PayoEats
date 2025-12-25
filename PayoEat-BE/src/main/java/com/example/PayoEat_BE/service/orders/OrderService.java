@@ -18,6 +18,8 @@ import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.utils.UserAccessValidator;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +37,8 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
     private final UploadService uploadService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
@@ -186,9 +190,13 @@ public class OrderService implements IOrderService {
         CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
+        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
+        }
 
         return result;
     }
+
 
     @Override
     public RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId) {
@@ -354,37 +362,42 @@ public class OrderService implements IOrderService {
 
     @Override
     public List<ActiveOrderDto> getActiveOrder(UUID restaurantId) {
-        checkIfRestaurantExists(restaurantId);
+        try {
+            checkIfRestaurantExists(restaurantId);
 
-        List<ActiveOrderRow> rows = orderRepository.getActiveOrderRows(restaurantId);
+            List<ActiveOrderRow> rows = orderRepository.getActiveOrderRows(restaurantId);
 
-        Map<UUID, ActiveOrderDto> orderMap = new LinkedHashMap<>();
+            Map<UUID, ActiveOrderDto> orderMap = new LinkedHashMap<>();
 
-        for (ActiveOrderRow r : rows) {
-            orderMap.computeIfAbsent(r.getOrderId(), id -> {
-                ActiveOrderDto dto = new ActiveOrderDto();
-                dto.setRestaurantId(restaurantId);
-                dto.setOrderId(id);
-                dto.setMenuLists(new ArrayList<>());
-                dto.setDineInTime(r.getDineInTime());
-                dto.setPaymentBeginAt(r.getPaymentBeginAt());
-                return dto;
-            });
+            for (ActiveOrderRow r : rows) {
+                orderMap.computeIfAbsent(r.getOrderId(), id -> {
+                    ActiveOrderDto dto = new ActiveOrderDto();
+                    dto.setRestaurantId(restaurantId);
+                    dto.setOrderId(id);
+                    dto.setMenuLists(new ArrayList<>());
+                    dto.setDineInTime(r.getDineInTime());
+                    dto.setPaymentBeginAt(r.getPaymentBeginAt());
+                    return dto;
+                });
 
-            ActiveOrderDto dto = orderMap.get(r.getOrderId());
+                ActiveOrderDto dto = orderMap.get(r.getOrderId());
 
-            MenuListDto menu = new MenuListDto();
-            menu.setMenuCode(r.getMenuCode());
-            menu.setMenuName(r.getMenuName());
-            menu.setMenuPrice(r.getMenuPrice());
-            menu.setMenuImageUrl(r.getMenuImageUrl());
-            menu.setQuantity(r.getQuantity());
-            menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
+                MenuListDto menu = new MenuListDto();
+                menu.setMenuCode(r.getMenuCode());
+                menu.setMenuName(r.getMenuName());
+                menu.setMenuPrice(r.getMenuPrice());
+                menu.setMenuImageUrl(r.getMenuImageUrl());
+                menu.setQuantity(r.getQuantity());
+                menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
 
-            dto.getMenuLists().add(menu);
+                dto.getMenuLists().add(menu);
+            }
+            return new ArrayList<>(orderMap.values());
+        } catch (Exception e) {
+            LOGGER.info("Error: ".concat(e.getMessage()));
+            throw new RuntimeException(e);
         }
 
-        return new ArrayList<>(orderMap.values());
     }
 
     private PlaceOrderDto createOrder(AddOrderRequest request) {
@@ -479,9 +492,21 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status) {
-        List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(restaurantId, startDate, endDate, status);
-        return groupOrderHistoryRows(rows);
+    public List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId) {
+        try {
+            LOGGER.info("Getting restaurant order successful!");
+
+
+            User user = userAccessValidator.validateRestaurantUser(userId);
+            CheckUserRestaurantDto result = checkUserRestaurant(user.getId());
+
+            List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(result.getId(), startDate, endDate, status);
+            return groupOrderHistoryRows(rows);
+
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     @Override
@@ -526,4 +551,6 @@ public class OrderService implements IOrderService {
 
         return new ArrayList<>(orderMap.values());
     }
+
+
 }

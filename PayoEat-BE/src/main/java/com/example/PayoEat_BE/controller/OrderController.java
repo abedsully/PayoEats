@@ -114,7 +114,6 @@ public class OrderController {
 
     @GetMapping("/get-active")
     @Operation(summary = "Getting the list of active orders", description = "Returning list of active orders")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getActiveOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -439,9 +438,7 @@ public class OrderController {
 
     @GetMapping("/history/restaurant")
     @Operation(summary = "Get restaurant order history", description = "Retrieve order history for restaurant")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getRestaurantOrderHistory(
-            @RequestParam UUID restaurantId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String status
@@ -453,10 +450,10 @@ public class OrderController {
             LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
             List<OrderHistoryDto> history = orderService.getRestaurantOrderHistory(
-                restaurantId,
                 start,
                 end,
-                status
+                status,
+                    user.getId()
             );
 
             return ResponseEntity.ok(new ApiResponse("Order history retrieved successfully", history));

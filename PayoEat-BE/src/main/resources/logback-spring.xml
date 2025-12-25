@@ -2,22 +2,28 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
     <appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-        <destination>logstash_springboot:5001</destination>
+        <destination>logstash:5001</destination>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>
                 <mdc />
                 <context />
                 <logLevel />
                 <loggerName />
+                <pattern>
+                    <pattern>
+                        {
+                        "app": "test-log"
+                        }
+                    </pattern>
+                </pattern>
                 <threadName />
                 <message />
                 <logstashMarkers />
                 <stackTrace />
             </providers>
-            <customFields>{"app":"test-log"}</customFields>
         </encoder>
     </appender>
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="logstash" />
     </root>
 </configuration>

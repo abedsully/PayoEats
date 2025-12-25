@@ -161,7 +161,12 @@ public class RestaurantService implements IRestaurantService {
 
     @Override
     public List<Restaurant> getAllRestaurants() {
-        return restaurantRepository.getAllRestaurant();
+        try {
+            LOGGER.info("Masuk request untuk get all restaurant");
+            return restaurantRepository.getAllRestaurant();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

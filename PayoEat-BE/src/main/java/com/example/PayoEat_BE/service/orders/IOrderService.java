@@ -33,6 +33,6 @@ public interface IOrderService {
     Boolean checkPayment(UUID orderId);
     List<RecentOrderDto> getRecentOrderLists(UUID restaurantId);
     List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status);
-    List<OrderHistoryDto> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status);
+    List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId);
     PaymentModalDto getPaymentModalData(UUID orderId);
 }
