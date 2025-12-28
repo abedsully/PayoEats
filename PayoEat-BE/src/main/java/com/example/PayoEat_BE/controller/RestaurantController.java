@@ -154,4 +154,18 @@ public class RestaurantController {
         }
     }
 
+    @PostMapping("/toggle-status")
+    @Operation(summary = "Toggle restaurant active status", description = "Toggle restaurant open/closed status")
+    public ResponseEntity<ApiResponse> toggleRestaurantStatus(
+            @RequestParam UUID restaurantId,
+            @RequestParam Boolean isActive) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
 }

@@ -11,6 +11,8 @@ import java.util.UUID;
 public class IncomingOrderDto {
     private UUID restaurantId;
     private UUID orderId;
+    private String orderStatus;
+    private String customerName;
     private List<MenuListDto> menuLists;
     private Double totalPrice;
     private Double subTotal;

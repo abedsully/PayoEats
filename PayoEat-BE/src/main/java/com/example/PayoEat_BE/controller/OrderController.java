@@ -184,6 +184,18 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/mark-ready")
+    @Operation(summary = "Mark order as ready", description = "Mark an order as ready for pickup by restaurant")
+    public ResponseEntity<ApiResponse> markOrderReady(@RequestParam UUID orderId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            String result = orderService.markOrderReady(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Operation successful", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/confirm-redirect")
     public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
         String html = String.format("""

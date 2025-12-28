@@ -9,10 +9,14 @@ import java.util.UUID;
 public class ConfirmedOrderRow {
     private UUID orderId;
     private LocalDateTime orderTime;
+    private String orderStatus;
+    private String customerName;
+    private String orderMessage;
     private UUID menuCode;
     private Long quantity;
     private String menuName;
     private Double menuPrice;
     private String menuImageUrl;
     private String paymentImageUrl;
+    private LocalDateTime paymentBeginAt;
 }

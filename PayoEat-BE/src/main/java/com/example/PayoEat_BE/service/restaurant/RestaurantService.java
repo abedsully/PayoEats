@@ -220,6 +220,17 @@ public class RestaurantService implements IRestaurantService {
         return result;
     }
 
+    @Override
+    public void toggleRestaurantStatus(UUID restaurantId, Boolean isActive, Long userId) {
+        checkIfRestaurantExists(restaurantId);
+        checkUserRestaurant(userId);
+
+        Integer updated = restaurantRepository.toggleRestaurantActiveStatus(restaurantId, isActive);
+
+        if (updated == 0) {
+            throw new RuntimeException("Failed to update restaurant status");
+        }
+    }
 
 
 

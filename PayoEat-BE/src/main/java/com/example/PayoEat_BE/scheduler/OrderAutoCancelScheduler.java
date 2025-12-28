@@ -18,36 +18,36 @@ public class OrderAutoCancelScheduler {
     private final OrderRepository orderRepository;
     private final RestaurantRepository restaurantRepository;
 
-    @Scheduled(fixedRate = 60000)
+     @Scheduled(fixedRate = 60000) // Comment to disable auto-cancel
     public void cancelExpiredOrders() {
         System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
-        LocalDateTime cutoffTime = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).minusMinutes(10);
+        LocalDateTime cutoffTime = LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(10);
         List<UUID> expiredOrders = orderRepository.findExpiredOrders(cutoffTime);
 
-        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired orders.");
+        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired payment orders.");
 
         for (UUID orderId : expiredOrders) {
-            System.out.println("[Scheduler] Cancelling order: " + orderId);
+            System.out.println("[Scheduler] Cancelling expired payment order: " + orderId);
             orderRepository.updateOrderStatus(orderId);
         }
     }
 
-    @Scheduled(fixedRate = 60000)
+     @Scheduled(fixedRate = 60000) // Comment to disable auto-cancel
     public void cancelUnprocessedOrders() {
-        System.out.println("[Scheduler] Running cancelExpiredOrders() at " +
+        System.out.println("[Scheduler] Running cancelUnprocessedOrders() at " +
                 LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
 
         LocalDateTime cutoffTime =
-                LocalDateTime.now(ZoneId.of("Asia/Jakarta")).minusHours(1);
+                LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(10);
 
         List<UUID> expiredOrders =
                 orderRepository.findExpiredUnprocessedOrders(cutoffTime);
 
-        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired orders.");
+        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired unprocessed orders.");
 
         for (UUID orderId : expiredOrders) {
-            System.out.println("[Scheduler] Cancelling order: " + orderId);
+            System.out.println("[Scheduler] Cancelling unprocessed order: " + orderId);
             orderRepository.updateOrderStatusToCancelled(orderId);
         }
     }

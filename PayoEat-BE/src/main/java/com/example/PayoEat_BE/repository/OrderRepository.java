@@ -90,9 +90,11 @@ public class OrderRepository {
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
         try {
             String sql = """
-                select 
+                select
                     o.id as order_id,
                     o.order_time,
+                    o.order_status,
+                    o.customer_name,
                     oi.menu_code,
                     oi.quantity,
                     o.order_message,
@@ -105,13 +107,11 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
-                  and o.created_date::date = :date
                 order by o.order_time asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("status", OrderStatus.RECEIVED.toString())
                     .query(IncomingOrderRow.class)
                     .list();
@@ -124,28 +124,30 @@ public class OrderRepository {
     public List<ConfirmedOrderRow> getConfirmedOrderRow(UUID restaurantId) {
         try {
             String sql = """
-                select 
+                select
                     o.id as order_id,
                     o.order_time,
+                    o.order_status,
+                    o.customer_name,
+                    o.order_message,
                     oi.menu_code,
                     oi.quantity,
                     m.menu_name,
                     m.menu_price,
                     m.menu_image_url,
-                    o.payment_image_url
+                    o.payment_image_url,
+                    o.payment_begin_at
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
-                  and o.created_date::date = :date
-                order by o.order_time asc
+                order by o.payment_begin_at asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("status", OrderStatus.PAYMENT.toString())
                     .query(ConfirmedOrderRow.class)
                     .list();
@@ -161,6 +163,9 @@ public class OrderRepository {
                 select
                     o.id as order_id,
                     o.order_time,
+                    o.order_status,
+                    o.customer_name,
+                    o.order_message,
                     oi.menu_code,
                     oi.quantity,
                     m.menu_name,
@@ -174,16 +179,15 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status in (:statuses)
-                  and o.created_date::date = :date
                 order by o.order_time asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .param("statuses", List.of(
+                            OrderStatus.CONFIRMED.toString(),
                             OrderStatus.ACTIVE.toString(),
-                            OrderStatus.CONFIRMED.toString()
+                            OrderStatus.READY.toString()
                     ))
                     .query(ActiveOrderRow.class)
                     .list();
@@ -205,15 +209,14 @@ public class OrderRepository {
                         o.order_time
                     FROM public.orders o
                     LEFT JOIN public.order_items oi ON o.id = oi.order_id
-                    WHERE o.restaurant_id = :restaurant_id and o.created_date = :created_date
+                    WHERE o.restaurant_id = :restaurant_id
                     GROUP BY o.id
                     ORDER BY o.order_time DESC
-                    LIMIT 4;
+                    LIMIT 5;
                     """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("created_date", LocalDate.now())
                     .query(RecentOrderDto.class)
                     .list();
 
@@ -406,6 +409,27 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("order_status", OrderStatus.FINISHED.toString())
+                    .param("order_id", orderId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer markOrderReady(UUID orderId) {
+        try {
+            String sql = """
+                    update
+                    	orders
+                    set
+                    	order_status = :order_status
+                    where
+                    	id = :order_id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("order_status", OrderStatus.READY.toString())
                     .param("order_id", orderId)
                     .update();
 
@@ -725,6 +749,7 @@ public class OrderRepository {
                     o.id AS order_id,
                     o.restaurant_id,
                     r.name AS restaurant_name,
+                    o.customer_name,
                     o.order_time,
                     o.order_status,
                     o.payment_status,

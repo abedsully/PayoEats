@@ -18,4 +18,5 @@ public interface IRestaurantService {
     List<Restaurant> getSimilarRestaurant(UUID id);
     UUID getRestaurantByUserId(Long userId);
     RestaurantManagementData getRestaurantManagementData(UUID restaurantId, Long userId);
+    void toggleRestaurantStatus(UUID restaurantId, Boolean isActive, Long userId);
 }

@@ -392,4 +392,24 @@ public class RestaurantRepository {
         }
     }
 
+    public Integer toggleRestaurantActiveStatus(UUID restaurantId, Boolean isOpen) {
+        try {
+            String sql = """
+                    UPDATE restaurant
+                    SET is_open = :is_open,
+                        updated_at = :updated_at
+                    WHERE id = :restaurant_id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("is_open", isOpen)
+                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("restaurant_id", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to toggle restaurant status: " + e.getMessage());
+        }
+    }
+
 }

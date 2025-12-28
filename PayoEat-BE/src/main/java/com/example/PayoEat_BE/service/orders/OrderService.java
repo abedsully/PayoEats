@@ -256,13 +256,28 @@ public class OrderService implements IOrderService {
         checkUserRestaurant(userId);
         checkIfRestaurantExists(result.getRestaurantId());
 
-        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
-            throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
+        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE) && !result.getOrderStatus().equals(OrderStatus.READY)) {
+            throw new IllegalArgumentException("This order can't be finished yet");
         }
 
         orderRepository.finishOrder(result.getId());
 
         return "This order has been completed";
+    }
+
+    public String markOrderReady(UUID orderId, Long userId) {
+        CheckOrderDto result = checkOrderExistance(orderId);
+
+        checkUserRestaurant(userId);
+        checkIfRestaurantExists(result.getRestaurantId());
+
+        if (!result.getOrderStatus().equals(OrderStatus.CONFIRMED) && !result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
+            throw new IllegalArgumentException("This order cannot be marked as ready. Current status: " + result.getOrderStatus());
+        }
+
+        orderRepository.markOrderReady(result.getId());
+
+        return "Order has been marked as ready for pickup";
     }
 
     @Override
@@ -283,6 +298,8 @@ public class OrderService implements IOrderService {
                 IncomingOrderDto dto = new IncomingOrderDto();
                 dto.setRestaurantId(restaurantId);
                 dto.setOrderId(id);
+                dto.setOrderStatus(r.getOrderStatus());
+                dto.setCustomerName(r.getCustomerName());
                 dto.setMenuLists(new ArrayList<>());
                 dto.setReceivedAt(r.getOrderTime());
                 dto.setOrderMessage(r.getOrderMessage());
@@ -329,8 +346,12 @@ public class OrderService implements IOrderService {
                 ConfirmedOrderDto dto = new ConfirmedOrderDto();
                 dto.setRestaurantId(restaurantId);
                 dto.setOrderId(id);
+                dto.setOrderStatus(r.getOrderStatus());
+                dto.setCustomerName(r.getCustomerName());
                 dto.setMenuLists(new ArrayList<>());
+                dto.setOrderMessage(r.getOrderMessage());
                 dto.setPaymentImageUrl(r.getPaymentImageUrl());
+                dto.setPaymentBeginAt(r.getPaymentBeginAt());
                 dto.setSubTotal(0.0);
                 dto.setTaxPrice(0.0);
                 dto.setTotalPrice(0.0);
@@ -374,7 +395,10 @@ public class OrderService implements IOrderService {
                     ActiveOrderDto dto = new ActiveOrderDto();
                     dto.setRestaurantId(restaurantId);
                     dto.setOrderId(id);
+                    dto.setOrderStatus(r.getOrderStatus());
+                    dto.setCustomerName(r.getCustomerName());
                     dto.setMenuLists(new ArrayList<>());
+                    dto.setOrderMessage(r.getOrderMessage());
                     dto.setDineInTime(r.getDineInTime());
                     dto.setPaymentBeginAt(r.getPaymentBeginAt());
                     return dto;
@@ -524,6 +548,7 @@ public class OrderService implements IOrderService {
                 dto.setCreatedDate(row.getCreatedDate());
                 dto.setRestaurantId(row.getRestaurantId());
                 dto.setRestaurantName(row.getRestaurantName());
+                dto.setCustomerName(row.getCustomerName());
                 dto.setOrderTime(row.getOrderTime());
                 dto.setOrderStatus(row.getOrderStatus());
                 dto.setPaymentStatus(row.getPaymentStatus());

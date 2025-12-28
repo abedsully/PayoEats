@@ -9,6 +9,8 @@ import java.util.UUID;
 public class IncomingOrderRow {
     private UUID orderId;
     private LocalDateTime orderTime;
+    private String orderStatus;
+    private String customerName;
     private UUID menuCode;
     private Long quantity;
     private String orderMessage;

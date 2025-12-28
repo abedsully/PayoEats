@@ -21,6 +21,7 @@ public interface IOrderService {
     void confirmOrderPayment(UUID orderId, Long userId);
     void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId);
     String finishOrder(UUID orderId, Long userId);
+    String markOrderReady(UUID orderId, Long userId);
     OrderDetailResponseDto getOrderByIdCustomer(UUID orderId);
     List<IncomingOrderDto> getIncomingOrder(UUID restaurantId);
     List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId);

@@ -15,6 +15,7 @@ public class OrderHistoryRow {
     private LocalDate createdDate;
     private UUID restaurantId;
     private String restaurantName;
+    private String customerName;
     private LocalDateTime orderTime;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;

@@ -12,7 +12,10 @@ import java.util.UUID;
 public class ActiveOrderDto {
     private UUID restaurantId;
     private UUID orderId;
+    private String orderStatus;
+    private String customerName;
     private List<MenuListDto> menuLists;
+    private String orderMessage;
 
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime dineInTime;

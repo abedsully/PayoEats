@@ -34,7 +34,7 @@ public class RestaurantStatsService implements IRestaurantStatsService {
 
     @Override
     public TodayRestaurantStatsDto getTodayRestaurantStats(UUID restaurantId, Long userId) {
-        return restaurantStatsRepository.getTodayRestaurantStatus(restaurantId, LocalDate.now());
+        return restaurantStatsRepository.getTodayRestaurantStatus(restaurantId, LocalDate.now(ZoneId.of("Asia/Jakarta")));
     }
 
     @Override
