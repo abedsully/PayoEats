@@ -14,19 +14,10 @@ import com.example.PayoEat_BE.request.menu.AddMenuRequest;
 import com.example.PayoEat_BE.service.UploadService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -148,85 +139,6 @@ public class MenuService implements IMenuService{
         return menuRepository.getMenusByRestaurantId(restaurantId);
     }
 
-
-    @Override
-    public List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException {
-        String returnMessage = "";
-        long totalRecords = 0L;
-
-        try (InputStream is = file.getInputStream()) {
-            Workbook workbook = new XSSFWorkbook(is);
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
-
-            if (rowIterator.hasNext()) {
-                rowIterator.next();
-            }
-
-            List<Menu> menuList = new ArrayList<>();
-
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-
-                if (row == null) continue;
-
-                Menu menu = new Menu();
-                menu.setMenuName(getCellValue(row.getCell(0)));
-                menu.setMenuDetail(getCellValue(row.getCell(2)));
-                menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
-                menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-                menu.setRestaurantId(UUID.randomUUID());
-
-                menuList.add(menu);
-            }
-
-            return getConvertedMenus(menuList);
-        } catch (IOException e) {
-            throw new IOException(e.getMessage());
-        }
-    }
-
-    @Override
-    public List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException {
-        String returnMessage = "";
-        long totalRecords = 0L;
-
-        try (InputStream is = file.getInputStream()) {
-            Workbook workbook = new XSSFWorkbook(is);
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
-
-            if (rowIterator.hasNext()) {
-                rowIterator.next();
-            }
-
-            List<Menu> menuList = new ArrayList<>();
-
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-
-                if (row == null) continue;
-
-                Menu menu = new Menu();
-                menu.setMenuName(getCellValue(row.getCell(0)));
-                menu.setMenuDetail(getCellValue(row.getCell(2)));
-                menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
-                menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-                menu.setRestaurantId(UUID.randomUUID());
-                menu.setIsActive(true);
-                menuList.add(menu);
-            }
-
-            menuRepository.addMenus(menuList);
-
-            return getConvertedMenus(menuList);
-        } catch (IOException e) {
-            throw new IOException(e.getMessage());
-        }
-    }
-
     @Override
     public List<TopMenusDto> getTop5Menu(UUID restaurantId, Long userId) {
         CheckUserRestaurantDto user = checkUserRestaurant(userId);
@@ -255,19 +167,6 @@ public class MenuService implements IMenuService{
         return menuRepository.getMenuDetail(menuCode);
     }
 
-    private String getCellValue(Cell cell) {
-        if (cell == null) return "";
-
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue();
-            case NUMERIC:
-                double numericValue = cell.getNumericCellValue();
-                return String.format("%.0f", numericValue);
-            default:
-                return "";
-        }
-    }
 
     private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
         CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)

@@ -19,4 +19,5 @@ public class ConfirmedOrderDto {
     private Double subTotal;
     private Double taxPrice;
     private LocalDateTime paymentBeginAt;
+    private Long taxRate;
 }

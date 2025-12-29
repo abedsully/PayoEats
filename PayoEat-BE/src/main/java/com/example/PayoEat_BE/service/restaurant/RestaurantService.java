@@ -10,8 +10,8 @@ import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.service.EmailService;
 import com.example.PayoEat_BE.service.UploadService;
 import lombok.RequiredArgsConstructor;
@@ -56,35 +56,6 @@ public class RestaurantService implements IRestaurantService {
         return createRestaurant(request, restaurantImageUrl, qrisImageUrl);
     }
 
-
-    private Restaurant updateExistingRestaurant(Restaurant existingRestaurant, UpdateRestaurantRequest request) {
-        if ((request.getName() == null || request.getName().isEmpty()) &&
-                (request.getDescription() == null || request.getDescription().isEmpty()) &&
-                request.getRating() == null) {
-            throw new IllegalArgumentException("No valid fields provided to update the restaurant.");
-        }
-
-        if (request.getName() != null && !request.getName().isEmpty()) {
-            existingRestaurant.setName(request.getName());
-        }
-
-        if (request.getDescription() != null && !request.getDescription().isEmpty()) {
-            existingRestaurant.setDescription(request.getDescription());
-        }
-
-        if (request.getRating() != null) {
-            existingRestaurant.setRating(request.getRating());
-        }
-
-        existingRestaurant.setUpdatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-
-        return existingRestaurant;
-    }
-
-    private void deleteExistingRestaurant(Restaurant existingRestaurant) {
-        existingRestaurant.setUpdatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-        existingRestaurant.setIsActive(false);
-    }
 
     private boolean restaurantExists(String name) {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
@@ -232,6 +203,30 @@ public class RestaurantService implements IRestaurantService {
         }
     }
 
+    @Override
+    public Integer updateRestaurant(UpdateRestaurantRequest request, Long userId, MultipartFile restaurantImageUrl, MultipartFile qrisImageUrl) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
+        String resImageUrl = "";
+        String qrImageUrl = "";
+
+        Restaurant restaurant = getRestaurantById(request.getRestaurantId());
+
+
+        if (restaurantImageUrl != null && !restaurantImageUrl.isEmpty()) {
+            resImageUrl = uploadService.update(restaurantImageUrl, UploadType.RESTAURANT, restaurant.getRestaurantImageUrl());
+        }
+
+        if (qrisImageUrl != null && !qrisImageUrl.isEmpty()) {
+            qrImageUrl = uploadService.update(qrisImageUrl, UploadType.QR, restaurant.getQrisImageUrl());
+        }
+
+        return restaurantRepository.updateRestaurant(request, resImageUrl, qrImageUrl);
+    }
+
+    @Override
+    public Long getRestaurantTax(UUID restaurantId) {
+        return restaurantRepository.getRestaurantTax(restaurantId);
+    }
 
 }

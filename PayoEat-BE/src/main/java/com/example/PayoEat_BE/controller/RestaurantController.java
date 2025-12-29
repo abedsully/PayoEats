@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
@@ -154,6 +155,17 @@ public class RestaurantController {
         }
     }
 
+    @GetMapping("/get-tax")
+    @Operation(summary = "Get restaurant management data", description = "Getting restaurant management data")
+    public ResponseEntity<ApiResponse> getRestaurantTax(@RequestParam UUID restaurantId) {
+        try {
+            Long result = restaurantService.getRestaurantTax(restaurantId);
+            return ResponseEntity.ok(new ApiResponse("Found", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
+        }
+    }
+
     @PostMapping("/toggle-status")
     @Operation(summary = "Toggle restaurant active status", description = "Toggle restaurant open/closed status")
     public ResponseEntity<ApiResponse> toggleRestaurantStatus(
@@ -162,6 +174,31 @@ public class RestaurantController {
         try {
             User user = userService.getAuthenticatedUser();
             restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/update-restaurant")
+    @Operation(summary = "Toggle restaurant active status", description = "Toggle restaurant open/closed status")
+    public ResponseEntity<ApiResponse> updateRestaurant(
+            @RequestParam UUID restaurantId,
+            @RequestParam String restaurantName,
+            @RequestParam String description,
+            @RequestParam String telephoneNumber,
+            @RequestParam String location,
+            @RequestParam String openingHour,
+            @RequestParam String closingHour,
+            @RequestParam String restaurantCategoryCode,
+            @RequestParam(value = "restaurantImageUrl", required = false) MultipartFile restaurantImageUrl,
+            @RequestParam(value = "qrisImageUrl", required = false) MultipartFile qrisImageUrl,
+            @RequestParam String tax) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode), Long.parseLong(tax));
+
+            restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
             return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));

@@ -18,6 +18,7 @@ public class IncomingOrderDto {
     private Double subTotal;
     private Double taxPrice;
     private String orderMessage;
+    private Long taxRate;
 
     private LocalDateTime receivedAt;
 }

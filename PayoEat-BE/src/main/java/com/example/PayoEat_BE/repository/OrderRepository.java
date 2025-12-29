@@ -100,10 +100,12 @@ public class OrderRepository {
                     o.order_message,
                     m.menu_name,
                     m.menu_price,
-                    m.menu_image_url
+                    m.menu_image_url,
+                    r.tax
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
+                join restaurant r on r.id = o.restaurant_id
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
@@ -136,10 +138,12 @@ public class OrderRepository {
                     m.menu_price,
                     m.menu_image_url,
                     o.payment_image_url,
-                    o.payment_begin_at
+                    o.payment_begin_at,
+                    r.tax
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
+                join restaurant r on r.id = o.restaurant_id
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status

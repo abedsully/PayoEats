@@ -1,14 +1,11 @@
 package com.example.PayoEat_BE.repository;
 
-import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantOpenStatusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
-import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
-import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import jakarta.mail.Multipart;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -144,21 +141,6 @@ public class RestaurantRepository {
                     .query(Long.class)
                     .single();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Long getRestaurantTax(UUID restaurantId) {
-        try {
-            String sql = """
-                    select tax from restaurant where id = :restaurantId;
-                    """;
-
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .query(Long.class)
-                    .single();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -338,7 +320,13 @@ public class RestaurantRepository {
             LocalTime openingTime = restaurant.getOpeningHour();
             LocalTime closingTime = restaurant.getClosingHour();
 
-            boolean shouldBeOpen = now.isAfter(openingTime) && now.isBefore(closingTime);
+            boolean shouldBeOpen;
+
+            if (openingTime.isBefore(closingTime)) {
+                shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
+            } else {
+                shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
+            }
 
             if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
 
@@ -409,6 +397,49 @@ public class RestaurantRepository {
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to toggle restaurant status: " + e.getMessage());
+        }
+    }
+
+    public Integer updateRestaurant(UpdateRestaurantRequest request, String resImageUrl, String qrisImageUrl) {
+        try {
+            String sql = """
+                    UPDATE restaurant
+                    SET name = :name, telephone_number = :number, description = :description, 
+                    location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour, tax = :tax,
+                    restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
+                    where id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("name", request.getName())
+                    .param("number", request.getTelephoneNumber())
+                    .param("description", request.getDescription())
+                    .param("location", request.getLocation())
+                    .param("opening_hour", request.getOpeningHour())
+                    .param("closing_hour", request.getClosingHour())
+                    .param("tax", request.getTax())
+                    .param("res_image", resImageUrl)
+                    .param("qris_image", qrisImageUrl)
+                    .param("category", request.getRestaurantCategory())
+                    .param("restaurant_id", request.getRestaurantId())
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Long getRestaurantTax(UUID restaurantId) {
+        try {
+            String sql = "select tax from restaurant where id = :id";
+
+            return jdbcClient.sql(sql)
+                    .param("id", restaurantId)
+                    .query(Long.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 

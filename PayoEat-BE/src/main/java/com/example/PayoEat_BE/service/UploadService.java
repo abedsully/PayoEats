@@ -39,7 +39,7 @@ public class UploadService {
         this.webClient = WebClient.builder()
                 .codecs(configurer -> configurer
                         .defaultCodecs()
-                        .maxInMemorySize(16 * 1024 * 1024)) // 16MB buffer
+                        .maxInMemorySize(16 * 1024 * 1024))
                 .build();
     }
 
@@ -94,4 +94,120 @@ public class UploadService {
             throw new RuntimeException("Upload failed: " + e.getMessage(), e);
         }
     }
+
+    public String update(MultipartFile file, UploadType type, String oldFileUrl) {
+        try {
+            String bucketPath = "";
+
+            switch (type) {
+                case PAYMENT:
+                    bucketPath = bucket1;
+                    break;
+                case REVIEW:
+                    bucketPath = bucket2;
+                    break;
+                case RESTAURANT:
+                    bucketPath = bucket3;
+                    break;
+                case QR:
+                    bucketPath = bucket4;
+                    break;
+                case MENU:
+                    bucketPath = bucket5;
+                    break;
+                default:
+                    bucketPath = bucket2;
+            }
+
+            String oldFileName = extractFileName(oldFileUrl);
+
+            if (oldFileName != null) {
+                delete(type, oldFileName);
+            }
+
+            String original = file.getOriginalFilename();
+
+            String safeName = original
+                    .replaceAll("[^A-Za-z0-9._-]", "-")
+                    .replaceAll("-+", "-");
+
+            String newFileName = UUID.randomUUID() + "-" + safeName;
+
+            String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucketPath + "/" + newFileName;
+
+            webClient.post()
+                    .uri(uploadUrl)
+                    .header("Authorization", "Bearer " + supabaseKey)
+                    .header("Content-Type", file.getContentType())
+                    .bodyValue(file.getBytes())
+                    .retrieve()
+                    .onStatus(
+                            status -> status.is4xxClientError() || status.is5xxServerError(),
+                            resp -> resp.bodyToMono(String.class)
+                                    .map(body -> new RuntimeException("Upload failed: " + body))
+                    )
+                    .bodyToMono(Void.class)
+                    .block();
+
+            return supabaseUrl + "/storage/v1/object/public/" + bucketPath + "/" + newFileName;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Update failed: " + e.getMessage(), e);
+        }
+    }
+
+
+
+    public void delete(UploadType type, String fileName) {
+        try {
+
+            String bucketPath = "";
+
+            switch (type) {
+                case PAYMENT:
+                    bucketPath = bucket1;
+                    break;
+                case REVIEW:
+                    bucketPath = bucket2;
+                    break;
+                case RESTAURANT:
+                    bucketPath = bucket3;
+                    break;
+                case QR:
+                    bucketPath = bucket4;
+                    break;
+                case MENU:
+                    bucketPath = bucket5;
+                    break;
+                default:
+                    bucketPath = bucket2;
+            }
+
+            String deleteUrl = supabaseUrl + "/storage/v1/object/" + bucketPath + "/" + fileName;
+
+            webClient.delete()
+                    .uri(deleteUrl)
+                    .header("Authorization", "Bearer " + supabaseKey)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Delete failed: " + e.getMessage(), e);
+        }
+    }
+
+    private String extractFileName(String url) {
+        if (url == null || url.isBlank()) return null;
+
+        // kalau bukan URL Supabase, jangan dihapus
+        if (!url.contains("/storage/v1/object/public/")) {
+            return null;
+        }
+
+        return url.substring(url.lastIndexOf("/") + 1);
+    }
+
+
+
 }

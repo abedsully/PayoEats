@@ -33,7 +33,7 @@ public class OrderAutoCancelScheduler {
         }
     }
 
-     @Scheduled(fixedRate = 60000) // Comment to disable auto-cancel
+     @Scheduled(fixedRate = 60000)
     public void cancelUnprocessedOrders() {
         System.out.println("[Scheduler] Running cancelUnprocessedOrders() at " +
                 LocalDateTime.now(ZoneId.of("Asia/Jakarta")));

@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,4 +20,6 @@ public interface IRestaurantService {
     UUID getRestaurantByUserId(Long userId);
     RestaurantManagementData getRestaurantManagementData(UUID restaurantId, Long userId);
     void toggleRestaurantStatus(UUID restaurantId, Boolean isActive, Long userId);
+    Integer updateRestaurant(UpdateRestaurantRequest request, Long userId, MultipartFile restaurantImageUrl, MultipartFile qrisImageUrl);
+    Long getRestaurantTax(UUID restaurantId);
 }
