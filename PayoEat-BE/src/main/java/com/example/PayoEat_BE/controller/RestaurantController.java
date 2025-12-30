@@ -92,13 +92,12 @@ public class RestaurantController {
                                                      @RequestParam("telephoneNumber") String telephoneNumber,
                                                      @RequestParam("restaurantCategoryCode") Long restaurantCategoryCode,
                                                      @RequestParam("restaurantColor") String restaurantColor,
-                                                     @RequestParam("tax") String tax,
                                                      @RequestParam("restaurantImageUrl") MultipartFile restaurantImageUrl,
                                                      @RequestParam("qrisImageUrl") MultipartFile qrisImageUrl
                                                      ) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax)
+                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
             );
             UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
             restaurantService.addRestaurantApproval(restaurantId);
@@ -150,6 +149,17 @@ public class RestaurantController {
             return ResponseEntity.ok(new ApiResponse("Found", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @GetMapping("/check-restaurant-name")
+    @Operation(summary = "Check restaurant name duplicate", description = "Endpoint for checking if restaurant name already exists")
+    public ResponseEntity<ApiResponse> checkRestaurantNameExists(@RequestParam String name) {
+        try {
+            Boolean exists = restaurantService.checkRestaurantNameExists(name);
+            return ResponseEntity.ok(new ApiResponse("Check completed", exists));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
         }
     }
 

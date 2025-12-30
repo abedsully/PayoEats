@@ -162,5 +162,10 @@ public class UserService implements IUserService{
         return matcher.matches();
     }
 
+    @Override
+    public Boolean checkEmailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
 
 }

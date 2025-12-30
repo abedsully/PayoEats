@@ -91,4 +91,17 @@ public class UserRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public Boolean existsByEmail(String email) {
+        try {
+            String sql = "select exists(select 1 from users where email = :email)";
+
+            return jdbcClient.sql(sql)
+                    .param("email", email)
+                    .query(Boolean.class)
+                    .single();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 }

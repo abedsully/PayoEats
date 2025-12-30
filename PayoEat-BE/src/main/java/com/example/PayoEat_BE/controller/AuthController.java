@@ -125,4 +125,15 @@ public class AuthController {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
         }
     }
+
+    @GetMapping("/check-email")
+    @Operation(summary = "Check email duplicate", description = "Endpoint for checking if email already exists")
+    public ResponseEntity<ApiResponse> checkEmailExists(@RequestParam String email) {
+        try {
+            Boolean exists = userService.checkEmailExists(email);
+            return ResponseEntity.ok(new ApiResponse("Check completed", exists));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
+        }
+    }
 }

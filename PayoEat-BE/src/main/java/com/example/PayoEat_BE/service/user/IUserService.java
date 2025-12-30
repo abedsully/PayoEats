@@ -11,4 +11,5 @@ public interface IUserService {
     User findByEmail(String email);
     String forgetPassword(String email);
     String resetPassword(String token, String password);
+    Boolean checkEmailExists(String email);
 }

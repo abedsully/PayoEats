@@ -232,5 +232,10 @@ public class RestaurantService implements IRestaurantService {
         return result;
     }
 
+    @Override
+    public Boolean checkRestaurantNameExists(String name) {
+        return restaurantRepository.existsByNameAndIsActiveTrue(name);
+    }
+
 
 }

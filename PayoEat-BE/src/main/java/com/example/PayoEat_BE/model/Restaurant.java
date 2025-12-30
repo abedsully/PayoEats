@@ -22,7 +22,6 @@ public class Restaurant {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isActive;
-    private Long tax;
     private Long userId;
     private LocalTime openingHour;
     private LocalTime closingHour;

@@ -290,11 +290,10 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTaxPrice(0.0);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -335,11 +334,10 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTaxPrice(0.0);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -382,8 +380,6 @@ public class OrderService implements IOrderService {
     private UUID createOrder(AddOrderRequest request) {
         checkIfRestaurantExists(request.getRestaurantId());
 
-        Long restaurantTax = restaurantRepository.getRestaurantTax(request.getRestaurantId());
-
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setRestaurantId(request.getRestaurantId());
 
@@ -422,13 +418,12 @@ public class OrderService implements IOrderService {
             orderItems.add(orderItem);
         }
 
-        double taxPrice = (subTotalPrice * restaurantTax) / 100;
-        double totalPrice = subTotalPrice + taxPrice;
+        double totalPrice = subTotalPrice;
 
         newRestaurantOrder.setOrderTime(LocalDateTime.now());
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
-        newRestaurantOrder.setTaxPrice(taxPrice);
+        newRestaurantOrder.setTaxPrice(0.0);
         newRestaurantOrder.setTotalPrice(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setDineInTime(null);

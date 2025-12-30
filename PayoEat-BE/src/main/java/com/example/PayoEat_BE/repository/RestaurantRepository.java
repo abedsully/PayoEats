@@ -35,7 +35,6 @@ public class RestaurantRepository {
             created_at,
             updated_at,
             is_active,
-            tax,
             user_id,
             opening_hour,
             closing_hour,
@@ -47,7 +46,7 @@ public class RestaurantRepository {
             restaurant_category
         ) VALUES (
             :id, :name, :rating, :total_rating_count, :description,
-            :created_at, :updated_at, :is_active, :tax, :user_id,
+            :created_at, :updated_at, :is_active, :user_id,
             :opening_hour, :closing_hour, :location, :telephone_number,
             :restaurant_image_url, :qris_image_url, :color, :restaurant_category
         )
@@ -62,7 +61,6 @@ public class RestaurantRepository {
                     .param("created_at", LocalDateTime.now())
                     .param("updated_at", null)
                     .param("is_active", false)
-                    .param("tax", request.getTax())
                     .param("user_id", userId)
                     .param("opening_hour", request.getOpeningHour())
                     .param("closing_hour", request.getClosingHour())
@@ -139,21 +137,6 @@ public class RestaurantRepository {
                     .query(Long.class)
                     .single();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Long getRestaurantTax(UUID restaurantId) {
-        try {
-            String sql = """
-                    select tax from restaurant where id = :restaurantId;
-                    """;
-
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .query(Long.class)
-                    .single();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

@@ -23,4 +23,5 @@ public interface IRestaurantService {
     Restaurant getRestaurantDetailForApproval(UUID id);
     List<Restaurant> getSimilarRestaurant(UUID id);
     UUID getRestaurantByUserId(Long userId);
+    Boolean checkRestaurantNameExists(String name);
 }
