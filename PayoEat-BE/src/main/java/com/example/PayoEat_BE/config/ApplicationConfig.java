@@ -74,9 +74,10 @@ public class ApplicationConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
+        configuration.setAllowedOriginPatterns(List.of(
                 "https://m8t547vr-5173.asse.devtunnels.ms",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://*.ngrok-free.dev"
         ));
 
         configuration.setAllowedMethods(List.of(

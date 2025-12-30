@@ -55,6 +55,10 @@ public class OrderController {
     @Value("${fe.url}")
     private String feUrl;
 
+    @Value("${backend.url}")
+    private String backendUrl;
+
+
 
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order")
@@ -203,19 +207,19 @@ public class OrderController {
 
     @GetMapping("/confirm-redirect")
     public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
-        String html = String.format("""
-    <html>
-      <head>
-        <title>Confirming Order...</title>
-      </head>
-      <body onload='document.forms[0].submit()'>
-        <p>Processing your order... please wait.</p>
-        <form method='POST' action='/api/order/confirm2'>
-          <input type='hidden' name='orderId' value='%s'/>
-        </form>
-      </body>
-    </html>
-    """, orderId.toString());
+        String html = """
+<html>
+  <head>
+    <title>Confirming Order...</title>
+  </head>
+  <body onload='document.forms[0].submit()'>
+    <p>Processing your order... please wait.</p>
+    <form method='POST' action='%sorder/confirm2'>
+      <input type='hidden' name='orderId' value='%s'/>
+    </form>
+  </body>
+</html>
+""".formatted(backendUrl, orderId);
 
 
         return ResponseEntity.ok()
@@ -223,7 +227,7 @@ public class OrderController {
                 .body(html);
     }
 
-    // POST endpoint to confirm order
+    @CrossOrigin(origins = "*")
     @PostMapping("/confirm2")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
     public ResponseEntity<String> confirmOrder2(@RequestParam UUID orderId) {
@@ -238,7 +242,7 @@ public class OrderController {
                     <script>
                       // Redirect after 1 second
                       setTimeout(() => {
-                        window.location.href = "%s";
+                        window.location.href = "%s/restaurant/management";
                       }, 1000);
                     </script>
                   </head>

@@ -144,7 +144,7 @@ public class OrderService implements IOrderService {
             throw new IllegalArgumentException("This order can't be cancelled");
         }
 
-        if (request.getCancellationReason().isEmpty() || order.getPaymentImageUrl().isBlank()) {
+        if (request.getCancellationReason().isEmpty()) {
             throw new IllegalArgumentException("Please provide cancellation reason");
         }
 
