@@ -16,9 +16,7 @@ public class IncomingOrderDto {
     private List<MenuListDto> menuLists;
     private Double totalPrice;
     private Double subTotal;
-    private Double taxPrice;
     private String orderMessage;
-    private Long taxRate;
 
     private LocalDateTime receivedAt;
 }

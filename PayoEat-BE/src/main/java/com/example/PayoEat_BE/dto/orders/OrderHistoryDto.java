@@ -22,7 +22,6 @@ public class OrderHistoryDto {
     private PaymentStatus paymentStatus;
     private Double subTotal;
     private Double totalPrice;
-    private Double taxPrice;
     private Long itemCount;
     private List<MenuListDto> menuLists;
 }

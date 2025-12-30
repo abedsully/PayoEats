@@ -97,8 +97,7 @@ public class OrderRepository {
                     o.order_message,
                     m.menu_name,
                     m.menu_price,
-                    m.menu_image_url,
-                    r.tax
+                    m.menu_image_url
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -135,8 +134,7 @@ public class OrderRepository {
                     m.menu_price,
                     m.menu_image_url,
                     o.payment_image_url,
-                    o.payment_begin_at,
-                    r.tax
+                    o.payment_begin_at
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true

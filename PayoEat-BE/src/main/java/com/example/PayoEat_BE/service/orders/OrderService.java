@@ -290,7 +290,6 @@ public class OrderService implements IOrderService {
                 dto.setReceivedAt(r.getOrderTime());
 
                 dto.setSubTotal(0.0);
-                dto.setTaxPrice(0.0);
                 dto.setTotalPrice(0.0);
                 return dto;
             });
@@ -308,11 +307,9 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -335,7 +332,6 @@ public class OrderService implements IOrderService {
                 dto.setMenuLists(new ArrayList<>());
                 dto.setPaymentImageUrl(r.getPaymentImageUrl());
                 dto.setSubTotal(0.0);
-                dto.setTaxPrice(0.0);
                 dto.setTotalPrice(0.0);
                 return dto;
             });
@@ -353,11 +349,9 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());

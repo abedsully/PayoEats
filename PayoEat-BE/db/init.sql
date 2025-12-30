@@ -347,7 +347,7 @@ BEGIN
             v_sub_total := v_sub_total + (v_menu_prices[v_item_idx] * v_quantity);
         END LOOP;
 
-        -- Calculate total (no tax)
+        -- Calculate total
         v_total_price := v_sub_total;
 
         -- Insert order

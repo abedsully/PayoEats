@@ -24,5 +24,4 @@ public class RestaurantDto {
     private String restaurantImageUrl;
     private Boolean isOpen;
     private String qrisImageUrl;
-    private Long tax;
 }

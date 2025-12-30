@@ -17,6 +17,5 @@ public class IncomingOrderRow {
     private String menuName;
     private Double menuPrice;
     private String menuImageUrl;
-    private Long tax;
 }
 
