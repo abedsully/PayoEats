@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.OrderDetailResponseDto;
+import com.example.PayoEat_BE.dto.orders.OrderHistoryDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.OrderRepository;
@@ -14,6 +15,7 @@ import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -25,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +49,12 @@ public class OrderController {
     private final List<UUID> trackedOrderIds = new CopyOnWriteArrayList<>();
     private final List<UUID> trackedRestaurantIds = new CopyOnWriteArrayList<>();
     private final List<UUID> trackedProgressOrderIds = new CopyOnWriteArrayList<>();
+
     private final RestaurantService restaurantService;
+
+    @Value("${fe.url}")
+    private String feUrl;
+
 
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order")
@@ -64,8 +72,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse> addOrder(@RequestBody AddOrderRequest request) {
 
         try {
-            UUID newOrder = orderService.addOrder(request);
-            return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", newOrder));
+            PlaceOrderDto result = orderService.addOrder(request);
+            return ResponseEntity.ok(new ApiResponse("Order has been received, Please wait for the restaurant to confirm your order", result));
 
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -111,7 +119,6 @@ public class OrderController {
 
     @GetMapping("/get-active")
     @Operation(summary = "Getting the list of active orders", description = "Returning list of active orders")
-    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getActiveOrders(@RequestParam UUID restaurantId) {
         try {
             User user = userService.getAuthenticatedUser();
@@ -182,6 +189,18 @@ public class OrderController {
         }
     }
 
+    @PostMapping("/mark-ready")
+    @Operation(summary = "Mark order as ready", description = "Mark an order as ready for pickup by restaurant")
+    public ResponseEntity<ApiResponse> markOrderReady(@RequestParam UUID orderId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            String result = orderService.markOrderReady(orderId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Operation successful", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/confirm-redirect")
     public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
         String html = String.format("""
@@ -219,7 +238,7 @@ public class OrderController {
                     <script>
                       // Redirect after 1 second
                       setTimeout(() => {
-                        window.location.href = 'http://localhost:5173/';
+                        window.location.href = "%s";
                       }, 1000);
                     </script>
                   </head>
@@ -228,7 +247,7 @@ public class OrderController {
                     <p>Redirecting to dashboard...</p>
                   </body>
                 </html>
-                """;
+                """.formatted(feUrl);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
@@ -273,6 +292,48 @@ public class OrderController {
         }
     }
 
+    @MessageMapping("/restaurant-recent-orders/request")
+    public void handleRecentOrdersRequest(@Payload String restaurantIdStr) {
+        try {
+            UUID restaurantId = UUID.fromString(restaurantIdStr);
+
+            // Track restaurantId for periodic updates
+            if (!trackedRestaurantIds.contains(restaurantId)) {
+                trackedRestaurantIds.add(restaurantId);
+            }
+
+            // Push initial data immediately
+            List<RecentOrderDto> recentOrders = orderService.getRecentOrderLists(restaurantId);
+            messagingTemplate.convertAndSend(
+                    "/topic/restaurant-recent-orders/" + restaurantIdStr,
+                    recentOrders
+            );
+
+        } catch (Exception e) {
+            System.err.println("Error in handleRecentOrdersRequest: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Scheduled task to periodically push recent orders to all subscribed restaurants
+     */
+    @Scheduled(fixedRate = 5000)
+    public void sendPeriodicRecentOrders() {
+        for (UUID restaurantId : trackedRestaurantIds) {
+            try {
+                List<RecentOrderDto> recentOrders = orderService.getRecentOrderLists(restaurantId);
+                messagingTemplate.convertAndSend(
+                        "/topic/restaurant-recent-orders/" + restaurantId,
+                        recentOrders
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to send recent orders for: " + restaurantId);
+                e.printStackTrace();
+            }
+        }
+    }
+
     @MessageMapping("/order-progress/request")
     public void handleOrderRequest(UUID orderId) {
         // Save the orderId if not already tracked
@@ -291,6 +352,17 @@ public class OrderController {
         try {
             List<IncomingOrderDto>  result = orderService.getIncomingOrder(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Order payment result: ", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/payment-modal-data")
+    @Operation(summary = "Getting payment modal data", description = "Getting payment modal data")
+    public ResponseEntity<ApiResponse> getPaymentModalData(@RequestParam UUID orderId) {
+        try {
+            PaymentModalDto result = orderService.getPaymentModalData(orderId);
+            return ResponseEntity.ok(new ApiResponse("Payment modal data: ", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
@@ -329,9 +401,6 @@ public class OrderController {
         }
     }
 
-
-
-
     @MessageMapping("/restaurant-orders/request")
     public void handleRestaurantOrderRequest(@Payload String restaurantIdStr) {
         try {
@@ -359,26 +428,54 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/history/customer")
+    @Operation(summary = "Get customer order history", description = "Retrieve order history for authenticated customer")
+    public ResponseEntity<ApiResponse> getCustomerOrderHistory(
+            @RequestParam String customerId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String status
+    ) {
+        try {
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
-    @Scheduled(fixedRate = 5000)
-    public void sendOrderProgress() {
-        for (UUID restaurantId : trackedProgressOrderIds) {
-            try {
-                List<IncomingOrderDto> incoming = orderService.getIncomingOrder(restaurantId);
-                List<ConfirmedOrderDto> confirmed = orderService.getConfirmedOrder(restaurantId);
-                List<ActiveOrderDto> active = orderService.getActiveOrder(restaurantId);
+            List<OrderHistoryDto> history = orderService.getCustomerOrderHistory(
+                    customerId,
+                start,
+                end,
+                status
+            );
 
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("incoming", incoming);
-                payload.put("confirmed", confirmed);
-                payload.put("active", active);
+            return ResponseEntity.ok(new ApiResponse("Order history retrieved successfully", history));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
 
-                messagingTemplate.convertAndSend("/topic/restaurant-orders/" + restaurantId, payload);
+    @GetMapping("/history/restaurant")
+    @Operation(summary = "Get restaurant order history", description = "Retrieve order history for restaurant")
+    public ResponseEntity<ApiResponse> getRestaurantOrderHistory(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String status
+    ) {
+        try {
+            User user = userService.getAuthenticatedUser();
 
-            } catch (Exception e) {
-                System.err.println("Failed to send restaurant order update for: " + restaurantId);
-                e.printStackTrace();
-            }
+            LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
+            LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
+
+            List<OrderHistoryDto> history = orderService.getRestaurantOrderHistory(
+                start,
+                end,
+                status,
+                    user.getId()
+            );
+
+            return ResponseEntity.ok(new ApiResponse("Order history retrieved successfully", history));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 }

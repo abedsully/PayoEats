@@ -1,8 +1,10 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
@@ -39,17 +41,6 @@ public class RestaurantController {
             Restaurant restaurant = restaurantService.getRestaurantById(id);
             RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
             return ResponseEntity.ok(new ApiResponse("Restaurant found", convertedRestaurant));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @GetMapping("/detail-restaurant")
-    @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
-    public ResponseEntity<ApiResponse> getRestaurantDetailForApproval(@RequestParam UUID id) {
-        try {
-            Restaurant restaurant = restaurantService.getRestaurantDetailForApproval(id);
-            return ResponseEntity.ok(new ApiResponse("Restaurant found", restaurant));
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
@@ -100,7 +91,6 @@ public class RestaurantController {
                     email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
             );
             UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
-            restaurantService.addRestaurantApproval(restaurantId);
             return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)
@@ -160,6 +150,56 @@ public class RestaurantController {
             return ResponseEntity.ok(new ApiResponse("Check completed", exists));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
+        }
+    }
+
+    @GetMapping("/get-management-data")
+    @Operation(summary = "Get restaurant management data", description = "Getting restaurant management data")
+    public ResponseEntity<ApiResponse> getRestaurantManagementData(@RequestParam UUID restaurantId) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            RestaurantManagementData result = restaurantService.getRestaurantManagementData(restaurantId, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Found", result));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @PostMapping("/toggle-status")
+    @Operation(summary = "Toggle restaurant active status", description = "Toggle restaurant open/closed status")
+    public ResponseEntity<ApiResponse> toggleRestaurantStatus(
+            @RequestParam UUID restaurantId,
+            @RequestParam Boolean isActive) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
+            return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/update-restaurant")
+    @Operation(summary = "Update restaurant", description = "Update restaurant information")
+    public ResponseEntity<ApiResponse> updateRestaurant(
+            @RequestParam UUID restaurantId,
+            @RequestParam String restaurantName,
+            @RequestParam String description,
+            @RequestParam String telephoneNumber,
+            @RequestParam String location,
+            @RequestParam String openingHour,
+            @RequestParam String closingHour,
+            @RequestParam String restaurantCategoryCode,
+            @RequestParam(value = "restaurantImageUrl", required = false) MultipartFile restaurantImageUrl,
+            @RequestParam(value = "qrisImageUrl", required = false) MultipartFile qrisImageUrl) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode));
+
+            restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
+            return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
         }
     }
 

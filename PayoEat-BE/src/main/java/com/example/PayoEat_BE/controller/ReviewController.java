@@ -1,7 +1,7 @@
 package com.example.PayoEat_BE.controller;
 
+import com.example.PayoEat_BE.dto.RestaurantReviewStatsDto;
 import com.example.PayoEat_BE.dto.ReviewDto;
-import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.Review;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.request.review.AddReviewRequest;
@@ -31,15 +31,15 @@ public class ReviewController {
 
     @PostMapping("/add")
     @Operation(summary = "Add Review", description = "Add a review to a restaurant")
-    @PreAuthorize("hasAuthority('CUSTOMER')")
-    public ResponseEntity<ApiResponse> addReview(@RequestParam("content") String reviewContent,
+    public ResponseEntity<ApiResponse> addReview(@RequestParam("reviewContent") String reviewContent,
+                                                 @RequestParam("customerId") String customerId,
                                                  @RequestParam("restaurantId") UUID restaurantId,
                                                  @RequestParam("rating") Double rating,
-                                                 @RequestParam("reviewImageUrl") String reviewImageUrl) {
+                                                 @RequestParam("orderId") UUID orderId,
+                                                 @RequestParam("reviewImageUrl") MultipartFile file) {
         try {
-            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, reviewImageUrl);
-            User user = userService.getAuthenticatedUser();
-            reviewService.addReview(request, user.getId());
+            AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId, customerId);
+            reviewService.addReview(request, file);
             return ResponseEntity.ok(new ApiResponse("Review added successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -57,6 +57,17 @@ public class ReviewController {
             }
 
             return ResponseEntity.ok(new ApiResponse("Review lists: ", reviewList));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/get-restaurant-review-stats")
+    @Operation(summary = "Get Reviews by Restaurant Id", description = "Getting reviews with restaurant id")
+    public ResponseEntity<ApiResponse> getRestaurantReviewStats(@RequestParam UUID id) {
+        try {
+            RestaurantReviewStatsDto result = reviewService.getRestaurantReviewStats(id);
+            return ResponseEntity.ok(new ApiResponse("Review lists: ", result));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }

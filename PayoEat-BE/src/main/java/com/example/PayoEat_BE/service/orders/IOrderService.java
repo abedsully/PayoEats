@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service.orders;
 
 import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.OrderDetailResponseDto;
+import com.example.PayoEat_BE.dto.orders.OrderHistoryDto;
 import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.OrderItem;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
@@ -14,12 +15,13 @@ import java.util.UUID;
 
 public interface IOrderService {
     String generateOrderIdQrCode(UUID orderId);
-    UUID addOrder(AddOrderRequest request);
+    PlaceOrderDto addOrder(AddOrderRequest request);
     void addPaymentProof(UUID orderId, MultipartFile file);
     void confirmOrder(UUID orderId, Long userId);
     void confirmOrderPayment(UUID orderId, Long userId);
     void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId);
     String finishOrder(UUID orderId, Long userId);
+    String markOrderReady(UUID orderId, Long userId);
     OrderDetailResponseDto getOrderByIdCustomer(UUID orderId);
     List<IncomingOrderDto> getIncomingOrder(UUID restaurantId);
     List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId);
@@ -30,4 +32,8 @@ public interface IOrderService {
     RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId);
     ProgressOrderDto getProgressOrder(UUID orderId);
     Boolean checkPayment(UUID orderId);
+    List<RecentOrderDto> getRecentOrderLists(UUID restaurantId);
+    List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status);
+    List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId);
+    PaymentModalDto getPaymentModalData(UUID orderId);
 }

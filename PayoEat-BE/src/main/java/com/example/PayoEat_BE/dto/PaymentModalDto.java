@@ -4,16 +4,14 @@ import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.enums.PaymentStatus;
 import lombok.Data;
 
-import java.time.LocalTime;
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Data
-public class ProgressOrderDto {
-    private UUID restaurantId;
-    private UUID orderId;
-    private String restaurantName;
-    private Double totalPrice;
+public class PaymentModalDto {
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
-    private String additionalInfo;
+    private String name;
+    private String qrisImageUrl;
+    private Double totalPrice;
+    private LocalDateTime paymentBeginAt;
 }

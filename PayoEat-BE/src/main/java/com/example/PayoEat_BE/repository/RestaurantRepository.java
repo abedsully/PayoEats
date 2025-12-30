@@ -1,18 +1,20 @@
 package com.example.PayoEat_BE.repository;
 
-import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
+import com.example.PayoEat_BE.dto.RestaurantOpenStatusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
-import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
-import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import jakarta.mail.Multipart;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,7 +60,7 @@ public class RestaurantRepository {
                     .param("rating", 0.0)
                     .param("total_rating_count", 0L)
                     .param("description", request.getDescription())
-                    .param("created_at", LocalDateTime.now())
+                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("updated_at", null)
                     .param("is_active", false)
                     .param("user_id", userId)
@@ -218,7 +220,7 @@ public class RestaurantRepository {
     public Integer addReview(UUID id, Double rating, Long total) {
         try {
             String sql = """
-                    UPDATE restaurant set rating = :rating, total_rating_count = :count
+                    UPDATE restaurant set rating = :rating, total_rating = :total
                     where id = :id;
                     """;
 
@@ -260,5 +262,168 @@ public class RestaurantRepository {
         }
     }
 
+    public List<UUID> getRestaurantUUIDLists() {
+        try {
+            String sql = """
+                    select id from restaurant where is_active = true;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .query(UUID.class).list();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public RestaurantOpenStatusDto getRestaurantOpenStatus(UUID restaurantId) {
+        try {
+            String sql = """
+                    select id, opening_hour, closing_hour, is_open from restaurant where id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(RestaurantOpenStatusDto.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private Integer setRestaurantIsOpenStatus(UUID restaurantId, Boolean status) {
+        try {
+            String sql = """
+                UPDATE restaurant
+                SET is_open = :status
+                WHERE id = :restaurant_id
+                """;
+
+            return jdbcClient.sql(sql)
+                    .param("status", status)
+                    .param("restaurant_id", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update restaurant open status: " + e.getMessage());
+        }
+    }
+
+    public Integer updateOpenStatusForRestaurant(UUID restaurantId) {
+        try {
+            RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
+
+            LocalTime now = LocalTime.now(ZoneId.of("Asia/Jakarta"));
+            LocalTime openingTime = restaurant.getOpeningHour();
+            LocalTime closingTime = restaurant.getClosingHour();
+
+            boolean shouldBeOpen;
+
+            if (openingTime.isBefore(closingTime)) {
+                shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
+            } else {
+                shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
+            }
+
+            if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
+
+                setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
+
+                System.out.println("[Scheduler] Restaurant " + restaurantId +
+                        " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
+
+            } else {
+
+                System.out.println("Time now: " + LocalTime.now(ZoneId.of("Asia/Jakarta")));
+
+                System.out.println("[Scheduler] Restaurant " + restaurantId +
+                        " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
+            }
+
+            return 1;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update open status: " + e.getMessage());
+        }
+    }
+
+    public Integer setRestaurantToActive(Long userId) {
+        try {
+            String sql = """
+                    update restaurant set is_active = true where user_id = :user_id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("user_id", userId)
+                    .update();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    };
+
+    public RestaurantManagementData getRestaurantManagementData(UUID restaurantId) {
+        try {
+            String sql = """
+                    select name from restaurant r where r.id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(RestaurantManagementData.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer toggleRestaurantActiveStatus(UUID restaurantId, Boolean isOpen) {
+        try {
+            String sql = """
+                    UPDATE restaurant
+                    SET is_open = :is_open,
+                        updated_at = :updated_at
+                    WHERE id = :restaurant_id
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("is_open", isOpen)
+                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("restaurant_id", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to toggle restaurant status: " + e.getMessage());
+        }
+    }
+
+    public Integer updateRestaurant(UpdateRestaurantRequest request, String resImageUrl, String qrisImageUrl) {
+        try {
+            String sql = """
+                    UPDATE restaurant
+                    SET name = :name, telephone_number = :number, description = :description,
+                    location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour,
+                    restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
+                    where id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("name", request.getName())
+                    .param("number", request.getTelephoneNumber())
+                    .param("description", request.getDescription())
+                    .param("location", request.getLocation())
+                    .param("opening_hour", request.getOpeningHour())
+                    .param("closing_hour", request.getClosingHour())
+                    .param("res_image", resImageUrl)
+                    .param("qris_image", qrisImageUrl)
+                    .param("category", request.getRestaurantCategory())
+                    .param("restaurant_id", request.getRestaurantId())
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
 }

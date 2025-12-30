@@ -23,4 +23,6 @@ public class Review {
     private UUID restaurantId;
     private Double rating;
     private String reviewImageUrl;
+    private UUID orderId;
+    private String customerId;
 }

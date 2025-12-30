@@ -26,10 +26,10 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
     private UUID restaurantId;
+    private String customerId;
     private LocalDateTime paymentBeginAt;
     private Double subTotal;
     private Double totalPrice;
-    private Double taxPrice;
     private String cancellationReason;
     private LocalTime dineInTime;
     private String paymentImageUrl;
@@ -37,4 +37,5 @@ public class Order {
     private Long paymentImageRejectionCount;
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
+    private String customerName;
 }

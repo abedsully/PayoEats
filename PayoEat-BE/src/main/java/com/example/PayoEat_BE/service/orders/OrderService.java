@@ -10,6 +10,7 @@ import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.service.UploadService;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
@@ -34,10 +35,11 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
     private final UploadService uploadService;
+    private final QrCodeUtil qrCodeUtil;
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
-        return QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
+        return qrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
     }
 
     private void checkIfRestaurantExists(UUID restaurantId) {
@@ -47,7 +49,7 @@ public class OrderService implements IOrderService {
 
     // Flow pertama, user add order
     @Override
-    public UUID addOrder(AddOrderRequest request) {
+    public PlaceOrderDto addOrder(AddOrderRequest request) {
 
         checkIfRestaurantExists(request.getRestaurantId());
 
@@ -71,7 +73,7 @@ public class OrderService implements IOrderService {
             throw new InvalidException("Unable to add payment proof as the order status is not PAYMENT");
         }
 
-        String url = uploadService.upload(file);
+        String url = uploadService.upload(file, UploadType.PAYMENT);
 
         orderRepository.addPaymentProof(order.getId(), url);
     }
@@ -251,6 +253,22 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public String markOrderReady(UUID orderId, Long userId) {
+        CheckOrderDto result = checkOrderExistance(orderId);
+
+        checkUserRestaurant(userId);
+        checkIfRestaurantExists(result.getRestaurantId());
+
+        if (!result.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+            throw new IllegalArgumentException("This order can't be marked as ready, it must be in CONFIRMED status");
+        }
+
+        orderRepository.markOrderReady(result.getId());
+
+        return "Order has been marked as ready";
+    }
+
+    @Override
     public OrderDetailResponseDto getOrderByIdCustomer(UUID orderId) {
         return orderRepository.getOrderDetails(orderId);
     }
@@ -290,10 +308,11 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
+            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(0.0);
-            dto.setTotalPrice(newSubtotal);
+            dto.setTaxPrice(tax);
+            dto.setTotalPrice(newSubtotal + tax);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -334,10 +353,11 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
+            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(0.0);
-            dto.setTotalPrice(newSubtotal);
+            dto.setTaxPrice(tax);
+            dto.setTotalPrice(newSubtotal + tax);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -377,7 +397,7 @@ public class OrderService implements IOrderService {
         return new ArrayList<>(orderMap.values());
     }
 
-    private UUID createOrder(AddOrderRequest request) {
+    private PlaceOrderDto createOrder(AddOrderRequest request) {
         checkIfRestaurantExists(request.getRestaurantId());
 
         Order newRestaurantOrder = new Order();
@@ -423,7 +443,6 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setOrderTime(LocalDateTime.now());
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
-        newRestaurantOrder.setTaxPrice(0.0);
         newRestaurantOrder.setTotalPrice(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setDineInTime(null);
@@ -437,6 +456,69 @@ public class OrderService implements IOrderService {
 
         orderItemRepository.addMenuItems(orderItems);
 
-        return savedOrder;
+        PlaceOrderDto result = new PlaceOrderDto();
+        result.setOrderId(savedOrder);
+        result.setCustomerId(request.getCustomerId());
+
+        return result;
+    }
+
+    @Override
+    public List<RecentOrderDto> getRecentOrderLists(UUID restaurantId) {
+        return orderRepository.getRecentOrder(restaurantId);
+    }
+
+    @Override
+    public List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status) {
+        List<OrderHistoryRow> rows = orderRepository.getCustomerOrderHistory(customerId, startDate, endDate, status);
+        return mapToOrderHistory(rows);
+    }
+
+    @Override
+    public List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+        UUID restaurantId = restaurantRepository.getRestaurantId(user.getUserId());
+        List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(restaurantId, startDate, endDate, status);
+        return mapToOrderHistory(rows);
+    }
+
+    @Override
+    public PaymentModalDto getPaymentModalData(UUID orderId) {
+        return orderRepository.getPaymentModalData(orderId);
+    }
+
+    private List<OrderHistoryDto> mapToOrderHistory(List<OrderHistoryRow> rows) {
+        Map<UUID, OrderHistoryDto> orderMap = new LinkedHashMap<>();
+
+        for (OrderHistoryRow row : rows) {
+            orderMap.computeIfAbsent(row.getOrderId(), id -> {
+                OrderHistoryDto dto = new OrderHistoryDto();
+                dto.setOrderId(id);
+                dto.setCreatedDate(row.getCreatedDate());
+                dto.setRestaurantId(row.getRestaurantId());
+                dto.setRestaurantName(row.getRestaurantName());
+                dto.setCustomerName(row.getCustomerName());
+                dto.setOrderTime(row.getOrderTime());
+                dto.setOrderStatus(row.getOrderStatus());
+                dto.setPaymentStatus(row.getPaymentStatus());
+                dto.setSubTotal(row.getSubTotal());
+                dto.setTotalPrice(row.getTotalPrice());
+                dto.setMenuLists(new ArrayList<>());
+                return dto;
+            });
+
+            OrderHistoryDto dto = orderMap.get(row.getOrderId());
+
+            MenuListDto menuItem = new MenuListDto();
+            menuItem.setMenuCode(row.getMenuCode());
+            menuItem.setMenuName(row.getMenuName());
+            menuItem.setMenuPrice(row.getMenuPrice());
+            menuItem.setMenuImageUrl(row.getMenuImageUrl());
+            menuItem.setQuantity(row.getQuantity());
+
+            dto.getMenuLists().add(menuItem);
+        }
+
+        return new ArrayList<>(orderMap.values());
     }
 }

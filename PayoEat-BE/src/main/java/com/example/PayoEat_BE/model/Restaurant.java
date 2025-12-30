@@ -17,7 +17,7 @@ public class Restaurant {
     private UUID id;
     private String name;
     private Double rating;
-    private Long totalRatingCount;
+    private Long totalRating;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -31,4 +31,5 @@ public class Restaurant {
     private String qrisImageUrl;
     private String color;
     private Long restaurantCategory;
+    private Boolean isOpen;
 }

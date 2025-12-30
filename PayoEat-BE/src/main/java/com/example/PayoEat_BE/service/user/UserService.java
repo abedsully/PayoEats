@@ -3,8 +3,10 @@ package com.example.PayoEat_BE.service.user;
 
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
+import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.model.VerificationToken;
+import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.repository.VerificationTokenRepository;
 import com.example.PayoEat_BE.request.menu.CreateUserRequest;
@@ -19,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -30,9 +33,9 @@ import java.util.regex.Pattern;
 public class UserService implements IUserService{
     private final UserRepository userRepository;
     private final VerificationTokenRepository tokenRepository;
-    private final ModelMapper modelMapper;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final RestaurantRepository restaurantRepository;
 
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
@@ -57,7 +60,7 @@ public class UserService implements IUserService{
                     user.setUsername(request.getUsername());
                     user.setEmail(request.getEmail());
                     user.setPassword(passwordEncoder.encode(request.getPassword()));
-                    user.setCreatedAt(LocalDateTime.now());
+                    user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
                     user.setUpdatedAt(null);
                     user.setIsActive(false);
                     user.setRoleId(3L);
@@ -68,7 +71,7 @@ public class UserService implements IUserService{
                     VerificationToken verificationToken = new VerificationToken();
                     verificationToken.setToken(token);
                     verificationToken.setUserId(userId);
-                    verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+                    verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
                     verificationToken.setType('1');
                     tokenRepository.add(verificationToken);
 
@@ -88,7 +91,7 @@ public class UserService implements IUserService{
         }
 
 
-        if (optionalToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (optionalToken.getExpiryDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Jakarta")))) {
             return "Token has expired.";
         }
 
@@ -97,10 +100,12 @@ public class UserService implements IUserService{
 
         user.setIsActive(true);
 
-        userRepository.activateUser(user.getId());
-        tokenRepository.delete(optionalToken.getId());
+        if (restaurantRepository.setRestaurantToActive(user.getId()) > 0) {
+            userRepository.activateUser(user.getId());
+            tokenRepository.delete(optionalToken.getId());
+        }
 
-        return "User confirmed successfully.";
+        return "User confirmed successfully, the restaurant is now active";
     }
 
     @Override
@@ -126,7 +131,7 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(user.getId());
-        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
         verificationToken.setType('1');
 
         tokenRepository.add(verificationToken);
@@ -141,7 +146,7 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, '2')
                 .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Jakarta")))) {
             throw new InvalidException("Token already expired");
         }
 

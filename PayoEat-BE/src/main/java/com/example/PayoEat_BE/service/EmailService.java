@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,9 +11,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 public class EmailService {
     private final JavaMailSender mailSender;
 
+    @Value("${backend.url}")
+    private String backendUrl;
+
     public void sendConfirmationEmail(String to, String token) {
+
+
         String subject = "Confirm Your Registration - Payoeat";
-        String confirmationUrl = "http://localhost:8080/api/auth/confirm?token=" + token;
+        String confirmationUrl = backendUrl + "auth/confirm?token=" + token;
 
         String message = """
                 Dear User,

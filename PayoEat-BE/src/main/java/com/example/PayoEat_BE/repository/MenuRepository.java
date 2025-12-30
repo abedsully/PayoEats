@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.repository;
 
 import com.example.PayoEat_BE.dto.MenuDto;
+import com.example.PayoEat_BE.dto.TopMenusDto;
 import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +20,37 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MenuRepository {
     private final JdbcClient jdbcClient;
+
+    public List<TopMenusDto> getTop5MenusFromRestaurant(UUID restaurantId) {
+        try {
+            String sql = """
+                    select
+                    	m.menu_code,
+                    	m.order_count,
+                    	m.menu_name,
+                    	m.menu_price,
+                    	m.menu_image_url
+                    from
+                    	menu m
+                    join restaurant r\s
+                        on
+                    	m.restaurant_id = r.id
+                    where
+                    	r.id = :restaurant_id
+                    order by
+                    	m.order_count desc
+                    limit 5;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(TopMenusDto.class)
+                    .list();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
     public List<Menu> getMenuDetail(List<UUID> menuCodes) {
         try {
@@ -34,6 +68,57 @@ public class MenuRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public Boolean getMenuAvailability(UUID menuCode) {
+        try {
+            String sql = "select is_active from menu where menu_code = :menu_code";
+
+            return jdbcClient.sql(sql)
+                    .param("menu_code", menuCode)
+                    .query(Boolean.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer editMenuAvailability(UUID menuCode) {
+        try {
+            Boolean availability = getMenuAvailability(menuCode);
+
+            String sql = """
+                    update menu set is_active = :availability where menu_code = :menu_code
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("availability", !availability)
+                    .param("menu_code", menuCode)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Integer updateAllMenuAvailability(UUID restaurantId, Boolean activate) {
+        try {
+            String sql = """
+            UPDATE menu
+            SET is_active = :availability
+            WHERE restaurant_id = :restaurantId
+        """;
+
+            return jdbcClient.sql(sql)
+                    .param("availability", activate)
+                    .param("restaurantId", restaurantId)
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
 
     public List<MenuDto> findMenuDtosByCodes(List<UUID> menuCodes) {
         String sql = """
@@ -80,8 +165,11 @@ public class MenuRepository {
 
     public UUID addMenu(Menu request) {
         try {
+            UUID newId = UUID.randomUUID();
+
             String sql = """
                 INSERT INTO menu (
+                    menu_code,
                     menu_name,
                     menu_detail,
                     menu_price,
@@ -91,6 +179,7 @@ public class MenuRepository {
                     restaurant_id,
                     menu_image_url
                 ) VALUES (
+                    :menu_code,
                     :menu_name,
                     :menu_detail,
                     :menu_price,
@@ -104,10 +193,12 @@ public class MenuRepository {
                 """;
 
             return jdbcClient.sql(sql)
+                    .param("menu_code", newId)
                     .param("menu_name", request.getMenuName())
                     .param("menu_detail", request.getMenuDetail())
                     .param("menu_price", request.getMenuPrice())
                     .param("is_active", request.getIsActive())
+                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
                     .param("restaurant_id", request.getRestaurantId())
                     .param("menu_image_url", request.getMenuImageUrl())
                     .query(UUID.class)
@@ -117,6 +208,38 @@ public class MenuRepository {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public UUID updateMenu(Menu request, UUID menuCode) {
+        try {
+            String sql = """
+            UPDATE menu
+            SET
+                menu_name = :menu_name,
+                menu_detail = :menu_detail,
+                menu_price = :menu_price,
+                updated_at = :updated_at,
+                is_active = :is_active,
+                menu_image_url = :menu_image_url
+            WHERE menu_code = :menu_code
+            RETURNING menu_code;
+            """;
+
+            return jdbcClient.sql(sql)
+                    .param("menu_code", menuCode)
+                    .param("menu_name", request.getMenuName())
+                    .param("menu_detail", request.getMenuDetail())
+                    .param("menu_price", request.getMenuPrice())
+                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("is_active", request.getIsActive())
+                    .param("menu_image_url", request.getMenuImageUrl())
+                    .query(UUID.class)
+                    .single();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
 
     public List<UUID> addMenus(List<Menu> menuList) {
         try {
@@ -168,6 +291,19 @@ public class MenuRepository {
         }
     }
 
+    public List<Menu> getAllActiveMenu(UUID restaurantId) {
+        try {
+            String sql = "select * from menu where restaurant_id = :restaurant_id and is_active = true";
+
+            return jdbcClient.sql(sql)
+                    .param("restaurant_id", restaurantId)
+                    .query(Menu.class)
+                    .list();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
     public List<Menu> getMenusByRestaurantId(UUID restaurantId) {
         try {
             String sql = "select * from menu where restaurant_id = :restaurant_id";
@@ -191,6 +327,22 @@ public class MenuRepository {
                     .param("name", name)
                     .query(Menu.class)
                     .list();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public Menu getMenuDetail(UUID menuCode) {
+        try {
+            String sql = """
+                    select * from menu where menu_code = :menu_code
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("menu_code", menuCode)
+                    .query(Menu.class)
+                    .single();
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

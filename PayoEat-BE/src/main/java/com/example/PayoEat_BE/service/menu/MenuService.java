@@ -2,24 +2,22 @@ package com.example.PayoEat_BE.service.menu;
 
 import com.example.PayoEat_BE.dto.CartMenuDto;
 import com.example.PayoEat_BE.dto.MenuDto;
+import com.example.PayoEat_BE.dto.TopMenusDto;
+import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.enums.UploadType;
+import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.repository.MenuRepository;
+import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.request.menu.AddMenuRequest;
+import com.example.PayoEat_BE.service.UploadService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -28,6 +26,9 @@ import java.util.*;
 public class MenuService implements IMenuService{
     private final MenuRepository menuRepository;
     private final ModelMapper modelMapper;
+    private final RestaurantRepository restaurantRepository;
+    private final UploadService uploadService;
+
 
     @Override
     public CartMenuDto getMenuByCode(UUID[] menuCodes) {
@@ -50,9 +51,73 @@ public class MenuService implements IMenuService{
 
 
     @Override
-    public UUID addMenu(AddMenuRequest request) {
-        return createMenu(request);
+    public UUID addMenu(AddMenuRequest request, MultipartFile file, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        String menuImageUrl = uploadService.upload(file, UploadType.MENU);
+
+        Menu menu = new Menu();
+        if (!menuImageUrl.isEmpty() || !menuImageUrl.isBlank()) {
+            menu.setMenuImageUrl(menuImageUrl);
+        }
+
+        menu.setMenuName(request.getMenuName());
+        menu.setMenuDetail(request.getMenuDetail());
+        menu.setMenuPrice(request.getMenuPrice());
+        menu.setIsActive(request.getIsActive());
+        menu.setRestaurantId(user.getId());
+
+        return menuRepository.addMenu(menu);
     }
+
+    @Override
+    public UUID editMenu(AddMenuRequest request, MultipartFile file, Long userId, UUID menuCode) {
+
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        Menu existing = menuRepository.getMenuDetail(menuCode);
+
+        boolean changed = false;
+
+        String menuImageUrl = existing.getMenuImageUrl();
+
+        if (file != null && !file.isEmpty()) {
+            menuImageUrl = uploadService.upload(file, UploadType.MENU);
+            changed = true;
+        }
+
+        // Cek setiap field satu per satu
+        if (!existing.getMenuName().equals(request.getMenuName())) {
+            changed = true;
+        }
+
+        if (!existing.getMenuDetail().equals(request.getMenuDetail())) {
+            changed = true;
+        }
+
+        if (!existing.getMenuPrice().equals(request.getMenuPrice())) {
+            changed = true;
+        }
+
+        if (!existing.getIsActive().equals(request.getIsActive())) {
+            changed = true;
+        }
+
+        if (!changed) {
+            return existing.getMenuCode();
+        }
+
+        Menu menu = new Menu();
+        menu.setMenuName(request.getMenuName());
+        menu.setMenuDetail(request.getMenuDetail());
+        menu.setMenuPrice(request.getMenuPrice());
+        menu.setIsActive(request.getIsActive());
+        menu.setRestaurantId(user.getId());
+        menu.setMenuImageUrl(menuImageUrl);
+
+        return menuRepository.updateMenu(menu, menuCode);
+    }
+
 
     @Override
     public MenuDto convertToDto(Menu menu) {
@@ -65,114 +130,53 @@ public class MenuService implements IMenuService{
     }
 
     @Override
+    public List<Menu> getAllActiveMenu(UUID restaurantId) {
+        return menuRepository.getAllActiveMenu(restaurantId);
+    }
+
+    @Override
     public List<Menu> getMenusByRestaurantId(UUID restaurantId) {
         return menuRepository.getMenusByRestaurantId(restaurantId);
     }
 
-
     @Override
-    public List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException {
-        String returnMessage = "";
-        long totalRecords = 0L;
+    public List<TopMenusDto> getTop5Menu(UUID restaurantId, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-        try (InputStream is = file.getInputStream()) {
-            Workbook workbook = new XSSFWorkbook(is);
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
-
-            if (rowIterator.hasNext()) {
-                rowIterator.next();
-            }
-
-            List<Menu> menuList = new ArrayList<>();
-
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-
-                if (row == null) continue;
-
-                Menu menu = new Menu();
-                menu.setMenuName(getCellValue(row.getCell(0)));
-                menu.setMenuDetail(getCellValue(row.getCell(2)));
-                menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
-                menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
-                menu.setRestaurantId(UUID.randomUUID());
-
-                menuList.add(menu);
-            }
-
-            return getConvertedMenus(menuList);
-        } catch (IOException e) {
-            throw new IOException(e.getMessage());
-        }
+        return menuRepository.getTop5MenusFromRestaurant(restaurantId);
     }
 
     @Override
-    public List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException {
-        String returnMessage = "";
-        long totalRecords = 0L;
+    public void editMenuAvailability(UUID menuCode, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-        try (InputStream is = file.getInputStream()) {
-            Workbook workbook = new XSSFWorkbook(is);
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
+        menuRepository.editMenuAvailability(menuCode);
+    }
 
-            if (rowIterator.hasNext()) {
-                rowIterator.next();
-            }
+    @Override
+    public void editAllMenuAvailability(UUID restaurantId, Long userId, Boolean activate) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-            List<Menu> menuList = new ArrayList<>();
+        menuRepository.updateAllMenuAvailability(restaurantId, activate);
+    }
 
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
+    @Override
+    public Menu getMenuDetail(UUID menuCode, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
-                if (row == null) continue;
+        return menuRepository.getMenuDetail(menuCode);
+    }
 
-                Menu menu = new Menu();
-                menu.setMenuName(getCellValue(row.getCell(0)));
-                menu.setMenuDetail(getCellValue(row.getCell(2)));
-                menu.setMenuPrice(Double.parseDouble(getCellValue(row.getCell(1))));
-                menu.setMenuImageUrl(getCellValue(row.getCell(3)));
-                menu.setCreatedAt(LocalDateTime.now());
-                menu.setRestaurantId(UUID.randomUUID());
-                menu.setIsActive(true);
-                menuList.add(menu);
-            }
 
-            menuRepository.addMenus(menuList);
+    private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
+        CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
+                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-            return getConvertedMenus(menuList);
-        } catch (IOException e) {
-            throw new IOException(e.getMessage());
+        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
+            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
         }
+
+        return result;
     }
 
-
-    private UUID createMenu(AddMenuRequest request) {
-        Menu menu = new Menu();
-        menu.setMenuName(request.getMenuName());
-        menu.setMenuDetail(request.getMenuDetail());
-        menu.setMenuPrice(request.getMenuPrice());
-        menu.setCreatedAt(LocalDateTime.now());
-        menu.setIsActive(true);
-        menu.setRestaurantId(request.getRestaurantId());
-        menu.setMenuImageUrl(request.getMenuImageUrl());
-
-        return menuRepository.addMenu(menu);
-    }
-
-    private String getCellValue(Cell cell) {
-        if (cell == null) return "";
-
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue();
-            case NUMERIC:
-                double numericValue = cell.getNumericCellValue();
-                return String.format("%.0f", numericValue);
-            default:
-                return "";
-        }
-    }
 }

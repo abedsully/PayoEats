@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -35,7 +36,7 @@ public class RestaurantCategoryService implements IRestaurantCategoryService{
 
         RestaurantCategory newRestaurantCategory = new RestaurantCategory();
         newRestaurantCategory.setCategoryName(categoryName);
-        newRestaurantCategory.setAddedAt(LocalDateTime.now());
+        newRestaurantCategory.setAddedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         newRestaurantCategory.setIsActive(true);
 
         restaurantCategoryRepository.add(newRestaurantCategory);

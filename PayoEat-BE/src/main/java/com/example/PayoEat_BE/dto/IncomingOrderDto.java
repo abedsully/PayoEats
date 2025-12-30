@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,10 +11,15 @@ import java.util.UUID;
 public class IncomingOrderDto {
     private UUID restaurantId;
     private UUID orderId;
+    private String orderStatus;
+    private String customerName;
     private List<MenuListDto> menuLists;
     private Double totalPrice;
     private Double subTotal;
     private Double taxPrice;
+    private String orderMessage;
+    private Long taxRate;
+
     private LocalDateTime receivedAt;
 }
 

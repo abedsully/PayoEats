@@ -1,7 +1,8 @@
 package com.example.PayoEat_BE.service.restaurant;
 
-import com.example.PayoEat_BE.dto.RestaurantApprovalDto;
+import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.InvalidException;
@@ -9,8 +10,8 @@ import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.service.EmailService;
 import com.example.PayoEat_BE.service.UploadService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +34,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RestaurantService implements IRestaurantService {
     private final ModelMapper modelMapper;
-    private final RestaurantApprovalRepository restaurantApprovalRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationTokenRepository verificationTokenRepository;
@@ -55,35 +56,6 @@ public class RestaurantService implements IRestaurantService {
         return createRestaurant(request, restaurantImageUrl, qrisImageUrl);
     }
 
-
-    private Restaurant updateExistingRestaurant(Restaurant existingRestaurant, UpdateRestaurantRequest request) {
-        if ((request.getName() == null || request.getName().isEmpty()) &&
-                (request.getDescription() == null || request.getDescription().isEmpty()) &&
-                request.getRating() == null) {
-            throw new IllegalArgumentException("No valid fields provided to update the restaurant.");
-        }
-
-        if (request.getName() != null && !request.getName().isEmpty()) {
-            existingRestaurant.setName(request.getName());
-        }
-
-        if (request.getDescription() != null && !request.getDescription().isEmpty()) {
-            existingRestaurant.setDescription(request.getDescription());
-        }
-
-        if (request.getRating() != null) {
-            existingRestaurant.setRating(request.getRating());
-        }
-
-        existingRestaurant.setUpdatedAt(LocalDateTime.now());
-
-        return existingRestaurant;
-    }
-
-    private void deleteExistingRestaurant(Restaurant existingRestaurant) {
-        existingRestaurant.setUpdatedAt(LocalDateTime.now());
-        existingRestaurant.setIsActive(false);
-    }
 
     private boolean restaurantExists(String name) {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
@@ -130,7 +102,7 @@ public class RestaurantService implements IRestaurantService {
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         user.setUpdatedAt(null);
         user.setIsActive(false);
 
@@ -140,14 +112,14 @@ public class RestaurantService implements IRestaurantService {
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(userId);
-        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
         verificationToken.setType('1');
         verificationTokenRepository.add(verificationToken);
 
         emailService.sendConfirmationEmail(request.getEmail(), token);
 
-        String url1 = uploadService.upload(restaurantImageUrl);
-        String url2 = uploadService.upload(qrisImageUrl);
+        String url1 = uploadService.upload(restaurantImageUrl, UploadType.RESTAURANT);
+        String url2 = uploadService.upload(qrisImageUrl, UploadType.QR);
 
         return restaurantRepository.addRestaurant(request, userId, url1, url2);
     }
@@ -160,7 +132,12 @@ public class RestaurantService implements IRestaurantService {
 
     @Override
     public List<Restaurant> getAllRestaurants() {
-        return restaurantRepository.getAllRestaurant();
+        try {
+            LOGGER.info("Masuk request untuk get all restaurant");
+            return restaurantRepository.getAllRestaurant();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -171,34 +148,6 @@ public class RestaurantService implements IRestaurantService {
     @Override
     public List<RestaurantDto> getConvertedRestaurants(List<Restaurant> restaurants) {
         return restaurants.stream().map(this::convertToDto).toList();
-    }
-
-    @Override
-    public void addRestaurantApproval(UUID restaurantId) {
-        Restaurant restaurant = restaurantRepository.getDetail(restaurantId, Boolean.FALSE)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found"));
-
-        RestaurantApproval restaurantApproval = new RestaurantApproval();
-        restaurantApproval.setRestaurantId(restaurant.getId());
-        restaurantApproval.setRestaurantName(restaurant.getName());
-        restaurantApproval.setRestaurantImageUrl(restaurant.getRestaurantImageUrl());
-        restaurantApproval.setUserId(restaurant.getUserId());
-        restaurantApproval.setRequestedAt(LocalDateTime.now());
-        restaurantApproval.setIsApproved(false);
-        restaurantApproval.setIsActive(true);
-
-        restaurantApprovalRepository.addRestaurantApproval(restaurantApproval);
-    }
-
-    @Override
-    public RestaurantApprovalDto convertApprovalToDto(RestaurantApproval restaurantApproval) {
-        return modelMapper.map(restaurantApproval, RestaurantApprovalDto.class);
-    }
-
-    @Override
-    public Restaurant getRestaurantDetailForApproval(UUID id) {
-        return restaurantRepository.getDetail(id, false)
-                .orElseThrow(() -> new NotFoundException("Restaurant not found with id: " + id));
     }
 
     @Override
@@ -215,6 +164,16 @@ public class RestaurantService implements IRestaurantService {
         CheckUserRestaurantDto user = checkUserRestaurant(userId);
         return restaurantRepository.getRestaurantId(user.getUserId());
     }
+
+    @Override
+    public RestaurantManagementData getRestaurantManagementData(UUID restaurantId, Long userId) {
+        checkIfRestaurantExists(restaurantId);
+
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        return restaurantRepository.getRestaurantManagementData(restaurantId);
+    }
+
 
     private void checkIfRestaurantExists(UUID restaurantId) {
         restaurantRepository.findRestaurantByIdAndIsActiveTrue(restaurantId)
@@ -237,5 +196,37 @@ public class RestaurantService implements IRestaurantService {
         return restaurantRepository.existsByNameAndIsActiveTrue(name);
     }
 
+    @Override
+    public void toggleRestaurantStatus(UUID restaurantId, Boolean isActive, Long userId) {
+        checkIfRestaurantExists(restaurantId);
+        checkUserRestaurant(userId);
+
+        Integer updated = restaurantRepository.toggleRestaurantActiveStatus(restaurantId, isActive);
+
+        if (updated == 0) {
+            throw new RuntimeException("Failed to update restaurant status");
+        }
+    }
+
+    @Override
+    public Integer updateRestaurant(UpdateRestaurantRequest request, Long userId, MultipartFile restaurantImageUrl, MultipartFile qrisImageUrl) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        String resImageUrl = "";
+        String qrImageUrl = "";
+
+        Restaurant restaurant = getRestaurantById(request.getRestaurantId());
+
+
+        if (restaurantImageUrl != null && !restaurantImageUrl.isEmpty()) {
+            resImageUrl = uploadService.update(restaurantImageUrl, UploadType.RESTAURANT, restaurant.getRestaurantImageUrl());
+        }
+
+        if (qrisImageUrl != null && !qrisImageUrl.isEmpty()) {
+            qrImageUrl = uploadService.update(qrisImageUrl, UploadType.QR, restaurant.getQrisImageUrl());
+        }
+
+        return restaurantRepository.updateRestaurant(request, resImageUrl, qrImageUrl);
+    }
 
 }
