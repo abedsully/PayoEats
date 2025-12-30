@@ -37,12 +37,13 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
     private final UploadService uploadService;
+    private final QrCodeUtil qrCodeUtil;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
-        return QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
+        return qrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
     }
 
     private void checkIfRestaurantExists(UUID restaurantId) {

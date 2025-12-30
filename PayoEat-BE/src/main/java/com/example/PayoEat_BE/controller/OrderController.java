@@ -15,6 +15,7 @@ import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -50,6 +51,10 @@ public class OrderController {
     private final List<UUID> trackedProgressOrderIds = new CopyOnWriteArrayList<>();
 
     private final RestaurantService restaurantService;
+
+    @Value("${fe.url}")
+    private String feUrl;
+
 
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order")
@@ -233,7 +238,7 @@ public class OrderController {
                     <script>
                       // Redirect after 1 second
                       setTimeout(() => {
-                        window.location.href = 'http://localhost:5173/';
+                        window.location.href = "%s";
                       }, 1000);
                     </script>
                   </head>
@@ -242,7 +247,7 @@ public class OrderController {
                     <p>Redirecting to dashboard...</p>
                   </body>
                 </html>
-                """;
+                """.formatted(feUrl);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
