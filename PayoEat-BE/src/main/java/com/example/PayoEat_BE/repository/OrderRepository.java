@@ -27,6 +27,9 @@ public class OrderRepository {
 
     public UUID addOrder(Order newRestaurantOrder) {
         try {
+            LocalDate orderDate = LocalDate.now(ZoneId.of("Asia/Jakarta"));
+            LocalDateTime orderTime = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
+
             String sql = """
                     INSERT INTO orders (
                         created_date,
@@ -66,9 +69,9 @@ public class OrderRepository {
                     RETURNING id;
                     """;
 
-            return jdbcClient.sql(sql)
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
-                    .param("order_time", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+            UUID orderId = jdbcClient.sql(sql)
+                    .param("date", orderDate)
+                    .param("order_time", orderTime)
                     .param("order_message", newRestaurantOrder.getOrderMessage())
                     .param("order_status", OrderStatus.RECEIVED.toString())
                     .param("restaurant_id", newRestaurantOrder.getRestaurantId())
@@ -79,6 +82,8 @@ public class OrderRepository {
                     .query(UUID.class)
                     .single();
 
+            return orderId;
+
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -86,6 +91,8 @@ public class OrderRepository {
 
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
         try {
+            LocalDate queryDate = LocalDate.now(ZoneId.of("Asia/Jakarta"));
+
             String sql = """
                 select
                     o.id as order_id,
@@ -112,7 +119,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.RECEIVED.toString())
-                    .param("date", LocalDate.now())
+                    .param("date", queryDate)
                     .query(IncomingOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -151,7 +158,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.PAYMENT.toString())
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .query(ConfirmedOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -194,7 +201,7 @@ public class OrderRepository {
                             OrderStatus.ACTIVE.toString(),
                             OrderStatus.READY.toString()
                     ))
-                    .param("date", LocalDate.now())
+                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
                     .query(ActiveOrderRow.class)
                     .list();
         } catch (Exception e) {
