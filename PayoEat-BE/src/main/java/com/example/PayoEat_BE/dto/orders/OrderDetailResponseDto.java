@@ -13,10 +13,10 @@ public class OrderDetailResponseDto {
     private UUID restaurantId;
     private LocalDate createdDate;
     private LocalDateTime orderTime;
+    private LocalDateTime paymentBeginAt;
     private String orderMessage;
     private Double subTotal;
     private Double totalPrice;
     private String customerName;
-
     private List<OrderItemDetailDto> items;
 }

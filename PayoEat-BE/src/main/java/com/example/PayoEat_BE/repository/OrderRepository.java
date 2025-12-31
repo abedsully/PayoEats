@@ -282,6 +282,11 @@ public class OrderRepository {
                 Object orderTimeObj = row.get("order_time");
                 if (orderTimeObj instanceof java.sql.Timestamp ts) {
                     dto.setOrderTime(ts.toLocalDateTime());
+
+                Object paymentBeginAtObj = row.get("payment_begin_at");
+                if (paymentBeginAtObj instanceof java.sql.Timestamp ts2) {
+                    dto.setPaymentBeginAt(ts2.toLocalDateTime());
+                }
                 }
                 dto.setOrderMessage((String) row.get("order_message"));
                 dto.setCustomerName((String) row.get("customer_name"));
