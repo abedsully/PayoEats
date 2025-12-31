@@ -21,4 +21,7 @@ public class ActiveOrderDto {
     private LocalTime dineInTime;
 
     private LocalDateTime paymentBeginAt;
+
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime paymentConfirmedAt;
 }

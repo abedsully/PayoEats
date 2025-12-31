@@ -288,7 +288,8 @@ public class OrderService implements IOrderService {
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
                 dto.setReceivedAt(r.getOrderTime());
-
+                dto.setOrderStatus(r.getOrderStatus());
+                dto.setCustomerName(r.getCustomerName());
                 dto.setSubTotal(0.0);
                 dto.setTotalPrice(0.0);
                 return dto;
@@ -332,6 +333,8 @@ public class OrderService implements IOrderService {
                 dto.setMenuLists(new ArrayList<>());
                 dto.setPaymentImageUrl(r.getPaymentImageUrl());
                 dto.setSubTotal(0.0);
+                dto.setCustomerName(r.getCustomerName());
+                dto.setOrderStatus(r.getOrderStatus());
                 dto.setTotalPrice(0.0);
                 return dto;
             });
@@ -372,6 +375,9 @@ public class OrderService implements IOrderService {
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
                 dto.setDineInTime(r.getDineInTime());
+                dto.setPaymentConfirmedAt(r.getPaymentConfirmedAt());
+                dto.setCustomerName(r.getCustomerName());
+                dto.setOrderStatus(r.getOrderStatus());
                 return dto;
             });
 
@@ -441,6 +447,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
+        newRestaurantOrder.setCustomerName(request.getCustomerName());
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 

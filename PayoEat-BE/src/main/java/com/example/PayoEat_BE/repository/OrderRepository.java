@@ -105,12 +105,14 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
+                  and o.created_date = :date
                 order by o.order_time asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.RECEIVED.toString())
+                    .param("date", LocalDate.now())
                     .query(IncomingOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -142,12 +144,14 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
+                  and o.created_date = :date
                 order by o.payment_begin_at asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.PAYMENT.toString())
+                    .param("date", LocalDate.now())
                     .query(ConfirmedOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -171,13 +175,15 @@ public class OrderRepository {
                     m.menu_price,
                     m.menu_image_url,
                     o.dine_in_time,
-                    o.payment_begin_at
+                    o.payment_begin_at,
+                    o.payment_confirmed_at
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status in (:statuses)
+                  and o.created_date = :date
                 order by o.order_time asc
         """;
 
@@ -188,6 +194,7 @@ public class OrderRepository {
                             OrderStatus.ACTIVE.toString(),
                             OrderStatus.READY.toString()
                     ))
+                    .param("date", LocalDate.now())
                     .query(ActiveOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -515,7 +522,8 @@ public class OrderRepository {
                     set
                         payment_status = :payment_status,
                     	order_status = :order_status,
-                    	is_active = TRUE
+                    	is_active = TRUE,
+                    	payment_confirmed_at = :payment_confirmed_at
                     where
                     	id = :order_id
                     """;
@@ -524,6 +532,7 @@ public class OrderRepository {
                     .param("payment_status", PaymentStatus.APPROVED.toString())
                     .param("order_status", OrderStatus.CONFIRMED.toString())
                     .param("order_id", orderId)
+                    .param("payment_confirmed_at", LocalTime.now(ZoneId.of("Asia/Jakarta")))
                     .update();
 
         } catch (Exception e) {
