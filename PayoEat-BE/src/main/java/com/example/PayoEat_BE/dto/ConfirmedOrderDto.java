@@ -18,4 +18,5 @@ public class ConfirmedOrderDto {
     private Double totalPrice;
     private Double subTotal;
     private LocalDateTime paymentBeginAt;
+    private LocalDateTime paymentUploadedAt;
 }

@@ -287,7 +287,7 @@ public class OrderService implements IOrderService {
                 dto.setRestaurantId(restaurantId);
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
-                dto.setReceivedAt(r.getOrderTime());
+                dto.setOrderTime(r.getOrderTime());
                 dto.setOrderStatus(r.getOrderStatus());
                 dto.setCustomerName(r.getCustomerName());
                 dto.setSubTotal(0.0);
@@ -332,6 +332,7 @@ public class OrderService implements IOrderService {
                 dto.setOrderId(id);
                 dto.setMenuLists(new ArrayList<>());
                 dto.setPaymentImageUrl(r.getPaymentImageUrl());
+                dto.setPaymentUploadedAt(r.getPaymentUploadedAt());
                 dto.setSubTotal(0.0);
                 dto.setCustomerName(r.getCustomerName());
                 dto.setOrderStatus(r.getOrderStatus());

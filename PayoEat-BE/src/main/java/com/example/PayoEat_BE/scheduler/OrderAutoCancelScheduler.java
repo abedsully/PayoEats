@@ -18,11 +18,11 @@ public class OrderAutoCancelScheduler {
     private final OrderRepository orderRepository;
     private final RestaurantRepository restaurantRepository;
 
-     @Scheduled(fixedRate = 60000) // Comment to disable auto-cancel
+     @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {
-        System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+        System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now());
 
-        LocalDateTime cutoffTime = LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(10);
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
         List<UUID> expiredOrders = orderRepository.findExpiredOrders(cutoffTime);
 
         System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired payment orders.");
@@ -36,10 +36,10 @@ public class OrderAutoCancelScheduler {
      @Scheduled(fixedRate = 60000)
     public void cancelUnprocessedOrders() {
         System.out.println("[Scheduler] Running cancelUnprocessedOrders() at " +
-                LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+                LocalDateTime.now());
 
         LocalDateTime cutoffTime =
-                LocalDateTime.now(ZoneId.of("UTC")).minusMinutes(10);
+                LocalDateTime.now().minusMinutes(10);
 
         List<UUID> expiredOrders =
                 orderRepository.findExpiredUnprocessedOrders(cutoffTime);
@@ -52,6 +52,24 @@ public class OrderAutoCancelScheduler {
         }
     }
 
+    @Scheduled(fixedRate = 60000)
+    public void autoAcceptExpiredVerifications() {
+        System.out.println("[Scheduler] Running autoAcceptExpiredVerifications() at " +
+                LocalDateTime.now());
+
+        LocalDateTime cutoffTime =
+                LocalDateTime.now().minusMinutes(10);
+
+        List<UUID> expiredVerifications =
+                orderRepository.findExpiredVerificationOrders(cutoffTime);
+
+        System.out.println("[Scheduler] Found " + expiredVerifications.size() + " expired verification orders.");
+
+        for (UUID orderId : expiredVerifications) {
+            System.out.println("[Scheduler] Auto-accepting expired verification for order: " + orderId);
+            orderRepository.confirmOrderPayment(orderId);
+        }
+    }
 
     @Scheduled(fixedRate = 60000)
     public void updateRestaurantOpenStatusScheduler() {

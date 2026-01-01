@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.*;
 
 @Repository
@@ -27,8 +26,8 @@ public class OrderRepository {
 
     public UUID addOrder(Order newRestaurantOrder) {
         try {
-            LocalDate orderDate = LocalDate.now(ZoneId.of("Asia/Jakarta"));
-            LocalDateTime orderTime = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
+            LocalDate orderDate = LocalDate.now();
+            LocalDateTime orderTime = LocalDateTime.now();
 
             String sql = """
                     INSERT INTO orders (
@@ -91,7 +90,7 @@ public class OrderRepository {
 
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
         try {
-            LocalDate queryDate = LocalDate.now(ZoneId.of("Asia/Jakarta"));
+            LocalDate queryDate = LocalDate.now();
 
             String sql = """
                 select
@@ -143,7 +142,8 @@ public class OrderRepository {
                     m.menu_price,
                     m.menu_image_url,
                     o.payment_image_url,
-                    o.payment_begin_at
+                    o.payment_begin_at,
+                    o.payment_uploaded_at
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -158,7 +158,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.PAYMENT.toString())
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
+                    .param("date", LocalDate.now())
                     .query(ConfirmedOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -201,7 +201,7 @@ public class OrderRepository {
                             OrderStatus.ACTIVE.toString(),
                             OrderStatus.READY.toString()
                     ))
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
+                    .param("date", LocalDate.now())
                     .query(ActiveOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -355,7 +355,7 @@ public class OrderRepository {
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
+                    .param("date", LocalDate.now())
                     .param("order_status",
                             orderStatuses.stream()
                                     .map(OrderStatus::name)
@@ -372,7 +372,8 @@ public class OrderRepository {
     public ProgressOrderDto getProgressOrder(UUID orderId) {
         try {
             String sql = "SELECT o.restaurant_id, o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
-                    "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo " +
+                    "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo, o.payment_image_rejection_count AS paymentImageRejectionCount, " +
+                    "o.order_time AS orderTime, o.payment_uploaded_at AS paymentUploadedAt " +
                     "FROM orders o join restaurant r on o.restaurant_id  = r.id " +
                     "WHERE o.id = :orderId";
 
@@ -455,7 +456,7 @@ public class OrderRepository {
                     """;
 
             return jdbcClient.sql(sql)
-                    .param("dine_in_time", LocalTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("dine_in_time", LocalTime.now())
                     .param("order_status", OrderStatus.ACTIVE.toString())
                     .param("order_id", orderId)
                     .update();
@@ -510,7 +511,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("reason", rejectionReason)
-                    .param("begin_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("begin_at", LocalDateTime.now())
                     .param("count", count)
                     .param("order_status", OrderStatus.PAYMENT.toString())
                     .param("order_id", orderId)
@@ -539,7 +540,7 @@ public class OrderRepository {
                     .param("payment_status", PaymentStatus.APPROVED.toString())
                     .param("order_status", OrderStatus.CONFIRMED.toString())
                     .param("order_id", orderId)
-                    .param("payment_confirmed_at", LocalTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("payment_confirmed_at", LocalDateTime.now())
                     .update();
 
         } catch (Exception e) {
@@ -563,7 +564,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("payment_status", PaymentStatus.PENDING.toString())
                     .param("order_status", OrderStatus.PAYMENT.toString())
-                    .param("payment_begin_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("payment_begin_at", LocalDateTime.now())
                     .param("order_id", orderId)
                     .update();
         } catch (Exception e) {
@@ -578,7 +579,8 @@ public class OrderRepository {
                     	orders
                     set
                         payment_status = :payment_status,
-                        payment_image_url = :url
+                        payment_image_url = :url,
+                        payment_uploaded_at = :payment_uploaded_at
                     where
                     	id = :order_id
                     """;
@@ -586,6 +588,7 @@ public class OrderRepository {
             return jdbcClient.sql(sql)
                     .param("url", url)
                     .param("payment_status", PaymentStatus.UPLOADED.toString())
+                    .param("payment_uploaded_at", LocalDateTime.now())
                     .param("order_id", orderId)
                     .update();
         } catch (Exception e) {
@@ -603,7 +606,7 @@ public class OrderRepository {
           AND o.payment_status = :payment_status
     """;
         try (var stream = jdbcClient.sql(sql)
-                .param("date", LocalDate.now(ZoneId.of("Asia/Jakarta")))
+                .param("date", LocalDate.now())
                 .param("cutOffTime", cutOffTime)
                 .param("status", OrderStatus.PAYMENT.name())
                 .param("payment_status", PaymentStatus.PENDING.name())
@@ -634,6 +637,31 @@ public class OrderRepository {
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch expired orders", e);
+        }
+    }
+
+    public List<UUID> findExpiredVerificationOrders(LocalDateTime cutOffTime) {
+        String sql = """
+        SELECT id FROM orders o
+        WHERE DATE(o.created_date) = :date
+          AND o.payment_uploaded_at < :cutOffTime
+          AND o.payment_uploaded_at IS NOT NULL
+          AND o.order_status = :status
+          AND o.payment_status = :payment_status
+          AND o.is_active = TRUE
+    """;
+        try (var stream = jdbcClient.sql(sql)
+                .param("date", LocalDate.now())
+                .param("cutOffTime", cutOffTime)
+                .param("status", OrderStatus.PAYMENT.name())
+                .param("payment_status", PaymentStatus.UPLOADED.name())
+                .query(UUID.class)
+                .stream()) {
+
+            return stream.toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch expired verification orders", e);
         }
     }
 
@@ -804,7 +832,7 @@ public class OrderRepository {
     public PaymentModalDto getPaymentModalData(UUID orderId) {
         try {
             String sql = """
-                    select o.order_status, o.payment_status, r.name, r.qris_image_url, o.total_price, o.payment_begin_at
+                    select o.order_status, o.payment_status, r.name, r.qris_image_url, o.total_price, o.payment_begin_at, o.payment_image_rejection_reason
                     from orders o
                     inner join restaurant r on o.restaurant_id = r.id where o.id = :id
                     """;

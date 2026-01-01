@@ -39,7 +39,7 @@ public class ReviewRepository {
             return jdbcClient.sql(sql)
                     .param("reviewContent", review.getReviewContent())
                     .param("customerName", customerName)
-                    .param("createdAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("createdAt", LocalDateTime.now())
                     .param("updatedAt", null)
                     .param("isActive", true)
                     .param("restaurantId", review.getRestaurantId())

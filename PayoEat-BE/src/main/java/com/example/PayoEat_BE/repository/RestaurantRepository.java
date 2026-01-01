@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,7 +59,7 @@ public class RestaurantRepository {
                     .param("rating", 0.0)
                     .param("total_rating_count", 0L)
                     .param("description", request.getDescription())
-                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("created_at", LocalDateTime.now())
                     .param("updated_at", null)
                     .param("is_active", false)
                     .param("user_id", userId)
@@ -314,7 +313,7 @@ public class RestaurantRepository {
         try {
             RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
 
-            LocalTime now = LocalTime.now(ZoneId.of("Asia/Jakarta"));
+            LocalTime now = LocalTime.now();
             LocalTime openingTime = restaurant.getOpeningHour();
             LocalTime closingTime = restaurant.getClosingHour();
 
@@ -335,7 +334,7 @@ public class RestaurantRepository {
 
             } else {
 
-                System.out.println("Time now: " + LocalTime.now(ZoneId.of("Asia/Jakarta")));
+                System.out.println("Time now: " + LocalTime.now());
 
                 System.out.println("[Scheduler] Restaurant " + restaurantId +
                         " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
@@ -389,7 +388,7 @@ public class RestaurantRepository {
 
             return jdbcClient.sql(sql)
                     .param("is_open", isOpen)
-                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("updated_at", LocalDateTime.now())
                     .param("restaurant_id", restaurantId)
                     .update();
 

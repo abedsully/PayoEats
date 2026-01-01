@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.enums.PaymentStatus;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -16,4 +17,7 @@ public class ProgressOrderDto {
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
     private String additionalInfo;
+    private Integer paymentImageRejectionCount;
+    private LocalDateTime orderTime;
+    private LocalDateTime paymentUploadedAt;
 }

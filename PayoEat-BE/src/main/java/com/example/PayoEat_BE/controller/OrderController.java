@@ -339,15 +339,22 @@ public class OrderController {
     }
 
     @MessageMapping("/order-progress/request")
-    public void handleOrderRequest(UUID orderId) {
-        // Save the orderId if not already tracked
-        if (!trackedOrderIds.contains(orderId)) {
-            trackedOrderIds.add(orderId);
-        }
+    public void handleOrderRequest(@Payload String orderIdStr) {
+        try {
+            UUID orderId = UUID.fromString(orderIdStr);
 
-        // Send the first response immediately
-        ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
-        messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            // Save the orderId if not already tracked
+            if (!trackedOrderIds.contains(orderId)) {
+                trackedOrderIds.add(orderId);
+            }
+
+            // Send the first response immediately
+            ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+            messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid orderId format: " + orderIdStr);
+            e.printStackTrace();
+        }
     }
 
     @GetMapping("/incoming")

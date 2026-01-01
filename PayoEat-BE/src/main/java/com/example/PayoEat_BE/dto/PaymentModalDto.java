@@ -14,4 +14,5 @@ public class PaymentModalDto {
     private String qrisImageUrl;
     private Double totalPrice;
     private LocalDateTime paymentBeginAt;
+    private String paymentImageRejectionReason;
 }

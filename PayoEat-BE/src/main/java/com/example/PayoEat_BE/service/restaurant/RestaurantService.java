@@ -25,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 import static com.example.PayoEat_BE.utils.EmailValidation.isValidEmail;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -102,7 +101,7 @@ public class RestaurantService implements IRestaurantService {
         }
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+        user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(null);
         user.setIsActive(false);
 
@@ -112,7 +111,7 @@ public class RestaurantService implements IRestaurantService {
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(userId);
-        verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
         verificationToken.setType('1');
         verificationTokenRepository.add(verificationToken);
 
