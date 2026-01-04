@@ -29,8 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -346,11 +348,16 @@ public class OrderController {
             // Save the orderId if not already tracked
             if (!trackedOrderIds.contains(orderId)) {
                 trackedOrderIds.add(orderId);
+                System.out.println("✅ Added orderId to tracked list: " + orderId);
+            } else {
+                System.out.println("ℹ️ OrderId already in tracked list: " + orderId);
             }
+            System.out.println("📊 Total tracked order IDs: " + trackedOrderIds.size());
 
             // Send the first response immediately
             ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
             messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            System.out.println("📤 Sent initial order progress for: " + orderId);
         } catch (IllegalArgumentException e) {
             System.err.println("Invalid orderId format: " + orderIdStr);
             e.printStackTrace();
@@ -384,9 +391,46 @@ public class OrderController {
      */
     @Scheduled(fixedRate = 5000)
     public void sendPeriodicUpdates() {
+        if (trackedOrderIds.isEmpty()) {
+            System.out.println("⏰ Scheduled task running, but no orders to track");
+            return;
+        }
+
+        System.out.println("⏰ Scheduled task running - Sending updates for " + trackedOrderIds.size() + " order(s)");
+        Set<UUID> ordersToRemove = new HashSet<>();
+
         for (UUID orderId : trackedOrderIds) {
-            ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
-            messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            try {
+                ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+                messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+                System.out.println("📤 Sent periodic update for orderId: " + orderId + " | Status: " + progress.getOrderStatus());
+            } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Incorrect result size")) {
+                    System.out.println("⚠️ Order " + orderId + " no longer exists in database, notifying client and removing from tracking");
+
+                    // Send a final notification to the client that the order is not found
+                    Map<String, Object> notFoundPayload = new HashMap<>();
+                    notFoundPayload.put("orderId", orderId.toString());
+                    notFoundPayload.put("orderStatus", "NOT_FOUND");
+                    notFoundPayload.put("message", "This order is no longer available. It may have been completed, cancelled, or expired.");
+
+                    messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, notFoundPayload);
+                    System.out.println("📤 Sent NOT_FOUND notification for orderId: " + orderId);
+
+                    ordersToRemove.add(orderId);
+                } else {
+                    System.err.println("❌ Failed to send update for orderId: " + orderId);
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send update for orderId: " + orderId);
+                e.printStackTrace();
+            }
+        }
+
+        if (!ordersToRemove.isEmpty()) {
+            trackedOrderIds.removeAll(ordersToRemove);
+            System.out.println("🗑️ Removed " + ordersToRemove.size() + " non-existent order(s) from tracking");
         }
     }
 

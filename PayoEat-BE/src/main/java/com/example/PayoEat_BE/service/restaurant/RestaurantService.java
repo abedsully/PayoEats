@@ -12,6 +12,7 @@ import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
 import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
+import com.example.PayoEat_BE.scheduler.OrderAutoCancelScheduler;
 import com.example.PayoEat_BE.service.EmailService;
 import com.example.PayoEat_BE.service.UploadService;
 import lombok.RequiredArgsConstructor;
@@ -205,6 +206,8 @@ public class RestaurantService implements IRestaurantService {
         if (updated == 0) {
             throw new RuntimeException("Failed to update restaurant status");
         }
+
+        OrderAutoCancelScheduler.recordManualOverride(restaurantId);
     }
 
     @Override

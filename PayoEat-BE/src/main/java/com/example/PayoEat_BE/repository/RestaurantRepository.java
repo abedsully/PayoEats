@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -309,7 +310,7 @@ public class RestaurantRepository {
         }
     }
 
-    public Integer updateOpenStatusForRestaurant(UUID restaurantId) {
+    public boolean updateOpenStatusForRestaurant(UUID restaurantId, Map<UUID, LocalDateTime> manualOverrides) {
         try {
             RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
 
@@ -318,32 +319,62 @@ public class RestaurantRepository {
             LocalTime closingTime = restaurant.getClosingHour();
 
             boolean shouldBeOpen;
-
             if (openingTime.isBefore(closingTime)) {
                 shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
             } else {
                 shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
             }
 
+            if (manualOverrides.containsKey(restaurantId)) {
+                LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
+                LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
+
+                if (LocalDateTime.now().isBefore(nextScheduledChange)) {
+                    return false;
+                }
+            }
+
             if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
-
                 setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
-
-                System.out.println("[Scheduler] Restaurant " + restaurantId +
-                        " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
-
+                System.out.println("Restaurant " + restaurantId + " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
+                return true;
             } else {
-
                 System.out.println("Time now: " + LocalTime.now());
-
                 System.out.println("[Scheduler] Restaurant " + restaurantId +
                         " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
             }
 
-            return 1;
+            return false;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to update open status: " + e.getMessage());
+        }
+    }
+
+    private LocalDateTime calculateNextScheduledChange(LocalTime opening, LocalTime closing, boolean currentlyShouldBeOpen) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalTime currentTime = now.toLocalTime();
+
+        if (opening.isBefore(closing)) {
+            if (currentlyShouldBeOpen) {
+                return now.with(closing);
+            } else {
+                if (currentTime.isBefore(opening)) {
+                    return now.with(opening);
+                } else {
+                    return now.plusDays(1).with(opening);
+                }
+            }
+        } else {
+            if (currentlyShouldBeOpen) {
+                if (currentTime.isBefore(closing)) {
+                    return now.with(closing);
+                } else {
+                    return now.plusDays(1).with(closing);
+                }
+            } else {
+                return now.with(opening);
+            }
         }
     }
 

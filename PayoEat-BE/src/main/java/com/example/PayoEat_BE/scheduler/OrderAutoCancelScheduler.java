@@ -10,13 +10,32 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 public class OrderAutoCancelScheduler {
     private final OrderRepository orderRepository;
     private final RestaurantRepository restaurantRepository;
+
+    private static final Map<UUID, LocalDateTime> manualOverrides = new ConcurrentHashMap<>();
+
+    public static void recordManualOverride(UUID restaurantId) {
+        manualOverrides.put(restaurantId, LocalDateTime.now());
+        System.out.println("Restaurant " + restaurantId + " manually controlled at " + LocalDateTime.now());
+    }
+
+    public static boolean hasManualOverride(UUID restaurantId) {
+        return manualOverrides.containsKey(restaurantId);
+    }
+
+    public static void clearManualOverride(UUID restaurantId) {
+        if (manualOverrides.remove(restaurantId) != null) {
+            System.out.println("Restaurant " + restaurantId + " returned to scheduled operation");
+        }
+    }
 
      @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {
@@ -77,9 +96,12 @@ public class OrderAutoCancelScheduler {
 
         for (UUID restaurantId : restaurantUUIDLists) {
             try {
-                restaurantRepository.updateOpenStatusForRestaurant(restaurantId);
+                boolean updated = restaurantRepository.updateOpenStatusForRestaurant(restaurantId, manualOverrides);
+                if (updated && hasManualOverride(restaurantId)) {
+                    clearManualOverride(restaurantId);
+                }
             } catch (Exception e) {
-                System.out.println("[Scheduler] Error updating restaurant ");
+                System.out.println("Error updating restaurant " + restaurantId + ": " + e.getMessage());
             }
         }
     }
