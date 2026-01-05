@@ -174,11 +174,12 @@ public class OrderService implements IOrderService {
         CheckOrderDto order = checkOrderExistance(orderId);
         checkIfRestaurantExists(order.getRestaurantId());
 
-        if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+
+        if (order.getOrderStatus().equals(OrderStatus.CONFIRMED) || order.getOrderStatus().equals(OrderStatus.READY) ) {
+            orderRepository.processOrderToActive(order.getId());
+        } else {
             throw new IllegalArgumentException("Unable to process order, order has not been confirmed yet");
         }
-
-        orderRepository.processOrderToActive(order.getId());
 
         return "Order is processed";
     }
@@ -412,6 +413,14 @@ public class OrderService implements IOrderService {
                 (orderMessage == null || orderMessage.isBlank()) ? null : orderMessage
         );
 
+        String customerId = "";
+
+        if (request.getCustomerId().isBlank() || request.getCustomerId().isEmpty()) {
+            customerId = QrCodeUtil.generateCustomerId();
+        } else {
+            customerId = request.getCustomerId();
+        }
+
         List<UUID> menuCodes = request.getItems()
                 .stream()
                 .map(OrderItemRequest::getMenuCode)
@@ -452,6 +461,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
+        newRestaurantOrder.setCustomerId(customerId);
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 

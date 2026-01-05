@@ -739,7 +739,8 @@ public class OrderRepository {
                     m.menu_name,
                     m.menu_price,
                     m.menu_image_url,
-                    oi.quantity
+                    oi.quantity,
+                    o.customer_name
                 FROM orders o
                 JOIN restaurant r ON r.id = o.restaurant_id
                 JOIN order_items oi ON oi.order_id = o.id
