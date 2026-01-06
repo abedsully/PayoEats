@@ -39,4 +39,5 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
     private String customerName;
+    private LocalDateTime scheduledCheckInTime;
 }

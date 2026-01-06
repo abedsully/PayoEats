@@ -66,4 +66,18 @@ public class OrderAutoCancelScheduler {
         }
     }
 
+    @Scheduled(fixedRate = 60000)
+    public void cancelExpiredScheduledCheckIns() {
+        System.out.println("[Scheduler] Running cancelExpiredScheduledCheckIns() at " + LocalDateTime.now());
+
+        List<UUID> expiredOrders = orderRepository.findExpiredScheduledCheckInOrders();
+
+        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired scheduled check-in orders.");
+
+        for (UUID orderId : expiredOrders) {
+            System.out.println("[Scheduler] Cancelling expired scheduled check-in order: " + orderId);
+            orderRepository.cancelExpiredScheduledCheckIn(orderId);
+        }
+    }
+
 }

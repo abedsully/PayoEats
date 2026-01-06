@@ -6,6 +6,10 @@ import java.util.UUID;
 
 @Data
 public class SearchRestaurantResultDto {
-    private String restaurantName;
     private UUID restaurantId;
+    private String restaurantName;
+    private String restaurantImageUrl;
+    private String description;
+    private Double rating;
+    private Long restaurantCategory;
 }

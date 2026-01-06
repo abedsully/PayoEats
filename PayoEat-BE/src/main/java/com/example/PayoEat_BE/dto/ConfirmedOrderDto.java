@@ -17,6 +17,7 @@ public class ConfirmedOrderDto {
     private String paymentImageUrl;
     private Double totalPrice;
     private Double subTotal;
-    private Double taxPrice;
     private LocalDateTime paymentBeginAt;
+    private LocalDateTime paymentUploadedAt;
+    private LocalDateTime scheduledCheckInTime;
 }

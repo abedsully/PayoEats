@@ -21,10 +21,8 @@ public class SearchService implements ISearchService{
     private final ModelMapper modelMapper;
 
     @Override
-    public List<SearchRestaurantResultDto> search(String query) {
-        List<Restaurant> restaurantList = restaurantRepository.findByNameContainingIgnoreCase(query);
-
-        return getConvertedRestaurant(restaurantList);
+    public List<Restaurant> search(String query) {
+        return restaurantRepository.findByNameContainingIgnoreCase(query);
     }
 
     @Override
@@ -32,16 +30,6 @@ public class SearchService implements ISearchService{
         List<Menu> menuList = menuRepository.findByRestaurantIdAndMenuNameContainingIgnoreCaseAndIsActiveTrue(restaurantId, query);
 
         return getConvertedMenu(menuList);
-    }
-
-    @Override
-    public SearchRestaurantResultDto convertRestaurantToDto(Restaurant restaurant) {
-        return modelMapper.map(restaurant, SearchRestaurantResultDto.class);
-    }
-
-    @Override
-    public List<SearchRestaurantResultDto> getConvertedRestaurant(List<Restaurant> restaurantList) {
-        return restaurantList.stream().map(this::convertRestaurantToDto).toList();
     }
 
     @Override

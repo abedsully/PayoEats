@@ -19,4 +19,6 @@ public class ConfirmedOrderRow {
     private String menuImageUrl;
     private String paymentImageUrl;
     private LocalDateTime paymentBeginAt;
+    private LocalDateTime paymentUploadedAt;
+    private LocalDateTime scheduledCheckInTime;
 }

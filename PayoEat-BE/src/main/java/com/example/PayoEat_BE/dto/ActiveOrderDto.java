@@ -21,4 +21,10 @@ public class ActiveOrderDto {
     private LocalTime dineInTime;
 
     private LocalDateTime paymentBeginAt;
+
+    private LocalDateTime paymentConfirmedAt;
+
+    private LocalDateTime scheduledCheckInTime;
+
+    private LocalDateTime checkInExpiredAt;
 }

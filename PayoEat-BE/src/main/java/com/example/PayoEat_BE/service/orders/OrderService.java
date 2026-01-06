@@ -4,13 +4,13 @@ import com.example.PayoEat_BE.dto.*;
 import com.example.PayoEat_BE.dto.orders.*;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
-import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
 import com.example.PayoEat_BE.service.UploadService;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
+import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.*;
@@ -18,8 +18,6 @@ import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.OrderItemRequest;
 import com.example.PayoEat_BE.utils.UserAccessValidator;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,12 +35,11 @@ public class OrderService implements IOrderService {
     private final RestaurantRepository restaurantRepository;
     private final UserAccessValidator userAccessValidator;
     private final UploadService uploadService;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderService.class);
+    private final QrCodeUtil qrCodeUtil;
 
     @Override
     public String generateOrderIdQrCode(UUID orderId) {
-        return QrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
+        return qrCodeUtil.generateBase64Qr(orderId.toString(), 200, 200);
     }
 
     private void checkIfRestaurantExists(UUID restaurantId) {
@@ -147,7 +144,7 @@ public class OrderService implements IOrderService {
             throw new IllegalArgumentException("This order can't be cancelled");
         }
 
-        if (request.getCancellationReason().isEmpty() || order.getPaymentImageUrl().isBlank()) {
+        if (request.getCancellationReason().isEmpty()) {
             throw new IllegalArgumentException("Please provide cancellation reason");
         }
 
@@ -190,13 +187,9 @@ public class OrderService implements IOrderService {
         CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
-        if (result.getRoleId() != 2L || !result.getUserId().equals(userId)) {
-            throw new ForbiddenException("Unauthorized! You can't access this restaurant");
-        }
 
         return result;
     }
-
 
     @Override
     public RestaurantStatusDto restaurantOrderStatus(LocalDate date, Long userId) {
@@ -238,12 +231,6 @@ public class OrderService implements IOrderService {
         return orderRepository.checkPayment(order.getId());
     }
 
-    @Override
-    public List<RecentOrderDto> getRecentOrderLists(UUID restaurantId) {
-
-        return orderRepository.getRecentOrder(restaurantId);
-    }
-
     private CheckOrderDto checkOrderExistance(UUID orderId) {
         return orderRepository.checkOrderExistance(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
@@ -256,8 +243,8 @@ public class OrderService implements IOrderService {
         checkUserRestaurant(userId);
         checkIfRestaurantExists(result.getRestaurantId());
 
-        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE) && !result.getOrderStatus().equals(OrderStatus.READY)) {
-            throw new IllegalArgumentException("This order can't be finished yet");
+        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
+            throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
         }
 
         orderRepository.finishOrder(result.getId());
@@ -265,19 +252,20 @@ public class OrderService implements IOrderService {
         return "This order has been completed";
     }
 
+    @Override
     public String markOrderReady(UUID orderId, Long userId) {
         CheckOrderDto result = checkOrderExistance(orderId);
 
         checkUserRestaurant(userId);
         checkIfRestaurantExists(result.getRestaurantId());
 
-        if (!result.getOrderStatus().equals(OrderStatus.CONFIRMED) && !result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
-            throw new IllegalArgumentException("This order cannot be marked as ready. Current status: " + result.getOrderStatus());
+        if (!result.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+            throw new IllegalArgumentException("This order can't be marked as ready, it must be in CONFIRMED status");
         }
 
         orderRepository.markOrderReady(result.getId());
 
-        return "Order has been marked as ready for pickup";
+        return "Order has been marked as ready";
     }
 
     @Override
@@ -298,14 +286,14 @@ public class OrderService implements IOrderService {
                 IncomingOrderDto dto = new IncomingOrderDto();
                 dto.setRestaurantId(restaurantId);
                 dto.setOrderId(id);
+                dto.setMenuLists(new ArrayList<>());
+                dto.setOrderTime(r.getOrderTime());
                 dto.setOrderStatus(r.getOrderStatus());
                 dto.setCustomerName(r.getCustomerName());
-                dto.setMenuLists(new ArrayList<>());
-                dto.setReceivedAt(r.getOrderTime());
                 dto.setOrderMessage(r.getOrderMessage());
                 dto.setSubTotal(0.0);
-                dto.setTaxPrice(0.0);
                 dto.setTotalPrice(0.0);
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
                 return dto;
             });
 
@@ -322,11 +310,9 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -346,15 +332,16 @@ public class OrderService implements IOrderService {
                 ConfirmedOrderDto dto = new ConfirmedOrderDto();
                 dto.setRestaurantId(restaurantId);
                 dto.setOrderId(id);
-                dto.setOrderStatus(r.getOrderStatus());
-                dto.setCustomerName(r.getCustomerName());
                 dto.setMenuLists(new ArrayList<>());
-                dto.setOrderMessage(r.getOrderMessage());
                 dto.setPaymentImageUrl(r.getPaymentImageUrl());
                 dto.setPaymentBeginAt(r.getPaymentBeginAt());
+                dto.setPaymentUploadedAt(r.getPaymentUploadedAt());
+                dto.setOrderMessage(r.getOrderMessage());
                 dto.setSubTotal(0.0);
-                dto.setTaxPrice(0.0);
+                dto.setCustomerName(r.getCustomerName());
+                dto.setOrderStatus(r.getOrderStatus());
                 dto.setTotalPrice(0.0);
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
                 return dto;
             });
 
@@ -371,11 +358,9 @@ public class OrderService implements IOrderService {
             dto.getMenuLists().add(menu);
 
             double newSubtotal = dto.getSubTotal() + menu.getTotalPrice();
-            double tax = newSubtotal * 0.1;
 
             dto.setSubTotal(newSubtotal);
-            dto.setTaxPrice(tax);
-            dto.setTotalPrice(newSubtotal + tax);
+            dto.setTotalPrice(newSubtotal);
         }
 
         return new ArrayList<>(orderMap.values());
@@ -383,51 +368,53 @@ public class OrderService implements IOrderService {
 
     @Override
     public List<ActiveOrderDto> getActiveOrder(UUID restaurantId) {
-        try {
-            checkIfRestaurantExists(restaurantId);
+        checkIfRestaurantExists(restaurantId);
 
-            List<ActiveOrderRow> rows = orderRepository.getActiveOrderRows(restaurantId);
+        List<ActiveOrderRow> rows = orderRepository.getActiveOrderRows(restaurantId);
 
-            Map<UUID, ActiveOrderDto> orderMap = new LinkedHashMap<>();
+        Map<UUID, ActiveOrderDto> orderMap = new LinkedHashMap<>();
 
-            for (ActiveOrderRow r : rows) {
-                orderMap.computeIfAbsent(r.getOrderId(), id -> {
-                    ActiveOrderDto dto = new ActiveOrderDto();
-                    dto.setRestaurantId(restaurantId);
-                    dto.setOrderId(id);
-                    dto.setOrderStatus(r.getOrderStatus());
-                    dto.setCustomerName(r.getCustomerName());
-                    dto.setMenuLists(new ArrayList<>());
-                    dto.setOrderMessage(r.getOrderMessage());
-                    dto.setDineInTime(r.getDineInTime());
-                    dto.setPaymentBeginAt(r.getPaymentBeginAt());
-                    return dto;
-                });
+        for (ActiveOrderRow r : rows) {
+            orderMap.computeIfAbsent(r.getOrderId(), id -> {
+                ActiveOrderDto dto = new ActiveOrderDto();
+                dto.setRestaurantId(restaurantId);
+                dto.setOrderId(id);
+                dto.setMenuLists(new ArrayList<>());
+                dto.setDineInTime(r.getDineInTime());
+                dto.setPaymentConfirmedAt(r.getPaymentConfirmedAt());
+                dto.setCustomerName(r.getCustomerName());
+                dto.setOrderStatus(r.getOrderStatus());
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
 
-                ActiveOrderDto dto = orderMap.get(r.getOrderId());
+                // Compute check-in expiry: GREATEST(scheduled, confirmed) + 1 hour
+                if (r.getScheduledCheckInTime() != null && r.getPaymentConfirmedAt() != null) {
+                    LocalDateTime scheduled = r.getScheduledCheckInTime();
+                    LocalDateTime confirmed = r.getPaymentConfirmedAt();
+                    LocalDateTime expiryBase = scheduled.isAfter(confirmed) ? scheduled : confirmed;
+                    dto.setCheckInExpiredAt(expiryBase.plusHours(1));
+                }
 
-                MenuListDto menu = new MenuListDto();
-                menu.setMenuCode(r.getMenuCode());
-                menu.setMenuName(r.getMenuName());
-                menu.setMenuPrice(r.getMenuPrice());
-                menu.setMenuImageUrl(r.getMenuImageUrl());
-                menu.setQuantity(r.getQuantity());
-                menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
+                return dto;
+            });
 
-                dto.getMenuLists().add(menu);
-            }
-            return new ArrayList<>(orderMap.values());
-        } catch (Exception e) {
-            LOGGER.info("Error: ".concat(e.getMessage()));
-            throw new RuntimeException(e);
+            ActiveOrderDto dto = orderMap.get(r.getOrderId());
+
+            MenuListDto menu = new MenuListDto();
+            menu.setMenuCode(r.getMenuCode());
+            menu.setMenuName(r.getMenuName());
+            menu.setMenuPrice(r.getMenuPrice());
+            menu.setMenuImageUrl(r.getMenuImageUrl());
+            menu.setQuantity(r.getQuantity());
+            menu.setTotalPrice(r.getMenuPrice() * r.getQuantity());
+
+            dto.getMenuLists().add(menu);
         }
 
+        return new ArrayList<>(orderMap.values());
     }
 
     private PlaceOrderDto createOrder(AddOrderRequest request) {
         checkIfRestaurantExists(request.getRestaurantId());
-
-        Long restaurantTax = restaurantRepository.getRestaurantTax(request.getRestaurantId());
 
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setRestaurantId(request.getRestaurantId());
@@ -436,14 +423,6 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setOrderMessage(
                 (orderMessage == null || orderMessage.isBlank()) ? null : orderMessage
         );
-
-        String customerId = "";
-
-        if (request.getCustomerId().isBlank() || request.getCustomerId().isEmpty()) {
-            customerId = QrCodeUtil.generateCustomerId();
-        } else {
-            customerId = request.getCustomerId();
-        }
 
         List<UUID> menuCodes = request.getItems()
                 .stream()
@@ -475,20 +454,18 @@ public class OrderService implements IOrderService {
             orderItems.add(orderItem);
         }
 
-        double taxPrice = (subTotalPrice * restaurantTax) / 100;
-        double totalPrice = subTotalPrice + taxPrice;
+        double totalPrice = subTotalPrice;
 
-        newRestaurantOrder.setOrderTime(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+        newRestaurantOrder.setOrderTime(LocalDateTime.now());
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
-        newRestaurantOrder.setTaxPrice(taxPrice);
         newRestaurantOrder.setTotalPrice(totalPrice);
         newRestaurantOrder.setOrderStatus(OrderStatus.RECEIVED);
         newRestaurantOrder.setDineInTime(null);
-        newRestaurantOrder.setOrderMessage(request.getOrderMessage());
+        newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
-        newRestaurantOrder.setCreatedDate(LocalDate.now(ZoneId.of("Asia/Jakarta")));
-        newRestaurantOrder.setCustomerId(customerId);
+        newRestaurantOrder.setCustomerId(request.getCustomerId());
+        newRestaurantOrder.setScheduledCheckInTime(request.getScheduledCheckInTime());
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 
@@ -498,39 +475,30 @@ public class OrderService implements IOrderService {
 
         orderItemRepository.addMenuItems(orderItems);
 
-        if (savedOrder == null) {
-            throw new IllegalArgumentException("Error placing orders");
-        }
-
         PlaceOrderDto result = new PlaceOrderDto();
         result.setOrderId(savedOrder);
-        result.setCustomerId(customerId);
+        result.setCustomerId(request.getCustomerId());
 
         return result;
     }
 
     @Override
+    public List<RecentOrderDto> getRecentOrderLists(UUID restaurantId) {
+        return orderRepository.getRecentOrder(restaurantId);
+    }
+
+    @Override
     public List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status) {
         List<OrderHistoryRow> rows = orderRepository.getCustomerOrderHistory(customerId, startDate, endDate, status);
-        return groupOrderHistoryRows(rows);
+        return mapToOrderHistory(rows);
     }
 
     @Override
     public List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId) {
-        try {
-            LOGGER.info("Getting restaurant order successful!");
-
-
-            User user = userAccessValidator.validateRestaurantUser(userId);
-            CheckUserRestaurantDto result = checkUserRestaurant(user.getId());
-
-            List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(result.getId(), startDate, endDate, status);
-            return groupOrderHistoryRows(rows);
-
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+        UUID restaurantId = restaurantRepository.getRestaurantId(user.getUserId());
+        List<OrderHistoryRow> rows = orderRepository.getRestaurantOrderHistory(restaurantId, startDate, endDate, status);
+        return mapToOrderHistory(rows);
     }
 
     @Override
@@ -538,7 +506,7 @@ public class OrderService implements IOrderService {
         return orderRepository.getPaymentModalData(orderId);
     }
 
-    private List<OrderHistoryDto> groupOrderHistoryRows(List<OrderHistoryRow> rows) {
+    private List<OrderHistoryDto> mapToOrderHistory(List<OrderHistoryRow> rows) {
         Map<UUID, OrderHistoryDto> orderMap = new LinkedHashMap<>();
 
         for (OrderHistoryRow row : rows) {
@@ -554,28 +522,22 @@ public class OrderService implements IOrderService {
                 dto.setPaymentStatus(row.getPaymentStatus());
                 dto.setSubTotal(row.getSubTotal());
                 dto.setTotalPrice(row.getTotalPrice());
-                dto.setTaxPrice(row.getTaxPrice());
-                dto.setItemCount(0L);
                 dto.setMenuLists(new ArrayList<>());
                 return dto;
             });
 
             OrderHistoryDto dto = orderMap.get(row.getOrderId());
 
-            MenuListDto menu = new MenuListDto();
-            menu.setMenuCode(row.getMenuCode());
-            menu.setMenuName(row.getMenuName());
-            menu.setMenuPrice(row.getMenuPrice());
-            menu.setMenuImageUrl(row.getMenuImageUrl());
-            menu.setQuantity(row.getQuantity());
-            menu.setTotalPrice(row.getMenuPrice() * row.getQuantity());
+            MenuListDto menuItem = new MenuListDto();
+            menuItem.setMenuCode(row.getMenuCode());
+            menuItem.setMenuName(row.getMenuName());
+            menuItem.setMenuPrice(row.getMenuPrice());
+            menuItem.setMenuImageUrl(row.getMenuImageUrl());
+            menuItem.setQuantity(row.getQuantity());
 
-            dto.getMenuLists().add(menu);
-            dto.setItemCount(dto.getItemCount() + row.getQuantity());
+            dto.getMenuLists().add(menuItem);
         }
 
         return new ArrayList<>(orderMap.values());
     }
-
-
 }

@@ -1,7 +1,7 @@
 package com.example.PayoEat_BE.controller;
 
 import com.example.PayoEat_BE.dto.SearchMenuResultDto;
-import com.example.PayoEat_BE.dto.SearchRestaurantResultDto;
+import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.search.SearchService;
@@ -31,7 +31,7 @@ public class SearchController {
     @Operation(summary = "Getting details of restaurant", description = "This endpoint is used for getting restaurant detail")
     public ResponseEntity<ApiResponse> searchRestaurants(@RequestParam String query) {
         try {
-            List<SearchRestaurantResultDto> result = searchService.search(query);
+            List<Restaurant> result = searchService.search(query);
             return ResponseEntity.ok(new ApiResponse("Restaurant found", result));
         } catch (Exception e) {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
