@@ -28,9 +28,9 @@ public class Order {
     private UUID restaurantId;
     private String customerId;
     private LocalDateTime paymentBeginAt;
+    private LocalDateTime paymentUploadedAt;
     private Double subTotal;
     private Double totalPrice;
-    private Double taxPrice;
     private String cancellationReason;
     private LocalTime dineInTime;
     private String paymentImageUrl;

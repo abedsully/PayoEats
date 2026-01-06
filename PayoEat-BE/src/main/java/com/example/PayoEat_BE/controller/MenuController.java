@@ -69,29 +69,6 @@ public class MenuController {
         }
     }
 
-    @PostMapping(value = "/preview-upload", consumes = {"multipart/form-data"})
-    @Operation(summary = "Preview upload restaurant menu", description = "API for previewing uploaded restaurant menu")
-    public ResponseEntity<ApiResponse> previewUploadMenu(@RequestParam MultipartFile file) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            List<MenuDto> results =  menuService.previewUploadedMenu(file, user.getId());
-            return ResponseEntity.ok(new ApiResponse("List Menu: ", results));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
-
-    @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
-    @Operation(summary = "Upload restaurant menu", description = "API for uploading restaurant menu")
-    public ResponseEntity<ApiResponse> uploadMenu(@RequestParam MultipartFile file) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            List<MenuDto> results =  menuService.uploadMenu(file, user.getId());
-            return ResponseEntity.ok(new ApiResponse("List Menu: ", results));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
-    }
 
     @PostMapping(value = "/edit-availability")
     public ResponseEntity<ApiResponse> editAvailability(@RequestParam UUID menuCode) {
@@ -114,7 +91,6 @@ public class MenuController {
             return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
         }
     }
-
 
     @GetMapping("/get-menu-by-code")
     @Operation(summary = "Show Menus by Menu Code", description = "API to display menus by providing menu code")

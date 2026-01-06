@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantStatusDto;
 import com.example.PayoEat_BE.model.*;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.orders.IOrderService;
 import com.example.PayoEat_BE.service.user.IUserService;
@@ -82,13 +83,12 @@ public class RestaurantController {
                                                      @RequestParam("telephoneNumber") String telephoneNumber,
                                                      @RequestParam("restaurantCategoryCode") Long restaurantCategoryCode,
                                                      @RequestParam("restaurantColor") String restaurantColor,
-                                                     @RequestParam("tax") String tax,
                                                      @RequestParam("restaurantImageUrl") MultipartFile restaurantImageUrl,
                                                      @RequestParam("qrisImageUrl") MultipartFile qrisImageUrl
                                                      ) {
         try {
             RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor, Long.parseLong(tax)
+                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
             );
             UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
             return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
@@ -142,6 +142,17 @@ public class RestaurantController {
         }
     }
 
+    @GetMapping("/check-restaurant-name")
+    @Operation(summary = "Check restaurant name duplicate", description = "Endpoint for checking if restaurant name already exists")
+    public ResponseEntity<ApiResponse> checkRestaurantNameExists(@RequestParam String name) {
+        try {
+            Boolean exists = restaurantService.checkRestaurantNameExists(name);
+            return ResponseEntity.ok(new ApiResponse("Check completed", exists));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
+        }
+    }
+
     @GetMapping("/get-management-data")
     @Operation(summary = "Get restaurant management data", description = "Getting restaurant management data")
     public ResponseEntity<ApiResponse> getRestaurantManagementData(@RequestParam UUID restaurantId) {
@@ -163,6 +174,30 @@ public class RestaurantController {
             User user = userService.getAuthenticatedUser();
             restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
             return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/update-restaurant")
+    @Operation(summary = "Update restaurant", description = "Update restaurant information")
+    public ResponseEntity<ApiResponse> updateRestaurant(
+            @RequestParam UUID restaurantId,
+            @RequestParam String restaurantName,
+            @RequestParam String description,
+            @RequestParam String telephoneNumber,
+            @RequestParam String location,
+            @RequestParam String openingHour,
+            @RequestParam String closingHour,
+            @RequestParam String restaurantCategoryCode,
+            @RequestParam(value = "restaurantImageUrl", required = false) MultipartFile restaurantImageUrl,
+            @RequestParam(value = "qrisImageUrl", required = false) MultipartFile qrisImageUrl) {
+        try {
+            User user = userService.getAuthenticatedUser();
+            UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode));
+
+            restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
+            return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
         }

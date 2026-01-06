@@ -1,22 +1,19 @@
 package com.example.PayoEat_BE.repository;
 
-import com.example.PayoEat_BE.dto.RestaurantDto;
 import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.RestaurantOpenStatusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
-import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
-import com.example.PayoEat_BE.enums.OrderStatus;
 import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.request.restaurant.RegisterRestaurantRequest;
-import jakarta.mail.Multipart;
+import com.example.PayoEat_BE.request.restaurant.UpdateRestaurantRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,7 +37,6 @@ public class RestaurantRepository {
             created_at,
             updated_at,
             is_active,
-            tax,
             user_id,
             opening_hour,
             closing_hour,
@@ -52,7 +48,7 @@ public class RestaurantRepository {
             restaurant_category
         ) VALUES (
             :id, :name, :rating, :total_rating_count, :description,
-            :created_at, :updated_at, :is_active, :tax, :user_id,
+            :created_at, :updated_at, :is_active, :user_id,
             :opening_hour, :closing_hour, :location, :telephone_number,
             :restaurant_image_url, :qris_image_url, :color, :restaurant_category
         )
@@ -64,10 +60,9 @@ public class RestaurantRepository {
                     .param("rating", 0.0)
                     .param("total_rating_count", 0L)
                     .param("description", request.getDescription())
-                    .param("created_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("created_at", LocalDateTime.now())
                     .param("updated_at", null)
                     .param("is_active", false)
-                    .param("tax", request.getTax())
                     .param("user_id", userId)
                     .param("opening_hour", request.getOpeningHour())
                     .param("closing_hour", request.getClosingHour())
@@ -144,21 +139,6 @@ public class RestaurantRepository {
                     .query(Long.class)
                     .single();
 
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Long getRestaurantTax(UUID restaurantId) {
-        try {
-            String sql = """
-                    select tax from restaurant where id = :restaurantId;
-                    """;
-
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .query(Long.class)
-                    .single();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -330,35 +310,71 @@ public class RestaurantRepository {
         }
     }
 
-    public Integer updateOpenStatusForRestaurant(UUID restaurantId) {
+    public boolean updateOpenStatusForRestaurant(UUID restaurantId, Map<UUID, LocalDateTime> manualOverrides) {
         try {
             RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
 
-            LocalTime now = LocalTime.now(ZoneId.of("Asia/Jakarta"));
+            LocalTime now = LocalTime.now();
             LocalTime openingTime = restaurant.getOpeningHour();
             LocalTime closingTime = restaurant.getClosingHour();
 
-            boolean shouldBeOpen = now.isAfter(openingTime) && now.isBefore(closingTime);
+            boolean shouldBeOpen;
+            if (openingTime.isBefore(closingTime)) {
+                shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
+            } else {
+                shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
+            }
+
+            if (manualOverrides.containsKey(restaurantId)) {
+                LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
+                LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
+
+                if (LocalDateTime.now().isBefore(nextScheduledChange)) {
+                    return false;
+                }
+            }
 
             if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
-
                 setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
-
-                System.out.println("[Scheduler] Restaurant " + restaurantId +
-                        " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
-
+                System.out.println("Restaurant " + restaurantId + " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
+                return true;
             } else {
-
-                System.out.println("Time now: " + LocalTime.now(ZoneId.of("Asia/Jakarta")));
-
+                System.out.println("Time now: " + LocalTime.now());
                 System.out.println("[Scheduler] Restaurant " + restaurantId +
                         " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
             }
 
-            return 1;
+            return false;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to update open status: " + e.getMessage());
+        }
+    }
+
+    private LocalDateTime calculateNextScheduledChange(LocalTime opening, LocalTime closing, boolean currentlyShouldBeOpen) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalTime currentTime = now.toLocalTime();
+
+        if (opening.isBefore(closing)) {
+            if (currentlyShouldBeOpen) {
+                return now.with(closing);
+            } else {
+                if (currentTime.isBefore(opening)) {
+                    return now.with(opening);
+                } else {
+                    return now.plusDays(1).with(opening);
+                }
+            }
+        } else {
+            if (currentlyShouldBeOpen) {
+                if (currentTime.isBefore(closing)) {
+                    return now.with(closing);
+                } else {
+                    return now.plusDays(1).with(closing);
+                }
+            } else {
+                return now.with(opening);
+            }
         }
     }
 
@@ -403,12 +419,40 @@ public class RestaurantRepository {
 
             return jdbcClient.sql(sql)
                     .param("is_open", isOpen)
-                    .param("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")))
+                    .param("updated_at", LocalDateTime.now())
                     .param("restaurant_id", restaurantId)
                     .update();
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to toggle restaurant status: " + e.getMessage());
+        }
+    }
+
+    public Integer updateRestaurant(UpdateRestaurantRequest request, String resImageUrl, String qrisImageUrl) {
+        try {
+            String sql = """
+                    UPDATE restaurant
+                    SET name = :name, telephone_number = :number, description = :description,
+                    location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour,
+                    restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
+                    where id = :restaurant_id;
+                    """;
+
+            return jdbcClient.sql(sql)
+                    .param("name", request.getName())
+                    .param("number", request.getTelephoneNumber())
+                    .param("description", request.getDescription())
+                    .param("location", request.getLocation())
+                    .param("opening_hour", request.getOpeningHour())
+                    .param("closing_hour", request.getClosingHour())
+                    .param("res_image", resImageUrl)
+                    .param("qris_image", qrisImageUrl)
+                    .param("category", request.getRestaurantCategory())
+                    .param("restaurant_id", request.getRestaurantId())
+                    .update();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 

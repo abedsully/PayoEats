@@ -15,6 +15,7 @@ import com.example.PayoEat_BE.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -28,8 +29,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -50,6 +53,14 @@ public class OrderController {
     private final List<UUID> trackedProgressOrderIds = new CopyOnWriteArrayList<>();
 
     private final RestaurantService restaurantService;
+
+    @Value("${fe.url}")
+    private String feUrl;
+
+    @Value("${backend.url}")
+    private String backendUrl;
+
+
 
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order")
@@ -198,19 +209,19 @@ public class OrderController {
 
     @GetMapping("/confirm-redirect")
     public ResponseEntity<String> confirmRedirect(@RequestParam UUID orderId) {
-        String html = String.format("""
-    <html>
-      <head>
-        <title>Confirming Order...</title>
-      </head>
-      <body onload='document.forms[0].submit()'>
-        <p>Processing your order... please wait.</p>
-        <form method='POST' action='/api/order/confirm2'>
-          <input type='hidden' name='orderId' value='%s'/>
-        </form>
-      </body>
-    </html>
-    """, orderId.toString());
+        String html = """
+<html>
+  <head>
+    <title>Confirming Order...</title>
+  </head>
+  <body onload='document.forms[0].submit()'>
+    <p>Processing your order... please wait.</p>
+    <form method='POST' action='%sorder/confirm2'>
+      <input type='hidden' name='orderId' value='%s'/>
+    </form>
+  </body>
+</html>
+""".formatted(backendUrl, orderId);
 
 
         return ResponseEntity.ok()
@@ -218,7 +229,7 @@ public class OrderController {
                 .body(html);
     }
 
-    // POST endpoint to confirm order
+    @CrossOrigin(origins = "*")
     @PostMapping("/confirm2")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
     public ResponseEntity<String> confirmOrder2(@RequestParam UUID orderId) {
@@ -233,7 +244,7 @@ public class OrderController {
                     <script>
                       // Redirect after 1 second
                       setTimeout(() => {
-                        window.location.href = 'http://localhost:5173/';
+                        window.location.href = "%s/restaurant/management";
                       }, 1000);
                     </script>
                   </head>
@@ -242,7 +253,7 @@ public class OrderController {
                     <p>Redirecting to dashboard...</p>
                   </body>
                 </html>
-                """;
+                """.formatted(feUrl);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_HTML)
@@ -330,15 +341,27 @@ public class OrderController {
     }
 
     @MessageMapping("/order-progress/request")
-    public void handleOrderRequest(UUID orderId) {
-        // Save the orderId if not already tracked
-        if (!trackedOrderIds.contains(orderId)) {
-            trackedOrderIds.add(orderId);
-        }
+    public void handleOrderRequest(@Payload String orderIdStr) {
+        try {
+            UUID orderId = UUID.fromString(orderIdStr);
 
-        // Send the first response immediately
-        ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
-        messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            // Save the orderId if not already tracked
+            if (!trackedOrderIds.contains(orderId)) {
+                trackedOrderIds.add(orderId);
+                System.out.println("✅ Added orderId to tracked list: " + orderId);
+            } else {
+                System.out.println("ℹ️ OrderId already in tracked list: " + orderId);
+            }
+            System.out.println("📊 Total tracked order IDs: " + trackedOrderIds.size());
+
+            // Send the first response immediately
+            ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+            messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            System.out.println("📤 Sent initial order progress for: " + orderId);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid orderId format: " + orderIdStr);
+            e.printStackTrace();
+        }
     }
 
     @GetMapping("/incoming")
@@ -368,9 +391,46 @@ public class OrderController {
      */
     @Scheduled(fixedRate = 5000)
     public void sendPeriodicUpdates() {
+        if (trackedOrderIds.isEmpty()) {
+            System.out.println("⏰ Scheduled task running, but no orders to track");
+            return;
+        }
+
+        System.out.println("⏰ Scheduled task running - Sending updates for " + trackedOrderIds.size() + " order(s)");
+        Set<UUID> ordersToRemove = new HashSet<>();
+
         for (UUID orderId : trackedOrderIds) {
-            ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
-            messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+            try {
+                ProgressOrderDto progress = orderRepository.getProgressOrder(orderId);
+                messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, progress);
+                System.out.println("📤 Sent periodic update for orderId: " + orderId + " | Status: " + progress.getOrderStatus());
+            } catch (RuntimeException e) {
+                if (e.getMessage() != null && e.getMessage().contains("Incorrect result size")) {
+                    System.out.println("⚠️ Order " + orderId + " no longer exists in database, notifying client and removing from tracking");
+
+                    // Send a final notification to the client that the order is not found
+                    Map<String, Object> notFoundPayload = new HashMap<>();
+                    notFoundPayload.put("orderId", orderId.toString());
+                    notFoundPayload.put("orderStatus", "NOT_FOUND");
+                    notFoundPayload.put("message", "This order is no longer available. It may have been completed, cancelled, or expired.");
+
+                    messagingTemplate.convertAndSend("/topic/order-progress/" + orderId, notFoundPayload);
+                    System.out.println("📤 Sent NOT_FOUND notification for orderId: " + orderId);
+
+                    ordersToRemove.add(orderId);
+                } else {
+                    System.err.println("❌ Failed to send update for orderId: " + orderId);
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send update for orderId: " + orderId);
+                e.printStackTrace();
+            }
+        }
+
+        if (!ordersToRemove.isEmpty()) {
+            trackedOrderIds.removeAll(ordersToRemove);
+            System.out.println("🗑️ Removed " + ordersToRemove.size() + " non-existent order(s) from tracking");
         }
     }
 

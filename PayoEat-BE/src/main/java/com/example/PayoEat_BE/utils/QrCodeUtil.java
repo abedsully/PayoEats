@@ -5,6 +5,8 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -12,12 +14,15 @@ import java.util.Base64;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 
-
+@Component
 public class QrCodeUtil {
 
-    public static String generateBase64Qr(String text, int width, int height) {
+    @Value("${backend.url}")
+    private String backendUrl;
+
+    public String generateBase64Qr(String text, int width, int height) {
         try {
-            String url = "http://localhost:8080/api/order/confirm-redirect?orderId=" + text;
+            String url = backendUrl + "order/confirm-redirect?orderId=" + text;
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(url, BarcodeFormat.QR_CODE, width, height);
             BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);

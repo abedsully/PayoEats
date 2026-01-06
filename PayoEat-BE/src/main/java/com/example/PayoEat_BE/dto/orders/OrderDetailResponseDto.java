@@ -16,7 +16,6 @@ public class OrderDetailResponseDto {
     private String orderMessage;
     private Double subTotal;
     private Double totalPrice;
-    private Double taxPrice;
     private String customerName;
     private LocalDateTime scheduledCheckInTime;
 

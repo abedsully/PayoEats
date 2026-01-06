@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS restaurant (
 );
 
 INSERT INTO restaurant (id,name,rating,total_rating,description,created_at,updated_at,is_active,user_id,opening_hour,closing_hour,location,telephone_number,restaurant_image_url,qris_image_url,color,restaurant_category,is_open) VALUES
-('550e8400-e29b-41d4-a716-446655440000','Sunset Grill',0.0,0,'Cozy rooftop grill with city views.','2024-01-01 10:00:00','2025-05-01 09:30:00',TRUE,101,'00:00:00','23:59:00','123 Skyline Ave','555-1234',
+('550e8400-e29b-41d4-a716-446655440000','Sunset Grill',0.0,0,'Cozy rooftop grill with city views.','2024-01-01 10:00:00','2025-05-01 09:30:00',TRUE,101,'10:00:00','22:00:00','123 Skyline Ave','555-1234',
 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmVzdGF1cmFudHxlbnwwfHwwfHx8MA%3D%3D',
 '7fa459ea-ee8a-3ca4-894e-db77e160355f','#FF5733',1,TRUE),
 
@@ -129,7 +129,7 @@ INSERT INTO restaurant (id,name,rating,total_rating,description,created_at,updat
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_date DATE,
-    order_time TIMESTAMP,
+    order_time TIMESTAMPTZ,
     order_message VARCHAR(255),
     payment_confirmed_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,

@@ -21,7 +21,6 @@ public class OrderHistoryRow {
     private PaymentStatus paymentStatus;
     private Double subTotal;
     private Double totalPrice;
-    private Double taxPrice;
     private UUID menuCode;
     private String menuName;
     private Double menuPrice;

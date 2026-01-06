@@ -20,8 +20,6 @@ public interface IMenuService {
     List<MenuDto> getConvertedMenus(List<Menu> menus);
     List<Menu> getAllActiveMenu(UUID restaurantId);
     List<Menu> getMenusByRestaurantId(UUID restaurantId);
-    List<MenuDto> previewUploadedMenu(MultipartFile file, Long userId) throws IOException;
-    List<MenuDto> uploadMenu(MultipartFile file, Long userId) throws IOException;
     List<TopMenusDto> getTop5Menu(UUID restaurantId, Long userId);
     void editMenuAvailability(UUID menuCode, Long userId);
     void editAllMenuAvailability(UUID restaurantId, Long userId, Boolean activate);

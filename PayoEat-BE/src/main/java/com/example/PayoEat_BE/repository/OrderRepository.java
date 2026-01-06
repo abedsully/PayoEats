@@ -93,6 +93,8 @@ public class OrderRepository {
 
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
         try {
+            LocalDate queryDate = LocalDate.now();
+
             String sql = """
                 select
                     o.id as order_id,
@@ -113,12 +115,14 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
+                  and o.created_date = :date
                 order by o.order_time asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.RECEIVED.toString())
+                    .param("date", queryDate)
                     .query(IncomingOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -152,12 +156,14 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status = :status
+                  and o.created_date = :date
                 order by o.payment_begin_at asc
         """;
 
             return jdbcClient.sql(sql)
                     .param("restaurant_id", restaurantId)
                     .param("status", OrderStatus.PAYMENT.toString())
+                    .param("date", LocalDate.now())
                     .query(ConfirmedOrderRow.class)
                     .list();
         } catch (Exception e) {
@@ -190,6 +196,7 @@ public class OrderRepository {
                 where o.restaurant_id = :restaurant_id
                   and o.is_active = true
                   and o.order_status in (:statuses)
+                  and o.created_date = :date
                 order by o.order_time asc
         """;
 
@@ -200,6 +207,7 @@ public class OrderRepository {
                             OrderStatus.ACTIVE.toString(),
                             OrderStatus.READY.toString()
                     ))
+                    .param("date", LocalDate.now())
                     .query(ActiveOrderRow.class)
                     .list();
         } catch (Exception e) {

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,6 +32,9 @@ public class AuthController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+
+    @Value("${fe.url}")
+    private String feUrl;
 
     @PostMapping("/register")
     @Operation(summary = "User registration", description = "Endpoint for registering user")
@@ -52,7 +56,7 @@ public class AuthController {
             String htmlResponse = """
         <html>
         <head>
-            <meta http-equiv="refresh" content="5;url=http://localhost:5173/login" />
+            <meta http-equiv="refresh" content="5;url=%s/login" />
             <style>
                 body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
                 .message-box { padding: 20px; border: 1px solid #ccc; display: inline-block; border-radius: 10px; background-color: #f9f9f9; }
@@ -65,7 +69,7 @@ public class AuthController {
             </div>
         </body>
         </html>
-        """.formatted(result);
+        """.formatted(feUrl, result);
 
             return ResponseEntity.ok().body(htmlResponse);
         } catch (Exception e) {
@@ -127,6 +131,17 @@ public class AuthController {
         try {
             String message = userService.resetPassword(token, password);
             return ResponseEntity.ok(new ApiResponse(message, null));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
+        }
+    }
+
+    @GetMapping("/check-email")
+    @Operation(summary = "Check email duplicate", description = "Endpoint for checking if email already exists")
+    public ResponseEntity<ApiResponse> checkEmailExists(@RequestParam String email) {
+        try {
+            Boolean exists = userService.checkEmailExists(email);
+            return ResponseEntity.ok(new ApiResponse("Check completed", exists));
         } catch (Exception e) {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
         }

@@ -21,7 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -60,7 +59,7 @@ public class UserService implements IUserService{
                     user.setUsername(request.getUsername());
                     user.setEmail(request.getEmail());
                     user.setPassword(passwordEncoder.encode(request.getPassword()));
-                    user.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+                    user.setCreatedAt(LocalDateTime.now());
                     user.setUpdatedAt(null);
                     user.setIsActive(false);
                     user.setRoleId(3L);
@@ -71,7 +70,7 @@ public class UserService implements IUserService{
                     VerificationToken verificationToken = new VerificationToken();
                     verificationToken.setToken(token);
                     verificationToken.setUserId(userId);
-                    verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
+                    verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
                     verificationToken.setType('1');
                     tokenRepository.add(verificationToken);
 
@@ -91,7 +90,7 @@ public class UserService implements IUserService{
         }
 
 
-        if (optionalToken.getExpiryDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Jakarta")))) {
+        if (optionalToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             return "Token has expired.";
         }
 
@@ -131,7 +130,7 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUserId(user.getId());
-        verificationToken.setExpiryDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")).plusDays(1));
+        verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
         verificationToken.setType('1');
 
         tokenRepository.add(verificationToken);
@@ -146,7 +145,7 @@ public class UserService implements IUserService{
         VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, '2')
                 .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
 
-        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Jakarta")))) {
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new InvalidException("Token already expired");
         }
 
@@ -165,6 +164,11 @@ public class UserService implements IUserService{
     private boolean isValidEmail(String email) {
         Matcher matcher = EMAIL_PATTERN.matcher(email);
         return matcher.matches();
+    }
+
+    @Override
+    public Boolean checkEmailExists(String email) {
+        return userRepository.existsByEmail(email);
     }
 
 
