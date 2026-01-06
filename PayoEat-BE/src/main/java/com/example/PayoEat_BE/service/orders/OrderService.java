@@ -293,6 +293,7 @@ public class OrderService implements IOrderService {
                 dto.setOrderMessage(r.getOrderMessage());
                 dto.setSubTotal(0.0);
                 dto.setTotalPrice(0.0);
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
                 return dto;
             });
 
@@ -340,6 +341,7 @@ public class OrderService implements IOrderService {
                 dto.setCustomerName(r.getCustomerName());
                 dto.setOrderStatus(r.getOrderStatus());
                 dto.setTotalPrice(0.0);
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
                 return dto;
             });
 
@@ -382,6 +384,16 @@ public class OrderService implements IOrderService {
                 dto.setPaymentConfirmedAt(r.getPaymentConfirmedAt());
                 dto.setCustomerName(r.getCustomerName());
                 dto.setOrderStatus(r.getOrderStatus());
+                dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
+
+                // Compute check-in expiry: GREATEST(scheduled, confirmed) + 1 hour
+                if (r.getScheduledCheckInTime() != null && r.getPaymentConfirmedAt() != null) {
+                    LocalDateTime scheduled = r.getScheduledCheckInTime();
+                    LocalDateTime confirmed = r.getPaymentConfirmedAt();
+                    LocalDateTime expiryBase = scheduled.isAfter(confirmed) ? scheduled : confirmed;
+                    dto.setCheckInExpiredAt(expiryBase.plusHours(1));
+                }
+
                 return dto;
             });
 
@@ -452,6 +464,8 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
+        newRestaurantOrder.setCustomerId(request.getCustomerId());
+        newRestaurantOrder.setScheduledCheckInTime(request.getScheduledCheckInTime());
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 

@@ -18,5 +18,6 @@ public class IncomingOrderDto {
     private Double subTotal;
     private String orderMessage;
     private LocalDateTime orderTime;
+    private LocalDateTime scheduledCheckInTime;
 }
 

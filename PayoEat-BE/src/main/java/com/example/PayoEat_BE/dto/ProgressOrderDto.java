@@ -20,4 +20,6 @@ public class ProgressOrderDto {
     private Integer paymentImageRejectionCount;
     private LocalDateTime orderTime;
     private LocalDateTime paymentUploadedAt;
+    private LocalDateTime scheduledCheckInTime;
+    private LocalDateTime paymentConfirmedAt;
 }

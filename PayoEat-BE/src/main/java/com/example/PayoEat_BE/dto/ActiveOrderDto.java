@@ -22,6 +22,9 @@ public class ActiveOrderDto {
 
     private LocalDateTime paymentBeginAt;
 
-    @JsonFormat(pattern = "HH:mm:ss")
-    private LocalTime paymentConfirmedAt;
+    private LocalDateTime paymentConfirmedAt;
+
+    private LocalDateTime scheduledCheckInTime;
+
+    private LocalDateTime checkInExpiredAt;
 }

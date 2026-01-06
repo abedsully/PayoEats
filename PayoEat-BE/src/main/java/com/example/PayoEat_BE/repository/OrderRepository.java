@@ -46,7 +46,8 @@ public class OrderRepository {
                         payment_image_rejection_count,
                         payment_status,
                         customer_name,
-                        customer_id
+                        customer_id,
+                        scheduled_check_in_time
                     ) VALUES (
                         :date,
                         :order_time,
@@ -63,7 +64,8 @@ public class OrderRepository {
                         0,
                         NULL,
                         :customer_name,
-                        :customer_id
+                        :customer_id,
+                        :scheduled_check_in_time
                     )
                     RETURNING id;
                     """;
@@ -78,6 +80,7 @@ public class OrderRepository {
                     .param("total_price", newRestaurantOrder.getTotalPrice())
                     .param("customer_name", newRestaurantOrder.getCustomerName())
                     .param("customer_id", newRestaurantOrder.getCustomerId())
+                    .param("scheduled_check_in_time", newRestaurantOrder.getScheduledCheckInTime())
                     .query(UUID.class)
                     .single();
 
@@ -103,7 +106,8 @@ public class OrderRepository {
                     o.order_message,
                     m.menu_name,
                     m.menu_price,
-                    m.menu_image_url
+                    m.menu_image_url,
+                    o.scheduled_check_in_time
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -143,7 +147,8 @@ public class OrderRepository {
                     m.menu_image_url,
                     o.payment_image_url,
                     o.payment_begin_at,
-                    o.payment_uploaded_at
+                    o.payment_uploaded_at,
+                    o.scheduled_check_in_time
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -183,7 +188,8 @@ public class OrderRepository {
                     m.menu_image_url,
                     o.dine_in_time,
                     o.payment_begin_at,
-                    o.payment_confirmed_at
+                    o.payment_confirmed_at,
+                    o.scheduled_check_in_time
                 from orders o
                 join order_items oi on oi.order_id = o.id
                 join menu m on m.menu_code = oi.menu_code and m.is_active = true
@@ -251,6 +257,7 @@ public class OrderRepository {
                 o.order_message,
                 o.sub_total,
                 o.total_price,
+                o.scheduled_check_in_time,
                 oi.id AS order_item_id,
                 oi.menu_code,
                 oi.quantity,
@@ -314,6 +321,11 @@ public class OrderRepository {
                     dto.setTotalPrice(d);
                 }
 
+                Object scheduledCheckInTimeObj = row.get("scheduled_check_in_time");
+                if (scheduledCheckInTimeObj instanceof java.sql.Timestamp ts) {
+                    dto.setScheduledCheckInTime(ts.toLocalDateTime());
+                }
+
             }
 
             OrderItemDetailDto item = new OrderItemDetailDto();
@@ -373,7 +385,8 @@ public class OrderRepository {
         try {
             String sql = "SELECT o.restaurant_id, o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
                     "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo, o.payment_image_rejection_count AS paymentImageRejectionCount, " +
-                    "o.order_time AS orderTime, o.payment_uploaded_at AS paymentUploadedAt " +
+                    "o.order_time AS orderTime, o.payment_uploaded_at AS paymentUploadedAt, o.scheduled_check_in_time AS scheduledCheckInTime, " +
+                    "o.payment_confirmed_at AS paymentConfirmedAt " +
                     "FROM orders o join restaurant r on o.restaurant_id  = r.id " +
                     "WHERE o.id = :orderId";
 
@@ -843,6 +856,52 @@ public class OrderRepository {
                     .single();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<UUID> findExpiredScheduledCheckInOrders() {
+        // Find CONFIRMED/READY orders where:
+        // MAX(scheduled_check_in_time, payment_confirmed_at) + 1 hour < NOW()
+        String sql = """
+            SELECT id FROM orders o
+            WHERE DATE(o.created_date) = :date
+              AND o.scheduled_check_in_time IS NOT NULL
+              AND o.payment_confirmed_at IS NOT NULL
+              AND o.order_status IN (:statuses)
+              AND o.is_active = TRUE
+              AND GREATEST(o.scheduled_check_in_time, o.payment_confirmed_at) + INTERVAL '1 hour' < :now
+        """;
+        try (var stream = jdbcClient.sql(sql)
+                .param("date", LocalDate.now())
+                .param("statuses", List.of(OrderStatus.CONFIRMED.name(), OrderStatus.READY.name()))
+                .param("now", LocalDateTime.now())
+                .query(UUID.class)
+                .stream()) {
+
+            return stream.toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch expired scheduled check-in orders", e);
+        }
+    }
+
+    public void cancelExpiredScheduledCheckIn(UUID orderId) {
+        try {
+            String sql = """
+            UPDATE orders
+            SET order_status = :order_status,
+                cancellation_reason = :reason,
+                is_active = FALSE
+            WHERE id = :order_id AND is_active = TRUE
+        """;
+
+            jdbcClient.sql(sql)
+                    .param("order_status", OrderStatus.CANCELLED.name())
+                    .param("reason", "Check-in time expired")
+                    .param("order_id", orderId)
+                    .update();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to cancel expired scheduled check-in order: " + e.getMessage(), e);
         }
     }
 }

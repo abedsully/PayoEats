@@ -20,5 +20,6 @@ public class ActiveOrderRow {
     private String menuImageUrl;
     private LocalTime dineInTime;
     private LocalDateTime paymentBeginAt;
-    private LocalTime paymentConfirmedAt;
+    private LocalDateTime paymentConfirmedAt;
+    private LocalDateTime scheduledCheckInTime;
 }

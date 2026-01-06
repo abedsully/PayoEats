@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS restaurant_approval (
     restaurant_image_url VARCHAR(255),
     user_id BIGINT,
     reason TEXT,
-    requested_at TIMESTAMPTZ,
-    processed_at TIMESTAMPTZ,
+    requested_at TIMESTAMP,
+    processed_at TIMESTAMP,
     is_approved BOOLEAN,
     is_active BOOLEAN
 );
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS verification_token (
     id BIGINT PRIMARY KEY,
     token VARCHAR(255),
     user_id BIGINT,
-    expiry_date TIMESTAMPTZ,
+    expiry_date TIMESTAMP,
     type CHAR(1)
 );
 
@@ -131,13 +131,13 @@ CREATE TABLE IF NOT EXISTS orders (
     created_date DATE,
     order_time TIMESTAMPTZ,
     order_message VARCHAR(255),
-    payment_confirmed_at TIMESTAMPTZ,
+    payment_confirmed_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     order_status VARCHAR(50),
     restaurant_id UUID,
     customer_id VARCHAR(100),
-    payment_begin_at TIMESTAMPTZ,
-    payment_uploaded_at TIMESTAMPTZ,
+    payment_begin_at TIMESTAMP,
+    payment_uploaded_at TIMESTAMP,
     sub_total DOUBLE PRECISION,
     total_price DOUBLE PRECISION,
     cancellation_reason VARCHAR(255),
@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_image_rejection_count BIGINT,
     payment_status VARCHAR(50),
     customer_name VARCHAR(255),
+    scheduled_check_in_time TIMESTAMP,
     CONSTRAINT fk_orders_restaurant
         FOREIGN KEY (restaurant_id) REFERENCES restaurant(id)
 );
@@ -194,7 +195,7 @@ CREATE TABLE IF NOT EXISTS verification_token (
     id SERIAL PRIMARY KEY,
     token VARCHAR(255),
     user_id BIGINT,
-    expiry_date TIMESTAMPTZ,
+    expiry_date TIMESTAMP,
     type CHAR(1)
 );
 
@@ -273,4 +274,19 @@ WHERE payment_status = 'UPLOADED'
 DO $$
 BEGIN
     RAISE NOTICE 'Migration completed: payment_uploaded_at column added and existing data migrated';
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'orders'
+        AND column_name = 'scheduled_check_in_time'
+    ) THEN
+        ALTER TABLE orders ADD COLUMN scheduled_check_in_time TIMESTAMP;
+        RAISE NOTICE 'Column scheduled_check_in_time added to orders table';
+    ELSE
+        RAISE NOTICE 'Column scheduled_check_in_time already exists';
+    END IF;
 END $$;
