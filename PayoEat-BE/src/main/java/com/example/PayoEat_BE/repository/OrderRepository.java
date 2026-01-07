@@ -746,6 +746,7 @@ public class OrderRepository {
                     o.order_time,
                     o.order_status,
                     o.payment_status,
+                    o.order_message,
                     o.sub_total,
                     o.total_price,
                     oi.menu_code,
@@ -799,6 +800,7 @@ public class OrderRepository {
                     o.order_time,
                     o.order_status,
                     o.payment_status,
+                    o.order_message,
                     o.sub_total,
                     o.total_price,
                     oi.menu_code,
@@ -837,6 +839,47 @@ public class OrderRepository {
             }
 
             return query.query(OrderHistoryRow.class).list();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public List<OrderHistoryRow> getReviewableOrders(String customerId, UUID restaurantId) {
+        try {
+            String sql = """
+                SELECT
+                    o.created_date,
+                    o.id AS order_id,
+                    o.restaurant_id,
+                    r.name AS restaurant_name,
+                    o.order_time,
+                    o.order_status,
+                    o.payment_status,
+                    o.order_message,
+                    o.sub_total,
+                    o.total_price,
+                    oi.menu_code,
+                    m.menu_name,
+                    m.menu_price,
+                    m.menu_image_url,
+                    oi.quantity
+                FROM orders o
+                JOIN restaurant r ON r.id = o.restaurant_id
+                JOIN order_items oi ON oi.order_id = o.id
+                JOIN menu m ON m.menu_code = oi.menu_code
+                LEFT JOIN review rv ON rv.order_id = o.id
+                WHERE o.customer_id = :customer_id
+                  AND o.restaurant_id = :restaurant_id
+                  AND o.order_status = 'FINISHED'
+                  AND rv.order_id IS NULL
+                ORDER BY o.order_time DESC
+                """;
+
+            return jdbcClient.sql(sql)
+                    .param("customer_id", customerId)
+                    .param("restaurant_id", restaurantId)
+                    .query(OrderHistoryRow.class)
+                    .list();
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

@@ -19,6 +19,7 @@ public class OrderHistoryRow {
     private LocalDateTime orderTime;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
+    private String orderMessage;
     private Double subTotal;
     private Double totalPrice;
     private UUID menuCode;

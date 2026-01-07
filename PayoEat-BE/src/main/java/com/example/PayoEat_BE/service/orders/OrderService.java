@@ -502,6 +502,12 @@ public class OrderService implements IOrderService {
     }
 
     @Override
+    public List<OrderHistoryDto> getReviewableOrders(String customerId, UUID restaurantId) {
+        List<OrderHistoryRow> rows = orderRepository.getReviewableOrders(customerId, restaurantId);
+        return mapToOrderHistory(rows);
+    }
+
+    @Override
     public PaymentModalDto getPaymentModalData(UUID orderId) {
         return orderRepository.getPaymentModalData(orderId);
     }
@@ -520,6 +526,7 @@ public class OrderService implements IOrderService {
                 dto.setOrderTime(row.getOrderTime());
                 dto.setOrderStatus(row.getOrderStatus());
                 dto.setPaymentStatus(row.getPaymentStatus());
+                dto.setOrderMessage(row.getOrderMessage());
                 dto.setSubTotal(row.getSubTotal());
                 dto.setTotalPrice(row.getTotalPrice());
                 dto.setMenuLists(new ArrayList<>());

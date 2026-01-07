@@ -533,4 +533,18 @@ public class OrderController {
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @GetMapping("/reviewable")
+    @Operation(summary = "Get reviewable orders", description = "Retrieve finished orders that haven't been reviewed yet for a specific restaurant")
+    public ResponseEntity<ApiResponse> getReviewableOrders(
+            @RequestParam String customerId,
+            @RequestParam UUID restaurantId
+    ) {
+        try {
+            List<OrderHistoryDto> orders = orderService.getReviewableOrders(customerId, restaurantId);
+            return ResponseEntity.ok(new ApiResponse("Reviewable orders retrieved successfully", orders));
+        } catch (Exception e) {
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }
+    }
 }
