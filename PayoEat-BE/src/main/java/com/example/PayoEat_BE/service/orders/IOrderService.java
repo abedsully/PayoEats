@@ -35,5 +35,6 @@ public interface IOrderService {
     List<RecentOrderDto> getRecentOrderLists(UUID restaurantId);
     List<OrderHistoryDto> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status);
     List<OrderHistoryDto> getRestaurantOrderHistory(LocalDate startDate, LocalDate endDate, String status, Long userId);
+    List<OrderHistoryDto> getReviewableOrders(String customerId, UUID restaurantId);
     PaymentModalDto getPaymentModalData(UUID orderId);
 }
