@@ -36,7 +36,7 @@ public class ReviewController {
                                                  @RequestParam("restaurantId") UUID restaurantId,
                                                  @RequestParam("rating") Double rating,
                                                  @RequestParam("orderId") UUID orderId,
-                                                 @RequestParam("reviewImageUrl") MultipartFile file) {
+                                                 @RequestParam(value = "reviewImageUrl", required = false) MultipartFile file) {
         try {
             AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId, customerId);
             reviewService.addReview(request, file);

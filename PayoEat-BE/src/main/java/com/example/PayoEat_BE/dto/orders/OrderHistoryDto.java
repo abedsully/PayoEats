@@ -20,6 +20,7 @@ public class OrderHistoryDto {
     private LocalDateTime orderTime;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
+    private String orderMessage;
     private Double subTotal;
     private Double totalPrice;
     private Long itemCount;
