@@ -9,10 +9,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ISearchService {
-    List<SearchRestaurantResultDto> search(String query);
+    List<Restaurant> search(String query);
     List<SearchMenuResultDto> searchMenu(UUID restaurantId, String query);
-    SearchRestaurantResultDto convertRestaurantToDto(Restaurant restaurant);
-    List<SearchRestaurantResultDto> getConvertedRestaurant(List<Restaurant> restaurantList);
     SearchMenuResultDto convertMenuToDto(Menu menu);
     List<SearchMenuResultDto> getConvertedMenu(List<Menu> menuList);
 }
