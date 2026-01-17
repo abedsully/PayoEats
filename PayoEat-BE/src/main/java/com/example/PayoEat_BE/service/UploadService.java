@@ -200,7 +200,6 @@ public class UploadService {
     private String extractFileName(String url) {
         if (url == null || url.isBlank()) return null;
 
-        // kalau bukan URL Supabase, jangan dihapus
         if (!url.contains("/storage/v1/object/public/")) {
             return null;
         }

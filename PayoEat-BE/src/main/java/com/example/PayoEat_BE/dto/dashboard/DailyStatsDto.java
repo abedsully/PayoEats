@@ -6,7 +6,7 @@ import java.time.LocalDate;
 @Data
 public class DailyStatsDto {
     private LocalDate date;
-    private String dayName; // "Mon", "Tue", etc.
+    private String dayName;
     private Long orders;
     private Double revenue;
     private Long completed;

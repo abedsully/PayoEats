@@ -13,95 +13,74 @@ public class UserRepository {
     private final JdbcClient jdbcClient;
 
     public Long addUser(User request) {
-        try {
-            String sql = """
-                    INSERT INTO users (
-                        username,
-                        email,
-                        role_id,
-                        password,
-                        created_at,
-                        updated_at,
-                        confirmation_token,
-                        is_active
-                    ) VALUES (
-                        :username,
-                        :email,
-                        :role_id,
-                        :password,
-                        :created_at,
-                        :updated_at,
-                        :confirmation_token,
-                        :is_active
-                    )
-                    RETURNING id;
-                    """;
+        String sql = """
+                INSERT INTO users (
+                    username,
+                    email,
+                    role_id,
+                    password,
+                    created_at,
+                    updated_at,
+                    confirmation_token,
+                    is_active
+                ) VALUES (
+                    :username,
+                    :email,
+                    :role_id,
+                    :password,
+                    :created_at,
+                    :updated_at,
+                    :confirmation_token,
+                    :is_active
+                )
+                RETURNING id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("username", request.getUsername())
-                    .param("email", request.getEmail())
-                    .param("role_id", request.getRoleId())
-                    .param("password", request.getPassword())
-                    .param("created_at", request.getCreatedAt())
-                    .param("updated_at", request.getUpdatedAt())
-                    .param("confirmation_token", request.getConfirmationToken())
-                    .param("is_active", request.getIsActive())
-                    .query(Long.class)
-                    .single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("username", request.getUsername())
+                .param("email", request.getEmail())
+                .param("role_id", request.getRoleId())
+                .param("password", request.getPassword())
+                .param("created_at", request.getCreatedAt())
+                .param("updated_at", request.getUpdatedAt())
+                .param("confirmation_token", request.getConfirmationToken())
+                .param("is_active", request.getIsActive())
+                .query(Long.class)
+                .single();
     }
 
     public Integer activateUser(Long userId) {
-        try {
-            String sql = "update users set is_active = true where id = :id";
+        String sql = "update users set is_active = true where id = :id";
 
-            return jdbcClient.sql(sql)
-                    .param("id", userId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", userId)
+                .update();
     }
 
     public Optional<User> findById(Long userId) {
-        try {
-            String sql = "select * from users where id = :user_id";
+        String sql = "select * from users where id = :user_id";
 
-            return jdbcClient.sql(sql)
-                    .param("user_id", userId)
-                    .query(User.class)
-                    .optional();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("user_id", userId)
+                .query(User.class)
+                .optional();
     }
 
     public Optional<User> findByEmail(String email) {
-        try {
-            String sql = "select * from users where email = :email";
+        String sql = "select * from users where email = :email";
 
-            return jdbcClient.sql(sql)
-                    .param("email", email)
-                    .query(User.class)
-                    .optional();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("email", email)
+                .query(User.class)
+                .optional();
     }
 
     public Boolean existsByEmail(String email) {
-        try {
-            String sql = "select exists(select 1 from users where email = :email)";
+        String sql = "select exists(select 1 from users where email = :email)";
 
-            return jdbcClient.sql(sql)
-                    .param("email", email)
-                    .query(Boolean.class)
-                    .single();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("email", email)
+                .query(Boolean.class)
+                .single();
     }
 }

@@ -14,12 +14,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,36 +37,24 @@ public class RestaurantController {
     @GetMapping("/detail")
     @Operation(summary = "Getting details of restaurant", description = "This endpoint is used for getting restaurant detail")
     public ResponseEntity<ApiResponse> getRestaurantById(@RequestParam UUID id) {
-        try {
-            Restaurant restaurant = restaurantService.getRestaurantById(id);
-            RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
-            return ResponseEntity.ok(new ApiResponse("Restaurant found", convertedRestaurant));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
+        Restaurant restaurant = restaurantService.getRestaurantById(id);
+        RestaurantDto convertedRestaurant = restaurantService.convertToDto(restaurant);
+        return ResponseEntity.ok(new ApiResponse("Restaurant found", convertedRestaurant));
     }
 
     @GetMapping("/similar-restaurants")
     @Operation(summary = "Getting details of restaurant for approval", description = "This endpoint is used for getting restaurant detail for approval")
     public ResponseEntity<ApiResponse> getSimilarRestaurants(@RequestParam UUID id) {
-        try {
-            List<Restaurant> restaurants = restaurantService.getSimilarRestaurant(id);
-            if (restaurants.isEmpty()) {
-                return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("Currently there are no restaurants yet", null));
-            }
-            List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
-            return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
+        List<Restaurant> restaurants = restaurantService.getSimilarRestaurant(id);
+        if (restaurants.isEmpty()) {
+            return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("Currently there are no restaurants yet", null));
         }
+        List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
+        return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
     }
 
     public static LocalTime parseTime(String timeString) {
-        try {
-            return LocalTime.parse(timeString);
-        } catch (DateTimeParseException e) {
-            throw (e);
-        }
+        return LocalTime.parse(timeString);
     }
 
     @PostMapping(value = "/register-restaurant", consumes = {"multipart/form-data"})
@@ -86,32 +74,23 @@ public class RestaurantController {
                                                      @RequestParam("restaurantImageUrl") MultipartFile restaurantImageUrl,
                                                      @RequestParam("qrisImageUrl") MultipartFile qrisImageUrl
                                                      ) {
-        try {
-            RegisterRestaurantRequest request = new RegisterRestaurantRequest(
-                    email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
-            );
-            UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
-            return ResponseEntity.ok(new ApiResponse("Your restaurant request has been added, Please wait for our admin to process your restaurant!", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Error: " + e.getMessage(), null));
-        }
+        RegisterRestaurantRequest request = new RegisterRestaurantRequest(
+                email, password, roleId, restaurantName, description, parseTime(openingHour), parseTime(closingHour), location, telephoneNumber, restaurantCategoryCode, restaurantColor
+        );
+        UUID restaurantId = restaurantService.addRestaurant(request, restaurantImageUrl, qrisImageUrl);
+        return ResponseEntity.ok(new ApiResponse("Your restaurant has been registered! Please check your email to activate your account.", null));
     }
 
 
     @GetMapping("/all")
     @Operation(summary = "Get All Restaurants", description = "Getting all available restaurants")
     public ResponseEntity<ApiResponse> getAllRestaurants() {
-        try {
-            List<Restaurant> restaurants = restaurantService.getAllRestaurants();
-            if (restaurants.isEmpty()) {
-                return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("Currently there are no restaurants yet", null));
-            }
-            List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
-            return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
-        } catch (Exception e) {
-            return ResponseEntity.status(CONFLICT).body(new ApiResponse("Error:", INTERNAL_SERVER_ERROR));
+        List<Restaurant> restaurants = restaurantService.getAllRestaurants();
+        if (restaurants.isEmpty()) {
+            return ResponseEntity.status(NO_CONTENT).body(new ApiResponse("Currently there are no restaurants yet", null));
         }
+        List<RestaurantDto> convertedRestaurants = restaurantService.getConvertedRestaurants(restaurants);
+        return ResponseEntity.ok(new ApiResponse("Found", convertedRestaurants));
     }
 
 
@@ -119,68 +98,52 @@ public class RestaurantController {
 
     @GetMapping("/status")
     @Operation(summary = "Get restaurant status", description = "Getting restaurant status")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getRestaurantStatus(@RequestParam LocalDate date) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            RestaurantStatusDto result = orderService.restaurantOrderStatus(date, user.getId());
-
-            return ResponseEntity.ok(new ApiResponse("Found", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
-        }
+        User user = userService.getAuthenticatedUser();
+        RestaurantStatusDto result = orderService.restaurantOrderStatus(date, user.getId());
+        return ResponseEntity.ok(new ApiResponse("Found", result));
     }
 
     @GetMapping("/get-id")
     @Operation(summary = "Get restaurant id by userId", description = "Getting restaurant id by userId")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getRestaurantStatus() {
-        try {
-            User user = userService.getAuthenticatedUser();
-            UUID result = restaurantService.getRestaurantByUserId(user.getId());
-            return ResponseEntity.ok(new ApiResponse("Found", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
-        }
+        User user = userService.getAuthenticatedUser();
+        UUID result = restaurantService.getRestaurantByUserId(user.getId());
+        return ResponseEntity.ok(new ApiResponse("Found", result));
     }
 
     @GetMapping("/check-restaurant-name")
     @Operation(summary = "Check restaurant name duplicate", description = "Endpoint for checking if restaurant name already exists")
     public ResponseEntity<ApiResponse> checkRestaurantNameExists(@RequestParam String name) {
-        try {
-            Boolean exists = restaurantService.checkRestaurantNameExists(name);
-            return ResponseEntity.ok(new ApiResponse("Check completed", exists));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error", null));
-        }
+        Boolean exists = restaurantService.checkRestaurantNameExists(name);
+        return ResponseEntity.ok(new ApiResponse("Check completed", exists));
     }
 
     @GetMapping("/get-management-data")
     @Operation(summary = "Get restaurant management data", description = "Getting restaurant management data")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getRestaurantManagementData(@RequestParam UUID restaurantId) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            RestaurantManagementData result = restaurantService.getRestaurantManagementData(restaurantId, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Found", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), INTERNAL_SERVER_ERROR));
-        }
+        User user = userService.getAuthenticatedUser();
+        RestaurantManagementData result = restaurantService.getRestaurantManagementData(restaurantId, user.getId());
+        return ResponseEntity.ok(new ApiResponse("Found", result));
     }
 
     @PostMapping("/toggle-status")
     @Operation(summary = "Toggle restaurant active status", description = "Toggle restaurant open/closed status")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> toggleRestaurantStatus(
             @RequestParam UUID restaurantId,
             @RequestParam Boolean isActive) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
-            return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
-        }
+        User user = userService.getAuthenticatedUser();
+        restaurantService.toggleRestaurantStatus(restaurantId, isActive, user.getId());
+        return ResponseEntity.ok(new ApiResponse("Restaurant status updated successfully", null));
     }
 
     @PostMapping("/update-restaurant")
     @Operation(summary = "Update restaurant", description = "Update restaurant information")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> updateRestaurant(
             @RequestParam UUID restaurantId,
             @RequestParam String restaurantName,
@@ -192,15 +155,11 @@ public class RestaurantController {
             @RequestParam String restaurantCategoryCode,
             @RequestParam(value = "restaurantImageUrl", required = false) MultipartFile restaurantImageUrl,
             @RequestParam(value = "qrisImageUrl", required = false) MultipartFile qrisImageUrl) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode));
+        User user = userService.getAuthenticatedUser();
+        UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode));
 
-            restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
-            return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new ApiResponse("Error: " + e.getMessage(), null));
-        }
+        restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
+        return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", null));
     }
 
 }

@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -39,8 +38,6 @@ public class ApplicationConfig {
     private final AuthUserDetailsService authUserDetailsService;
     private final JwtUtils jwtUtils;
     private final JwtAuthEntryPoint authEntryPoint;
-
-    private static final List<String> SECURED_URLS = List.of("/api/add/test");
 
     @Bean
     public ModelMapper modelMapper() {
@@ -84,6 +81,7 @@ public class ApplicationConfig {
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         configuration.setMaxAge(3600L);
 
@@ -99,7 +97,24 @@ public class ApplicationConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(authEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/confirm").permitAll()
+                        .requestMatchers("/api/auth/forget-password", "/api/auth/reset-password", "/api/auth/check-email").permitAll()
+                        .requestMatchers("/api/restaurant/all", "/api/restaurant/detail/**", "/api/restaurant/similar-restaurants").permitAll()
+                        .requestMatchers("/api/restaurant/register-restaurant", "/api/restaurant/check-restaurant-name").permitAll()
+                        .requestMatchers("/api/restaurant-category/all", "/api/restaurant-category/get-by-id").permitAll()
+                        .requestMatchers("/api/menu/get-menus", "/api/menu/get-menus-by-restaurant", "/api/menu/get-menu-by-code").permitAll()
+                        .requestMatchers("/api/review/get", "/api/review/get-restaurant-review-stats", "/api/review/add").permitAll()
+                        .requestMatchers("/api/order/place", "/api/order/add-payment-proof").permitAll()
+                        .requestMatchers("/api/order/details-order-by-customer", "/api/order/progress").permitAll()
+                        .requestMatchers("/api/order/check-payment", "/api/order/payment-modal-data", "/api/order/qr").permitAll()
+                        .requestMatchers("/api/order/confirm-redirect", "/api/order/confirm2").permitAll()
+                        .requestMatchers("/api/order/history/customer", "/api/order/reviewable").permitAll()
+                        .requestMatchers("/api/search/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+                        .anyRequest().authenticated()
+                );
         http.authenticationProvider(daoAuthenticationProvider());
         http.addFilterBefore(authTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();

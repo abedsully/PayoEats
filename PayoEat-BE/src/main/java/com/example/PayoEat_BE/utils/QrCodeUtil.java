@@ -38,12 +38,7 @@ public class QrCodeUtil {
     }
 
     public static String generateCustomerId() {
-        try {
-            UUID randomUUID = UUID.randomUUID();
-
-            return "CUS-".concat(String.valueOf(randomUUID));
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        UUID randomUUID = UUID.randomUUID();
+        return "CUS-".concat(String.valueOf(randomUUID));
     }
 }

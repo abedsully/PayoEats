@@ -11,14 +11,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserAccessValidator {
 
+    private static final Long RESTAURANT_ROLE_ID = 2L;
+
     private final UserRepository userRepository;
 
     public User validateRestaurantUser(Long userId) {
-        // Role ID = 1 (Admin), 2 (Restaurant)
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        if (user.getRoleId() != 2L) {
+        if (!user.getRoleId().equals(RESTAURANT_ROLE_ID)) {
             throw new ForbiddenException("Unauthorized! You can't access this restaurant");
         }
 

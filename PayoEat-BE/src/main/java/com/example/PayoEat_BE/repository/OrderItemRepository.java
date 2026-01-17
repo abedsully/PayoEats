@@ -13,8 +13,7 @@ public class OrderItemRepository {
     private final JdbcClient jdbcClient;
 
     public int addMenuItems(List<OrderItem> items) {
-        try {
-            String sql = """
+        String sql = """
             INSERT INTO order_items (
                 menu_code,
                 quantity,
@@ -26,23 +25,18 @@ public class OrderItemRepository {
             )
         """;
 
-            int totalInserted = 0;
+        int totalInserted = 0;
 
-            for (OrderItem item : items) {
-                int inserted = jdbcClient.sql(sql)
-                        .param("menu_code", item.getMenuCode())
-                        .param("quantity", item.getQuantity())
-                        .param("order_id", item.getOrderId())
-                        .update();
+        for (OrderItem item : items) {
+            int inserted = jdbcClient.sql(sql)
+                    .param("menu_code", item.getMenuCode())
+                    .param("quantity", item.getQuantity())
+                    .param("order_id", item.getOrderId())
+                    .update();
 
-                totalInserted += inserted;
-            }
-
-            return totalInserted;
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            totalInserted += inserted;
         }
-    }
 
+        return totalInserted;
+    }
 }

@@ -15,6 +15,7 @@ import com.example.PayoEat_BE.repository.UserRepository;
 import com.example.PayoEat_BE.request.review.AddReviewRequest;
 import com.example.PayoEat_BE.service.UploadService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewService implements IReviewService{
@@ -72,10 +74,6 @@ public class ReviewService implements IReviewService{
         OrderDetailResponseDto order = orderRepository.getOrderDetails(request.getOrderId());
 
         if (!request.getRestaurantId().equals(order.getRestaurantId())) {
-            System.out.println(request.getRestaurantId());
-            System.out.println(request.getOrderId());
-            System.out.println(order.getRestaurantId());
-
             throw new IllegalArgumentException("Sorry, it seems that you never dine in this restaurant");
         }
 

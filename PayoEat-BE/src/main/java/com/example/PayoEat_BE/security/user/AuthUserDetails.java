@@ -1,6 +1,5 @@
 package com.example.PayoEat_BE.security.user;
 
-import com.example.PayoEat_BE.enums.UserRoles;
 import com.example.PayoEat_BE.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -33,12 +32,8 @@ public class AuthUserDetails implements UserDetails {
 
     private String getRoleNameFromId(Long roleId) {
         if (roleId == null) return "GUEST";
-        switch (roleId.intValue()) {
-            case 1: return "CUSTOMER";
-            case 2: return "RESTAURANT";
-            case 3: return "ADMIN";
-            default: return "GUEST";
-        }
+        if (roleId == 2L) return "RESTAURANT";
+        return "GUEST";
     }
 
 

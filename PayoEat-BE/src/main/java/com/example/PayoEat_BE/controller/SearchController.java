@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/search")
@@ -30,24 +28,14 @@ public class SearchController {
     @GetMapping("/restaurant")
     @Operation(summary = "Getting details of restaurant", description = "This endpoint is used for getting restaurant detail")
     public ResponseEntity<ApiResponse> searchRestaurants(@RequestParam String query) {
-        try {
-            List<Restaurant> result = searchService.search(query);
-            return ResponseEntity.ok(new ApiResponse("Restaurant found", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
+        List<Restaurant> result = searchService.search(query);
+        return ResponseEntity.ok(new ApiResponse("Restaurant found", result));
     }
 
     @GetMapping("/menu")
     @Operation(summary = "Getting search results of menu", description = "This endpoint is used for getting search menu")
     public ResponseEntity<ApiResponse> searchMenus(@RequestParam UUID restaurantId, @RequestParam String query) {
-        try {
-            List<SearchMenuResultDto> result = searchService.searchMenu(restaurantId, query);
-            return ResponseEntity.ok(new ApiResponse("Menu found", result));
-        } catch (Exception e) {
-            return ResponseEntity.status(NOT_FOUND).body(new ApiResponse(e.getMessage(), null));
-        }
+        List<SearchMenuResultDto> result = searchService.searchMenu(restaurantId, query);
+        return ResponseEntity.ok(new ApiResponse("Menu found", result));
     }
-
-
 }

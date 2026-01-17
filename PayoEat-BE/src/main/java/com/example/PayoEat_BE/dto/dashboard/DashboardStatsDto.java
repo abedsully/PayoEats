@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class DashboardStatsDto {
-    // Today vs Yesterday
     private Double todayRevenue;
     private Double yesterdayRevenue;
     private Long todayOrders;
@@ -14,13 +13,11 @@ public class DashboardStatsDto {
     private Long todayCancelled;
     private Long yesterdayCancelled;
 
-    // Calculated metrics
     private Double avgOrderValue;
     private Double completionRate;
     private Double revenueChangePercent;
     private Double ordersChangePercent;
 
-    // Weekly data
     private Double weekRevenue;
     private Double lastWeekRevenue;
     private Long weekOrders;

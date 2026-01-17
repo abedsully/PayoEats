@@ -25,229 +25,204 @@ public class OrderRepository {
     private final JdbcClient jdbcClient;
 
     public UUID addOrder(Order newRestaurantOrder) {
-        try {
-            LocalDate orderDate = LocalDate.now();
-            LocalDateTime orderTime = LocalDateTime.now();
+        LocalDate orderDate = LocalDate.now();
+        LocalDateTime orderTime = LocalDateTime.now();
 
-            String sql = """
-                    INSERT INTO orders (
-                        created_date,
-                        order_time,
-                        order_message,
-                        is_active,
-                        order_status,
-                        restaurant_id,
-                        payment_begin_at,
-                        sub_total,
-                        total_price,
-                        cancellation_reason,
-                        dine_in_time,
-                        payment_image_rejection_reason,
-                        payment_image_rejection_count,
-                        payment_status,
-                        customer_name,
-                        customer_id,
-                        scheduled_check_in_time
-                    ) VALUES (
-                        :date,
-                        :order_time,
-                        :order_message,
-                        TRUE,
-                        :order_status,
-                        :restaurant_id,
-                        NULL,
-                        :sub_total,
-                        :total_price,
-                        NULL,
-                        NULL,
-                        NULL,
-                        0,
-                        NULL,
-                        :customer_name,
-                        :customer_id,
-                        :scheduled_check_in_time
-                    )
-                    RETURNING id;
-                    """;
+        String sql = """
+                INSERT INTO orders (
+                    created_date,
+                    order_time,
+                    order_message,
+                    is_active,
+                    order_status,
+                    restaurant_id,
+                    payment_begin_at,
+                    sub_total,
+                    total_price,
+                    cancellation_reason,
+                    dine_in_time,
+                    payment_image_rejection_reason,
+                    payment_image_rejection_count,
+                    payment_status,
+                    customer_name,
+                    customer_id,
+                    scheduled_check_in_time
+                ) VALUES (
+                    :date,
+                    :order_time,
+                    :order_message,
+                    TRUE,
+                    :order_status,
+                    :restaurant_id,
+                    NULL,
+                    :sub_total,
+                    :total_price,
+                    NULL,
+                    NULL,
+                    NULL,
+                    0,
+                    NULL,
+                    :customer_name,
+                    :customer_id,
+                    :scheduled_check_in_time
+                )
+                RETURNING id;
+                """;
 
-            UUID orderId = jdbcClient.sql(sql)
-                    .param("date", orderDate)
-                    .param("order_time", orderTime)
-                    .param("order_message", newRestaurantOrder.getOrderMessage())
-                    .param("order_status", OrderStatus.RECEIVED.toString())
-                    .param("restaurant_id", newRestaurantOrder.getRestaurantId())
-                    .param("sub_total", newRestaurantOrder.getSubTotal())
-                    .param("total_price", newRestaurantOrder.getTotalPrice())
-                    .param("customer_name", newRestaurantOrder.getCustomerName())
-                    .param("customer_id", newRestaurantOrder.getCustomerId())
-                    .param("scheduled_check_in_time", newRestaurantOrder.getScheduledCheckInTime())
-                    .query(UUID.class)
-                    .single();
-
-            return orderId;
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("date", orderDate)
+                .param("order_time", orderTime)
+                .param("order_message", newRestaurantOrder.getOrderMessage())
+                .param("order_status", OrderStatus.RECEIVED.toString())
+                .param("restaurant_id", newRestaurantOrder.getRestaurantId())
+                .param("sub_total", newRestaurantOrder.getSubTotal())
+                .param("total_price", newRestaurantOrder.getTotalPrice())
+                .param("customer_name", newRestaurantOrder.getCustomerName())
+                .param("customer_id", newRestaurantOrder.getCustomerId())
+                .param("scheduled_check_in_time", newRestaurantOrder.getScheduledCheckInTime())
+                .query(UUID.class)
+                .single();
     }
 
     public List<IncomingOrderRow> getIncomingOrderRow(UUID restaurantId) {
-        try {
-            LocalDate queryDate = LocalDate.now();
+        LocalDate queryDate = LocalDate.now();
 
-            String sql = """
-                select
-                    o.id as order_id,
-                    o.order_time,
-                    o.order_status,
-                    o.customer_name,
-                    oi.menu_code,
-                    oi.quantity,
-                    o.order_message,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    o.scheduled_check_in_time
-                from orders o
-                join order_items oi on oi.order_id = o.id
-                join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                join restaurant r on r.id = o.restaurant_id
-                where o.restaurant_id = :restaurant_id
-                  and o.is_active = true
-                  and o.order_status = :status
-                  and o.created_date = :date
-                order by o.order_time asc
+        String sql = """
+            select
+                o.id as order_id,
+                o.order_time,
+                o.order_status,
+                o.customer_name,
+                oi.menu_code,
+                oi.quantity,
+                o.order_message,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                o.scheduled_check_in_time
+            from orders o
+            join order_items oi on oi.order_id = o.id
+            join menu m on m.menu_code = oi.menu_code and m.is_active = true
+            join restaurant r on r.id = o.restaurant_id
+            where o.restaurant_id = :restaurant_id
+              and o.is_active = true
+              and o.order_status = :status
+              and o.created_date = :date
+            order by o.order_time asc
         """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .param("status", OrderStatus.RECEIVED.toString())
-                    .param("date", queryDate)
-                    .query(IncomingOrderRow.class)
-                    .list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .param("status", OrderStatus.RECEIVED.toString())
+                .param("date", queryDate)
+                .query(IncomingOrderRow.class)
+                .list();
     }
 
 
     public List<ConfirmedOrderRow> getConfirmedOrderRow(UUID restaurantId) {
-        try {
-            String sql = """
-                select
-                    o.id as order_id,
-                    o.order_time,
-                    o.order_status,
-                    o.customer_name,
-                    o.order_message,
-                    oi.menu_code,
-                    oi.quantity,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    o.payment_image_url,
-                    o.payment_begin_at,
-                    o.payment_uploaded_at,
-                    o.scheduled_check_in_time
-                from orders o
-                join order_items oi on oi.order_id = o.id
-                join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                join restaurant r on r.id = o.restaurant_id
-                where o.restaurant_id = :restaurant_id
-                  and o.is_active = true
-                  and o.order_status = :status
-                  and o.created_date = :date
-                order by o.payment_begin_at asc
+        String sql = """
+            select
+                o.id as order_id,
+                o.order_time,
+                o.order_status,
+                o.customer_name,
+                o.order_message,
+                oi.menu_code,
+                oi.quantity,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                o.payment_image_url,
+                o.payment_begin_at,
+                o.payment_uploaded_at,
+                o.scheduled_check_in_time
+            from orders o
+            join order_items oi on oi.order_id = o.id
+            join menu m on m.menu_code = oi.menu_code and m.is_active = true
+            join restaurant r on r.id = o.restaurant_id
+            where o.restaurant_id = :restaurant_id
+              and o.is_active = true
+              and o.order_status = :status
+              and o.created_date = :date
+            order by o.payment_begin_at asc
         """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .param("status", OrderStatus.PAYMENT.toString())
-                    .param("date", LocalDate.now())
-                    .query(ConfirmedOrderRow.class)
-                    .list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .param("status", OrderStatus.PAYMENT.toString())
+                .param("date", LocalDate.now())
+                .query(ConfirmedOrderRow.class)
+                .list();
     }
 
 
     public List<ActiveOrderRow> getActiveOrderRows(UUID restaurantId) {
-        try {
-            String sql = """
-                select
-                    o.id as order_id,
-                    o.order_time,
-                    o.order_status,
-                    o.customer_name,
-                    o.order_message,
-                    oi.menu_code,
-                    oi.quantity,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    o.dine_in_time,
-                    o.payment_begin_at,
-                    o.payment_confirmed_at,
-                    o.scheduled_check_in_time
-                from orders o
-                join order_items oi on oi.order_id = o.id
-                join menu m on m.menu_code = oi.menu_code and m.is_active = true
-                where o.restaurant_id = :restaurant_id
-                  and o.is_active = true
-                  and o.order_status in (:statuses)
-                  and o.created_date = :date
-                order by o.order_time asc
+        String sql = """
+            select
+                o.id as order_id,
+                o.order_time,
+                o.order_status,
+                o.customer_name,
+                o.order_message,
+                oi.menu_code,
+                oi.quantity,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                o.dine_in_time,
+                o.payment_begin_at,
+                o.payment_confirmed_at,
+                o.scheduled_check_in_time
+            from orders o
+            join order_items oi on oi.order_id = o.id
+            join menu m on m.menu_code = oi.menu_code and m.is_active = true
+            where o.restaurant_id = :restaurant_id
+              and o.is_active = true
+              and o.order_status in (:statuses)
+              and o.created_date = :date
+            order by o.order_time asc
         """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .param("statuses", List.of(
-                            OrderStatus.CONFIRMED.toString(),
-                            OrderStatus.ACTIVE.toString(),
-                            OrderStatus.READY.toString()
-                    ))
-                    .param("date", LocalDate.now())
-                    .query(ActiveOrderRow.class)
-                    .list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .param("statuses", List.of(
+                        OrderStatus.CONFIRMED.toString(),
+                        OrderStatus.ACTIVE.toString(),
+                        OrderStatus.READY.toString()
+                ))
+                .param("date", LocalDate.now())
+                .query(ActiveOrderRow.class)
+                .list();
     }
 
     public List<RecentOrderDto> getRecentOrder(UUID restaurantId) {
-        try {
-            String sql = """
-                    SELECT\s
-                        o.id AS order_id,
-                        o.customer_name,
-                        COUNT(oi.id) AS item_count,
-                        o.total_price,
-                        o.order_status,
-                        o.created_date,
-                        o.order_time
-                    FROM public.orders o
-                    LEFT JOIN public.order_items oi ON o.id = oi.order_id
-                    WHERE o.restaurant_id = :restaurant_id
-                    GROUP BY o.id
-                    ORDER BY o.order_time DESC
-                    LIMIT 5;
-                    """;
+        String sql = """
+                SELECT
+                    o.id AS order_id,
+                    o.customer_name,
+                    COUNT(oi.id) AS item_count,
+                    o.total_price,
+                    o.order_status,
+                    o.created_date,
+                    o.order_time
+                FROM public.orders o
+                LEFT JOIN public.order_items oi ON o.id = oi.order_id
+                WHERE o.restaurant_id = :restaurant_id
+                GROUP BY o.id
+                ORDER BY o.order_time DESC
+                LIMIT 5;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .query(RecentOrderDto.class)
-                    .list();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .query(RecentOrderDto.class)
+                .list();
     }
 
 
     public OrderDetailResponseDto getOrderDetails(UUID orderId) {
-        try {
-            String sql = """
+        String sql = """
             SELECT
                 o.customer_name,
                 o.id AS order_id,
@@ -270,20 +245,16 @@ public class OrderRepository {
             WHERE o.id = :orderId
             ORDER BY oi.id
         """;
-            List<Map<String, Object>> rows = jdbcClient.sql(sql)
-                    .param("orderId", orderId)
-                    .query()
-                    .listOfRows();
+        List<Map<String, Object>> rows = jdbcClient.sql(sql)
+                .param("orderId", orderId)
+                .query()
+                .listOfRows();
 
-            if (rows.isEmpty()) {
-                return null;
-            }
-
-            return mapOrderDetail(rows);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        if (rows.isEmpty()) {
+            return null;
         }
 
+        return mapOrderDetail(rows);
     }
 
     private OrderDetailResponseDto mapOrderDetail(List<Map<String, Object>> rows) {
@@ -351,263 +322,213 @@ public class OrderRepository {
     }
 
     public TodayRestaurantStatusDto getTodayRestaurantStatus(UUID restaurantId, LocalDate date, List<OrderStatus> orderStatuses, Boolean isActive) {
-        try {
-            String sql = """
-                    select
-                        coalesce(sum(o.total_price), 0) as total_price,
-                        count(*) as total_count
-                    from
-                        orders o
-                    where
-                        o.restaurant_id = :restaurant_id 
-                        and DATE(o.created_date) = :date 
-                        and o.order_status in (:order_status) 
-                        and o.is_active = :is_active 
-                    """;
+        String sql = """
+                select
+                    coalesce(sum(o.total_price), 0) as total_price,
+                    count(*) as total_count
+                from
+                    orders o
+                where
+                    o.restaurant_id = :restaurant_id
+                    and DATE(o.created_date) = :date
+                    and o.order_status in (:order_status)
+                    and o.is_active = :is_active
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .param("date", LocalDate.now())
-                    .param("order_status",
-                            orderStatuses.stream()
-                                    .map(OrderStatus::name)
-                                    .toList()
-                    )
-                    .param("is_active", isActive)
-                    .query(TodayRestaurantStatusDto.class)
-                    .single();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .param("date", LocalDate.now())
+                .param("order_status",
+                        orderStatuses.stream()
+                                .map(OrderStatus::name)
+                                .toList()
+                )
+                .param("is_active", isActive)
+                .query(TodayRestaurantStatusDto.class)
+                .single();
     }
 
     public ProgressOrderDto getProgressOrder(UUID orderId) {
-        try {
-            String sql = "SELECT o.restaurant_id, o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
-                    "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo, o.payment_image_rejection_count AS paymentImageRejectionCount, " +
-                    "o.order_time AS orderTime, o.payment_uploaded_at AS paymentUploadedAt, o.scheduled_check_in_time AS scheduledCheckInTime, " +
-                    "o.payment_confirmed_at AS paymentConfirmedAt " +
-                    "FROM orders o join restaurant r on o.restaurant_id  = r.id " +
-                    "WHERE o.id = :orderId";
+        String sql = "SELECT o.restaurant_id, o.id AS orderId, r.name AS restaurantName, o.total_price AS totalPrice, o.order_status AS orderStatus, " +
+                "o.payment_status as paymentStatus, o.payment_image_rejection_reason AS additionalInfo, o.payment_image_rejection_count AS paymentImageRejectionCount, " +
+                "o.order_time AS orderTime, o.payment_uploaded_at AS paymentUploadedAt, o.scheduled_check_in_time AS scheduledCheckInTime, " +
+                "o.payment_confirmed_at AS paymentConfirmedAt " +
+                "FROM orders o join restaurant r on o.restaurant_id  = r.id " +
+                "WHERE o.id = :orderId";
 
-            return jdbcClient.sql(sql)
-                    .param("orderId", orderId)
-                    .query(ProgressOrderDto.class).single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("orderId", orderId)
+                .query(ProgressOrderDto.class).single();
     }
 
     public Optional<CheckOrderDto> checkOrderExistance(UUID orderId) {
-        try {
-            String sql = "select id, restaurant_id, order_status, payment_image_url, payment_image_rejection_count " +
-                    "from orders where id = :order_id";
+        String sql = "select id, restaurant_id, order_status, payment_image_url, payment_image_rejection_count " +
+                "from orders where id = :order_id";
 
-            return jdbcClient.sql(sql)
-                    .param("order_id", orderId)
-                    .query(CheckOrderDto.class)
-                    .optional();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("order_id", orderId)
+                .query(CheckOrderDto.class)
+                .optional();
     }
 
     public Integer finishOrder(UUID orderId) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                    	is_active = false,
-                    	order_status = :order_status
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                	is_active = false,
+                	order_status = :order_status
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.FINISHED.toString())
-                    .param("order_id", orderId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.FINISHED.toString())
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer markOrderReady(UUID orderId) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                    	order_status = :order_status
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                	order_status = :order_status
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.READY.toString())
-                    .param("order_id", orderId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.READY.toString())
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer processOrderToActive(UUID orderId) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                        dine_in_time = :dine_in_time,
-                    	order_status = :order_status
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    dine_in_time = :dine_in_time,
+                	order_status = :order_status
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("dine_in_time", LocalTime.now())
-                    .param("order_status", OrderStatus.ACTIVE.toString())
-                    .param("order_id", orderId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("dine_in_time", LocalTime.now())
+                .param("order_status", OrderStatus.ACTIVE.toString())
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer cancelOrder(UUID orderId, String cancellationReason) {
-        try {
-            String reason = cancellationReason != null ? cancellationReason : "";
+        String reason = cancellationReason != null ? cancellationReason : "";
 
-            String sql = """
-                    update
-                    	orders
-                    set
-                        cancellation_reason = :cancellation_reason,
-                    	order_status = :order_status,
-                    	is_active = FALSE
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    cancellation_reason = :cancellation_reason,
+                	order_status = :order_status,
+                	is_active = FALSE
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.CANCELLED.toString())
-                    .param("cancellation_reason", reason)
-                    .param("order_id", orderId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.CANCELLED.toString())
+                .param("cancellation_reason", reason)
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer rejectOrderPayment(UUID orderId, String rejectionReason, Long count) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                        payment_image_rejection_reason = :reason,
-                        payment_image_url = null,
-                        payment_status = :payment_status,
-                        payment_begin_at = :begin_at,
-                        payment_image_rejection_count = :count,
-                    	order_status = :order_status
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    payment_image_rejection_reason = :reason,
+                    payment_image_url = null,
+                    payment_status = :payment_status,
+                    payment_begin_at = :begin_at,
+                    payment_image_rejection_count = :count,
+                	order_status = :order_status
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("payment_status", PaymentStatus.PENDING.toString())
-                    .param("reason", rejectionReason)
-                    .param("begin_at", LocalDateTime.now())
-                    .param("count", count)
-                    .param("order_status", OrderStatus.PAYMENT.toString())
-                    .param("order_id", orderId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("payment_status", PaymentStatus.PENDING.toString())
+                .param("reason", rejectionReason)
+                .param("begin_at", LocalDateTime.now())
+                .param("count", count)
+                .param("order_status", OrderStatus.PAYMENT.toString())
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer confirmOrderPayment(UUID orderId) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                        payment_status = :payment_status,
-                    	order_status = :order_status,
-                    	is_active = TRUE,
-                    	payment_confirmed_at = :payment_confirmed_at
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    payment_status = :payment_status,
+                	order_status = :order_status,
+                	is_active = TRUE,
+                	payment_confirmed_at = :payment_confirmed_at
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("payment_status", PaymentStatus.APPROVED.toString())
-                    .param("order_status", OrderStatus.CONFIRMED.toString())
-                    .param("order_id", orderId)
-                    .param("payment_confirmed_at", LocalDateTime.now())
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("payment_status", PaymentStatus.APPROVED.toString())
+                .param("order_status", OrderStatus.CONFIRMED.toString())
+                .param("order_id", orderId)
+                .param("payment_confirmed_at", LocalDateTime.now())
+                .update();
     }
 
     public Integer processOrderToPayment(UUID orderId) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                        payment_status = :payment_status,
-                    	order_status = :order_status,
-                    	payment_begin_at = :payment_begin_at
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    payment_status = :payment_status,
+                	order_status = :order_status,
+                	payment_begin_at = :payment_begin_at
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("payment_status", PaymentStatus.PENDING.toString())
-                    .param("order_status", OrderStatus.PAYMENT.toString())
-                    .param("payment_begin_at", LocalDateTime.now())
-                    .param("order_id", orderId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("payment_status", PaymentStatus.PENDING.toString())
+                .param("order_status", OrderStatus.PAYMENT.toString())
+                .param("payment_begin_at", LocalDateTime.now())
+                .param("order_id", orderId)
+                .update();
     }
 
     public Integer addPaymentProof(UUID orderId, String url) {
-        try {
-            String sql = """
-                    update
-                    	orders
-                    set
-                        payment_status = :payment_status,
-                        payment_image_url = :url,
-                        payment_uploaded_at = :payment_uploaded_at
-                    where
-                    	id = :order_id
-                    """;
+        String sql = """
+                update
+                	orders
+                set
+                    payment_status = :payment_status,
+                    payment_image_url = :url,
+                    payment_uploaded_at = :payment_uploaded_at
+                where
+                	id = :order_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("url", url)
-                    .param("payment_status", PaymentStatus.UPLOADED.toString())
-                    .param("payment_uploaded_at", LocalDateTime.now())
-                    .param("order_id", orderId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("url", url)
+                .param("payment_status", PaymentStatus.UPLOADED.toString())
+                .param("payment_uploaded_at", LocalDateTime.now())
+                .param("order_id", orderId)
+                .update();
     }
+
     public List<UUID> findExpiredOrders(LocalDateTime cutOffTime) {
         String sql = """
         SELECT id FROM orders o
@@ -627,9 +548,6 @@ public class OrderRepository {
                 .stream()) {
 
             return stream.toList();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch expired orders", e);
         }
     }
 
@@ -647,9 +565,6 @@ public class OrderRepository {
                 .stream()) {
 
             return stream.toList();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch expired orders", e);
         }
     }
 
@@ -672,16 +587,12 @@ public class OrderRepository {
                 .stream()) {
 
             return stream.toList();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch expired verification orders", e);
         }
     }
 
     public void updateOrderStatus(UUID orderId) {
-        try {
-            String sql = """
-            UPDATE orders 
+        String sql = """
+            UPDATE orders
             SET order_status = :order_status,
                 cancellation_reason = :reason,
                 payment_status = :payment_status,
@@ -689,222 +600,193 @@ public class OrderRepository {
             WHERE id = :order_id AND is_active = TRUE
         """;
 
-            jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.CANCELLED.name())
-                    .param("payment_status", PaymentStatus.EXPIRED.name())
-                    .param("reason", "Payment time expired")
-                    .param("order_id", orderId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update order status: " + e.getMessage(), e);
-        }
+        jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.CANCELLED.name())
+                .param("payment_status", PaymentStatus.EXPIRED.name())
+                .param("reason", "Payment time expired")
+                .param("order_id", orderId)
+                .update();
     }
 
     public void updateOrderStatusToCancelled(UUID orderId) {
-        try {
-            String sql = """
-            UPDATE orders 
+        String sql = """
+            UPDATE orders
             SET order_status = :order_status,
                 cancellation_reason = :reason,
                 is_active = FALSE
             WHERE id = :order_id AND is_active = TRUE
         """;
 
-            jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.CANCELLED.name())
-                    .param("reason", "Not processed by restaurant")
-                    .param("order_id", orderId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update order status: " + e.getMessage(), e);
-        }
+        jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.CANCELLED.name())
+                .param("reason", "Not processed by restaurant")
+                .param("order_id", orderId)
+                .update();
     }
 
     public boolean checkPayment(UUID orderId) {
-        try {
-             String sql = """
-                     SELECT EXISTS (select 1 FROM orders WHERE id = :order_id and payment_image_url is not null and order_status = 'CONFIRMED')
-                     """;
+        String sql = """
+                 SELECT EXISTS (select 1 FROM orders WHERE id = :order_id and payment_image_url is not null and order_status = 'CONFIRMED')
+                 """;
 
-             return jdbcClient.sql(sql)
-                     .param("order_id", orderId)
-                     .query(Boolean.class)
-                     .single();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("order_id", orderId)
+                .query(Boolean.class)
+                .single();
     }
 
     public List<OrderHistoryRow> getCustomerOrderHistory(String customerId, LocalDate startDate, LocalDate endDate, String status) {
-        try {
-            StringBuilder sql = new StringBuilder("""
-                SELECT
-                    o.created_date,
-                    o.id AS order_id,
-                    o.restaurant_id,
-                    r.name AS restaurant_name,
-                    o.order_time,
-                    o.order_status,
-                    o.payment_status,
-                    o.order_message,
-                    o.sub_total,
-                    o.total_price,
-                    oi.menu_code,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    oi.quantity
-                FROM orders o
-                JOIN restaurant r ON r.id = o.restaurant_id
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN menu m ON m.menu_code = oi.menu_code
-                WHERE o.customer_id = :customer_id
-                """);
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                o.created_date,
+                o.id AS order_id,
+                o.restaurant_id,
+                r.name AS restaurant_name,
+                o.order_time,
+                o.order_status,
+                o.payment_status,
+                o.order_message,
+                o.sub_total,
+                o.total_price,
+                oi.menu_code,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                oi.quantity
+            FROM orders o
+            JOIN restaurant r ON r.id = o.restaurant_id
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN menu m ON m.menu_code = oi.menu_code
+            WHERE o.customer_id = :customer_id
+            """);
 
-            if (startDate != null && endDate != null) {
-                sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
-            }
-
-            if (status != null && !status.isEmpty()) {
-                sql.append(" AND o.order_status = :status");
-            }
-
-            sql.append(" ORDER BY o.order_time DESC");
-
-            var query = jdbcClient.sql(sql.toString())
-                    .param("customer_id", customerId);
-
-            if (startDate != null && endDate != null) {
-                query = query.param("start_date", startDate)
-                           .param("end_date", endDate);
-            }
-
-            if (status != null && !status.isEmpty()) {
-                query = query.param("status", status);
-            }
-
-            return query.query(OrderHistoryRow.class).list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        if (startDate != null && endDate != null) {
+            sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
         }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND o.order_status = :status");
+        }
+
+        sql.append(" ORDER BY o.order_time DESC");
+
+        var query = jdbcClient.sql(sql.toString())
+                .param("customer_id", customerId);
+
+        if (startDate != null && endDate != null) {
+            query = query.param("start_date", startDate)
+                    .param("end_date", endDate);
+        }
+
+        if (status != null && !status.isEmpty()) {
+            query = query.param("status", status);
+        }
+
+        return query.query(OrderHistoryRow.class).list();
     }
 
     public List<OrderHistoryRow> getRestaurantOrderHistory(UUID restaurantId, LocalDate startDate, LocalDate endDate, String status) {
-        try {
-            StringBuilder sql = new StringBuilder("""
-                SELECT
-                    o.id AS order_id,
-                    o.restaurant_id,
-                    r.name AS restaurant_name,
-                    o.customer_name,
-                    o.order_time,
-                    o.order_status,
-                    o.payment_status,
-                    o.order_message,
-                    o.sub_total,
-                    o.total_price,
-                    oi.menu_code,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    oi.quantity,
-                    o.created_date
-                FROM orders o
-                JOIN restaurant r ON r.id = o.restaurant_id
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN menu m ON m.menu_code = oi.menu_code
-                WHERE o.restaurant_id = :restaurant_id
-                """);
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                o.id AS order_id,
+                o.restaurant_id,
+                r.name AS restaurant_name,
+                o.customer_name,
+                o.order_time,
+                o.order_status,
+                o.payment_status,
+                o.order_message,
+                o.sub_total,
+                o.total_price,
+                oi.menu_code,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                oi.quantity,
+                o.created_date
+            FROM orders o
+            JOIN restaurant r ON r.id = o.restaurant_id
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN menu m ON m.menu_code = oi.menu_code
+            WHERE o.restaurant_id = :restaurant_id
+            """);
 
-            if (startDate != null && endDate != null) {
-                sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
-            }
-
-            if (status != null && !status.isEmpty()) {
-                sql.append(" AND o.order_status = :status");
-            }
-
-            sql.append(" ORDER BY o.order_time DESC");
-
-            var query = jdbcClient.sql(sql.toString())
-                    .param("restaurant_id", restaurantId);
-
-            if (startDate != null && endDate != null) {
-                query = query.param("start_date", startDate)
-                           .param("end_date", endDate);
-            }
-
-            if (status != null && !status.isEmpty()) {
-                query = query.param("status", status);
-            }
-
-            return query.query(OrderHistoryRow.class).list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        if (startDate != null && endDate != null) {
+            sql.append(" AND o.created_date BETWEEN :start_date AND :end_date");
         }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND o.order_status = :status");
+        }
+
+        sql.append(" ORDER BY o.order_time DESC");
+
+        var query = jdbcClient.sql(sql.toString())
+                .param("restaurant_id", restaurantId);
+
+        if (startDate != null && endDate != null) {
+            query = query.param("start_date", startDate)
+                    .param("end_date", endDate);
+        }
+
+        if (status != null && !status.isEmpty()) {
+            query = query.param("status", status);
+        }
+
+        return query.query(OrderHistoryRow.class).list();
     }
 
     public List<OrderHistoryRow> getReviewableOrders(String customerId, UUID restaurantId) {
-        try {
-            String sql = """
-                SELECT
-                    o.created_date,
-                    o.id AS order_id,
-                    o.restaurant_id,
-                    r.name AS restaurant_name,
-                    o.order_time,
-                    o.order_status,
-                    o.payment_status,
-                    o.order_message,
-                    o.sub_total,
-                    o.total_price,
-                    oi.menu_code,
-                    m.menu_name,
-                    m.menu_price,
-                    m.menu_image_url,
-                    oi.quantity
-                FROM orders o
-                JOIN restaurant r ON r.id = o.restaurant_id
-                JOIN order_items oi ON oi.order_id = o.id
-                JOIN menu m ON m.menu_code = oi.menu_code
-                LEFT JOIN review rv ON rv.order_id = o.id
-                WHERE o.customer_id = :customer_id
-                  AND o.restaurant_id = :restaurant_id
-                  AND o.order_status = 'FINISHED'
-                  AND rv.order_id IS NULL
-                ORDER BY o.order_time DESC
-                """;
+        String sql = """
+            SELECT
+                o.created_date,
+                o.id AS order_id,
+                o.restaurant_id,
+                r.name AS restaurant_name,
+                o.order_time,
+                o.order_status,
+                o.payment_status,
+                o.order_message,
+                o.sub_total,
+                o.total_price,
+                oi.menu_code,
+                m.menu_name,
+                m.menu_price,
+                m.menu_image_url,
+                oi.quantity
+            FROM orders o
+            JOIN restaurant r ON r.id = o.restaurant_id
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN menu m ON m.menu_code = oi.menu_code
+            LEFT JOIN review rv ON rv.order_id = o.id
+            WHERE o.customer_id = :customer_id
+              AND o.restaurant_id = :restaurant_id
+              AND o.order_status = 'FINISHED'
+              AND rv.order_id IS NULL
+            ORDER BY o.order_time DESC
+            """;
 
-            return jdbcClient.sql(sql)
-                    .param("customer_id", customerId)
-                    .param("restaurant_id", restaurantId)
-                    .query(OrderHistoryRow.class)
-                    .list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("customer_id", customerId)
+                .param("restaurant_id", restaurantId)
+                .query(OrderHistoryRow.class)
+                .list();
     }
 
     public PaymentModalDto getPaymentModalData(UUID orderId) {
-        try {
-            String sql = """
-                    select o.order_status, o.payment_status, r.name, r.qris_image_url, o.total_price, o.payment_begin_at, o.payment_image_rejection_reason
-                    from orders o
-                    inner join restaurant r on o.restaurant_id = r.id where o.id = :id
-                    """;
+        String sql = """
+                select o.order_status, o.payment_status, r.name, r.qris_image_url, o.total_price, o.payment_begin_at, o.payment_image_rejection_reason
+                from orders o
+                inner join restaurant r on o.restaurant_id = r.id where o.id = :id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("id", orderId)
-                    .query(PaymentModalDto.class)
-                    .single();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", orderId)
+                .query(PaymentModalDto.class)
+                .single();
     }
 
     public List<UUID> findExpiredScheduledCheckInOrders() {
-        // Find CONFIRMED/READY orders where:
-        // MAX(scheduled_check_in_time, payment_confirmed_at) + 1 hour < NOW()
         String sql = """
             SELECT id FROM orders o
             WHERE DATE(o.created_date) = :date
@@ -922,15 +804,11 @@ public class OrderRepository {
                 .stream()) {
 
             return stream.toList();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch expired scheduled check-in orders", e);
         }
     }
 
     public void cancelExpiredScheduledCheckIn(UUID orderId) {
-        try {
-            String sql = """
+        String sql = """
             UPDATE orders
             SET order_status = :order_status,
                 cancellation_reason = :reason,
@@ -938,13 +816,10 @@ public class OrderRepository {
             WHERE id = :order_id AND is_active = TRUE
         """;
 
-            jdbcClient.sql(sql)
-                    .param("order_status", OrderStatus.CANCELLED.name())
-                    .param("reason", "Check-in time expired")
-                    .param("order_id", orderId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to cancel expired scheduled check-in order: " + e.getMessage(), e);
-        }
+        jdbcClient.sql(sql)
+                .param("order_status", OrderStatus.CANCELLED.name())
+                .param("reason", "Check-in time expired")
+                .param("order_id", orderId)
+                .update();
     }
 }

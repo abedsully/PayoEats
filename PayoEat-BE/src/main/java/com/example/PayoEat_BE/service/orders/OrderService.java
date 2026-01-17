@@ -47,7 +47,6 @@ public class OrderService implements IOrderService {
                 .orElseThrow(() -> new NotFoundException("Restaurant is not found"));
     }
 
-    // Flow pertama, user add order
     @Override
     public PlaceOrderDto addOrder(AddOrderRequest request) {
 
@@ -78,7 +77,6 @@ public class OrderService implements IOrderService {
         orderRepository.addPaymentProof(order.getId(), url);
     }
 
-    // Flow 2, restaurant confirm order, masuk ke payment
     @Override
     public void confirmOrder(UUID orderId, Long userId) {
         checkUserRestaurant(userId);
@@ -93,7 +91,6 @@ public class OrderService implements IOrderService {
         orderRepository.processOrderToPayment(order.getId());
     }
 
-    // Flow tambahan order
     @Override
     public void confirmOrderPayment(UUID orderId, Long userId) {
         CheckOrderDto order = checkOrderExistance(orderId);
@@ -133,7 +130,6 @@ public class OrderService implements IOrderService {
         orderRepository.rejectOrderPayment(order.getId(), dto.getRejectionReason(), countPaymentImageRejection);
     }
 
-    // Flow 2, Restaurant confirm (NO)
     @Override
     public String cancelOrderByRestaurant(CancelOrderRequest request, Long userId) {
         checkUserRestaurant(userId);
@@ -386,7 +382,6 @@ public class OrderService implements IOrderService {
                 dto.setOrderStatus(r.getOrderStatus());
                 dto.setScheduledCheckInTime(r.getScheduledCheckInTime());
 
-                // Compute check-in expiry: GREATEST(scheduled, confirmed) + 1 hour
                 if (r.getScheduledCheckInTime() != null && r.getPaymentConfirmedAt() != null) {
                     LocalDateTime scheduled = r.getScheduledCheckInTime();
                     LocalDateTime confirmed = r.getPaymentConfirmedAt();

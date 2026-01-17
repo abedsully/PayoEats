@@ -24,10 +24,9 @@ public class RestaurantRepository {
     private final JdbcClient jdbcClient;
 
     public UUID addRestaurant(RegisterRestaurantRequest request, Long userId, String url1, String url2) {
-        try {
-            UUID restaurantId = UUID.randomUUID();
+        UUID restaurantId = UUID.randomUUID();
 
-            String sql = """
+        String sql = """
         INSERT INTO restaurant (
             id,
             name,
@@ -54,94 +53,71 @@ public class RestaurantRepository {
         )
         """;
 
-            jdbcClient.sql(sql)
-                    .param("id", restaurantId)
-                    .param("name", request.getRestaurantName())
-                    .param("rating", 0.0)
-                    .param("total_rating_count", 0L)
-                    .param("description", request.getDescription())
-                    .param("created_at", LocalDateTime.now())
-                    .param("updated_at", null)
-                    .param("is_active", false)
-                    .param("user_id", userId)
-                    .param("opening_hour", request.getOpeningHour())
-                    .param("closing_hour", request.getClosingHour())
-                    .param("location", request.getLocation())
-                    .param("telephone_number", request.getTelephoneNumber())
-                    .param("restaurant_image_url", url1)
-                    .param("qris_image_url", url2)
-                    .param("color", request.getColor())
-                    .param("restaurant_category", request.getRestaurantCategory())
-                    .update();
+        jdbcClient.sql(sql)
+                .param("id", restaurantId)
+                .param("name", request.getRestaurantName())
+                .param("rating", 0.0)
+                .param("total_rating_count", 0L)
+                .param("description", request.getDescription())
+                .param("created_at", LocalDateTime.now())
+                .param("updated_at", null)
+                .param("is_active", false)
+                .param("user_id", userId)
+                .param("opening_hour", request.getOpeningHour())
+                .param("closing_hour", request.getClosingHour())
+                .param("location", request.getLocation())
+                .param("telephone_number", request.getTelephoneNumber())
+                .param("restaurant_image_url", url1)
+                .param("qris_image_url", url2)
+                .param("color", request.getColor())
+                .param("restaurant_category", request.getRestaurantCategory())
+                .update();
 
-            return restaurantId;
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return restaurantId;
     }
 
-
-
     public Optional<CheckUserRestaurantDto> checkUserRestaurant(Long userId) {
-        try {
-            String sql = """
-                    	SELECT r.id, user_id, u.role_id from restaurant r
-                    	join users u on r.user_id  = u.id
-                    	where u.id = :id
-                    """;
+        String sql = """
+                SELECT r.id, user_id, u.role_id from restaurant r
+                join users u on r.user_id  = u.id
+                where u.id = :id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("id", userId)
-                    .query(CheckUserRestaurantDto.class)
-                    .optional();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", userId)
+                .query(CheckUserRestaurantDto.class)
+                .optional();
     }
 
     public UUID getRestaurantId(Long userId) {
-        try {
-            String sql = "SELECT id from restaurant where user_id = :user_id";
+        String sql = "SELECT id from restaurant where user_id = :user_id";
 
-            return jdbcClient.sql(sql)
-                    .param("user_id", userId)
-                    .query(UUID.class)
-                    .single();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("user_id", userId)
+                .query(UUID.class)
+                .single();
     }
 
     public Optional<Boolean> findRestaurantByIdAndIsActiveTrue(UUID restaurantId) {
-        try {
-            String sql = """
-                    select exists(select 1 from restaurant where id = :restaurantId and is_active = true)
-                    """;
+        String sql = """
+                select exists(select 1 from restaurant where id = :restaurantId and is_active = true)
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .query(Boolean.class)
-                    .optional();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurantId", restaurantId)
+                .query(Boolean.class)
+                .optional();
     }
 
     public Long getRestaurantCategory(UUID restaurantId) {
-        try {
-            String sql = """
-                    select restaurant_category from restaurant where id = :id;
-                    """;
+        String sql = """
+                select restaurant_category from restaurant where id = :id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("id", restaurantId)
-                    .query(Long.class)
-                    .single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", restaurantId)
+                .query(Long.class)
+                .single();
     }
 
     public List<Restaurant> getAllRestaurant() {
@@ -161,194 +137,131 @@ public class RestaurantRepository {
 
 
     public List<Restaurant> getSimilarRestaurant(Long categoryCode, UUID restaurantId) {
-        try {
-            String sql = """
-                    select
-                    	*
-                    from
-                    	restaurant
-                    where
-                    	restaurant_category = :category_code
-                    	and is_active = true
-                    	and id <> :id
-                    """;
+        String sql = """
+                select
+                	*
+                from
+                	restaurant
+                where
+                	restaurant_category = :category_code
+                	and is_active = true
+                	and id <> :id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("category_code", categoryCode)
-                    .param("id", restaurantId)
-                    .query(Restaurant.class)
-                    .list();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("category_code", categoryCode)
+                .param("id", restaurantId)
+                .query(Restaurant.class)
+                .list();
     }
 
     public Optional<Restaurant> getDetail(UUID restaurantId, Boolean isActive) {
-        try {
-            String sql = """
-                    select * from restaurant where id = :restaurantId and is_active = :isActive;
-                    """;
+        String sql = """
+                select * from restaurant where id = :restaurantId and is_active = :isActive;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .param("isActive", isActive)
-                    .query(Restaurant.class)
-                    .optional();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurantId", restaurantId)
+                .param("isActive", isActive)
+                .query(Restaurant.class)
+                .optional();
     }
 
     public Boolean existsByNameAndIsActiveTrue(String name) {
-        try {
-            String sql = """
-                    select exists(select 1 from restaurant where name = :name and is_active = true);
-                    """;
+        String sql = """
+                select exists(select 1 from restaurant where name = :name and is_active = true);
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("name", name)
-                    .query(Boolean.class)
-                    .single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("name", name)
+                .query(Boolean.class)
+                .single();
     }
 
     public Integer addReview(UUID id, Double rating, Long total) {
-        try {
-            String sql = """
-                    UPDATE restaurant set rating = :rating, total_rating = :total
-                    where id = :id;
-                    """;
+        String sql = """
+                UPDATE restaurant set rating = :rating, total_rating = :total
+                where id = :id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("id", id)
-                    .param("rating", rating)
-                    .param("total", total)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", id)
+                .param("rating", rating)
+                .param("total", total)
+                .update();
     }
 
     public List<Restaurant> findByNameContainingIgnoreCase(String name) {
-        try {
-            String sql = "SELECT * from restaurant where LOWER(name) LIKE LOWER(:name)";
+        String sql = "SELECT * from restaurant where LOWER(name) LIKE LOWER(:name)";
 
-            return jdbcClient.sql(sql)
-                    .param("name", "%" + name + "%")
-                    .query(Restaurant.class)
-                    .list();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    }
-
-    public Integer approveRestaurant(UUID restaurantId) {
-        try {
-            String sql = """
-                    update restaurant set is_active = true where id = :restaurantId;
-                    """;
-
-            return jdbcClient.sql(sql)
-                    .param("restaurantId", restaurantId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("name", "%" + name + "%")
+                .query(Restaurant.class)
+                .list();
     }
 
     public List<UUID> getRestaurantUUIDLists() {
-        try {
-            String sql = """
-                    select id from restaurant where is_active = true;
-                    """;
+        String sql = """
+                select id from restaurant where is_active = true;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .query(UUID.class).list();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .query(UUID.class).list();
     }
 
     public RestaurantOpenStatusDto getRestaurantOpenStatus(UUID restaurantId) {
-        try {
-            String sql = """
-                    select id, opening_hour, closing_hour, is_open from restaurant where id = :restaurant_id;
-                    """;
+        String sql = """
+                select id, opening_hour, closing_hour, is_open from restaurant where id = :restaurant_id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .query(RestaurantOpenStatusDto.class)
-                    .single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .query(RestaurantOpenStatusDto.class)
+                .single();
     }
 
     private Integer setRestaurantIsOpenStatus(UUID restaurantId, Boolean status) {
-        try {
-            String sql = """
-                UPDATE restaurant
-                SET is_open = :status
-                WHERE id = :restaurant_id
-                """;
+        String sql = """
+            UPDATE restaurant
+            SET is_open = :status
+            WHERE id = :restaurant_id
+            """;
 
-            return jdbcClient.sql(sql)
-                    .param("status", status)
-                    .param("restaurant_id", restaurantId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update restaurant open status: " + e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("status", status)
+                .param("restaurant_id", restaurantId)
+                .update();
     }
 
     public boolean updateOpenStatusForRestaurant(UUID restaurantId, Map<UUID, LocalDateTime> manualOverrides) {
-        try {
-            RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
+        RestaurantOpenStatusDto restaurant = getRestaurantOpenStatus(restaurantId);
 
-            LocalTime now = LocalTime.now();
-            LocalTime openingTime = restaurant.getOpeningHour();
-            LocalTime closingTime = restaurant.getClosingHour();
+        LocalTime now = LocalTime.now();
+        LocalTime openingTime = restaurant.getOpeningHour();
+        LocalTime closingTime = restaurant.getClosingHour();
 
-            boolean shouldBeOpen;
-            if (openingTime.isBefore(closingTime)) {
-                shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
-            } else {
-                shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
-            }
-
-            if (manualOverrides.containsKey(restaurantId)) {
-                LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
-                LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
-
-                if (LocalDateTime.now().isBefore(nextScheduledChange)) {
-                    return false;
-                }
-            }
-
-            if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
-                setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
-                System.out.println("Restaurant " + restaurantId + " is now " + (shouldBeOpen ? "OPEN" : "CLOSED"));
-                return true;
-            } else {
-                System.out.println("Time now: " + LocalTime.now());
-                System.out.println("[Scheduler] Restaurant " + restaurantId +
-                        " already " + (restaurant.getIsOpen() ? "OPEN" : "CLOSED"));
-            }
-
-            return false;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update open status: " + e.getMessage());
+        boolean shouldBeOpen;
+        if (openingTime.isBefore(closingTime)) {
+            shouldBeOpen = !now.isBefore(openingTime) && now.isBefore(closingTime);
+        } else {
+            shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
         }
+
+        if (manualOverrides.containsKey(restaurantId)) {
+            LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
+            LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
+
+            if (LocalDateTime.now().isBefore(nextScheduledChange)) {
+                return false;
+            }
+        }
+
+        if (!Objects.equals(restaurant.getIsOpen(), shouldBeOpen)) {
+            setRestaurantIsOpenStatus(restaurantId, shouldBeOpen);
+            return true;
+        }
+
+        return false;
     }
 
     private LocalDateTime calculateNextScheduledChange(LocalTime opening, LocalTime closing, boolean currentlyShouldBeOpen) {
@@ -379,81 +292,61 @@ public class RestaurantRepository {
     }
 
     public Integer setRestaurantToActive(Long userId) {
-        try {
-            String sql = """
-                    update restaurant set is_active = true where user_id = :user_id
-                    """;
+        String sql = """
+                update restaurant set is_active = true where user_id = :user_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("user_id", userId)
-                    .update();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
-    };
+        return jdbcClient.sql(sql)
+                .param("user_id", userId)
+                .update();
+    }
 
     public RestaurantManagementData getRestaurantManagementData(UUID restaurantId) {
-        try {
-            String sql = """
-                    select name from restaurant r where r.id = :restaurant_id;
-                    """;
+        String sql = """
+                select name from restaurant r where r.id = :restaurant_id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("restaurant_id", restaurantId)
-                    .query(RestaurantManagementData.class)
-                    .single();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("restaurant_id", restaurantId)
+                .query(RestaurantManagementData.class)
+                .single();
     }
 
     public Integer toggleRestaurantActiveStatus(UUID restaurantId, Boolean isOpen) {
-        try {
-            String sql = """
-                    UPDATE restaurant
-                    SET is_open = :is_open,
-                        updated_at = :updated_at
-                    WHERE id = :restaurant_id
-                    """;
+        String sql = """
+                UPDATE restaurant
+                SET is_open = :is_open,
+                    updated_at = :updated_at
+                WHERE id = :restaurant_id
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("is_open", isOpen)
-                    .param("updated_at", LocalDateTime.now())
-                    .param("restaurant_id", restaurantId)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to toggle restaurant status: " + e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("is_open", isOpen)
+                .param("updated_at", LocalDateTime.now())
+                .param("restaurant_id", restaurantId)
+                .update();
     }
 
     public Integer updateRestaurant(UpdateRestaurantRequest request, String resImageUrl, String qrisImageUrl) {
-        try {
-            String sql = """
-                    UPDATE restaurant
-                    SET name = :name, telephone_number = :number, description = :description,
-                    location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour,
-                    restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
-                    where id = :restaurant_id;
-                    """;
+        String sql = """
+                UPDATE restaurant
+                SET name = :name, telephone_number = :number, description = :description,
+                location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour,
+                restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
+                where id = :restaurant_id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("name", request.getName())
-                    .param("number", request.getTelephoneNumber())
-                    .param("description", request.getDescription())
-                    .param("location", request.getLocation())
-                    .param("opening_hour", request.getOpeningHour())
-                    .param("closing_hour", request.getClosingHour())
-                    .param("res_image", resImageUrl)
-                    .param("qris_image", qrisImageUrl)
-                    .param("category", request.getRestaurantCategory())
-                    .param("restaurant_id", request.getRestaurantId())
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("name", request.getName())
+                .param("number", request.getTelephoneNumber())
+                .param("description", request.getDescription())
+                .param("location", request.getLocation())
+                .param("opening_hour", request.getOpeningHour())
+                .param("closing_hour", request.getClosingHour())
+                .param("res_image", resImageUrl)
+                .param("qris_image", qrisImageUrl)
+                .param("category", request.getRestaurantCategory())
+                .param("restaurant_id", request.getRestaurantId())
+                .update();
     }
-
 }

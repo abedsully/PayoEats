@@ -13,52 +13,37 @@ public class VerificationTokenRepository {
     private final JdbcClient jdbcClient;
 
     public Optional<VerificationToken> findByTokenAndType(String token, Character type) {
-        try {
-            String sql = """
-                    select * from verification_token where token = :token and type = :type;
-                    """;
+        String sql = """
+                select * from verification_token where token = :token and type = :type;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("token", token)
-                    .param("type", type)
-                    .query(VerificationToken.class)
-                    .optional();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("token", token)
+                .param("type", type)
+                .query(VerificationToken.class)
+                .optional();
     }
 
     public Integer delete(Long id) {
-        try {
-            String sql = """
-                    delete from verification_token where id = :id;
-                    """;
+        String sql = """
+                delete from verification_token where id = :id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("id", id)
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("id", id)
+                .update();
     }
 
     public Integer add(VerificationToken request) {
-        try {
-            String sql = """
-                    INSERT INTO verification_token (token, user_id, expiry_date, type) values (:token, :user_id, :expiry_date, :type);
-                    """;
+        String sql = """
+                INSERT INTO verification_token (token, user_id, expiry_date, type) values (:token, :user_id, :expiry_date, :type);
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("token", request.getToken())
-                    .param("user_id", request.getUserId())
-                    .param("expiry_date", request.getExpiryDate())
-                    .param("type", request.getType())
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("token", request.getToken())
+                .param("user_id", request.getUserId())
+                .param("expiry_date", request.getExpiryDate())
+                .param("type", request.getType())
+                .update();
     }
 }

@@ -4,6 +4,7 @@ import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderAutoCancelScheduler {
@@ -24,7 +26,6 @@ public class OrderAutoCancelScheduler {
 
     public static void recordManualOverride(UUID restaurantId) {
         manualOverrides.put(restaurantId, LocalDateTime.now());
-        System.out.println("Restaurant " + restaurantId + " manually controlled at " + LocalDateTime.now());
     }
 
     public static boolean hasManualOverride(UUID restaurantId) {
@@ -32,60 +33,44 @@ public class OrderAutoCancelScheduler {
     }
 
     public static void clearManualOverride(UUID restaurantId) {
-        if (manualOverrides.remove(restaurantId) != null) {
-            System.out.println("Restaurant " + restaurantId + " returned to scheduled operation");
-        }
+        manualOverrides.remove(restaurantId);
     }
 
-     @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000)
     public void cancelExpiredOrders() {
-        System.out.println("[Scheduler] Running cancelExpiredOrders() at " + LocalDateTime.now());
-
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
         List<UUID> expiredOrders = orderRepository.findExpiredOrders(cutoffTime);
 
-        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired payment orders.");
-
+        if (!expiredOrders.isEmpty()) {
+            log.info("Cancelling {} expired orders", expiredOrders.size());
+        }
         for (UUID orderId : expiredOrders) {
-            System.out.println("[Scheduler] Cancelling expired payment order: " + orderId);
             orderRepository.updateOrderStatus(orderId);
         }
     }
 
-     @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000)
     public void cancelUnprocessedOrders() {
-        System.out.println("[Scheduler] Running cancelUnprocessedOrders() at " +
-                LocalDateTime.now());
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
+        List<UUID> expiredOrders = orderRepository.findExpiredUnprocessedOrders(cutoffTime);
 
-        LocalDateTime cutoffTime =
-                LocalDateTime.now().minusMinutes(10);
-
-        List<UUID> expiredOrders =
-                orderRepository.findExpiredUnprocessedOrders(cutoffTime);
-
-        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired unprocessed orders.");
-
+        if (!expiredOrders.isEmpty()) {
+            log.info("Cancelling {} unprocessed orders", expiredOrders.size());
+        }
         for (UUID orderId : expiredOrders) {
-            System.out.println("[Scheduler] Cancelling unprocessed order: " + orderId);
             orderRepository.updateOrderStatusToCancelled(orderId);
         }
     }
 
     @Scheduled(fixedRate = 60000)
     public void autoAcceptExpiredVerifications() {
-        System.out.println("[Scheduler] Running autoAcceptExpiredVerifications() at " +
-                LocalDateTime.now());
+        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(10);
+        List<UUID> expiredVerifications = orderRepository.findExpiredVerificationOrders(cutoffTime);
 
-        LocalDateTime cutoffTime =
-                LocalDateTime.now().minusMinutes(10);
-
-        List<UUID> expiredVerifications =
-                orderRepository.findExpiredVerificationOrders(cutoffTime);
-
-        System.out.println("[Scheduler] Found " + expiredVerifications.size() + " expired verification orders.");
-
+        if (!expiredVerifications.isEmpty()) {
+            log.info("Auto-accepting {} expired payment verifications", expiredVerifications.size());
+        }
         for (UUID orderId : expiredVerifications) {
-            System.out.println("[Scheduler] Auto-accepting expired verification for order: " + orderId);
             orderRepository.confirmOrderPayment(orderId);
         }
     }
@@ -97,25 +82,26 @@ public class OrderAutoCancelScheduler {
         for (UUID restaurantId : restaurantUUIDLists) {
             try {
                 boolean updated = restaurantRepository.updateOpenStatusForRestaurant(restaurantId, manualOverrides);
-                if (updated && hasManualOverride(restaurantId)) {
-                    clearManualOverride(restaurantId);
+                if (updated) {
+                    log.info("Updated open status for restaurant {}", restaurantId);
+                    if (hasManualOverride(restaurantId)) {
+                        clearManualOverride(restaurantId);
+                    }
                 }
             } catch (Exception e) {
-                System.out.println("Error updating restaurant " + restaurantId + ": " + e.getMessage());
+                log.error("Failed to update open status for restaurant {}: {}", restaurantId, e.getMessage());
             }
         }
     }
 
     @Scheduled(fixedRate = 60000)
     public void cancelExpiredScheduledCheckIns() {
-        System.out.println("[Scheduler] Running cancelExpiredScheduledCheckIns() at " + LocalDateTime.now());
-
         List<UUID> expiredOrders = orderRepository.findExpiredScheduledCheckInOrders();
 
-        System.out.println("[Scheduler] Found " + expiredOrders.size() + " expired scheduled check-in orders.");
-
+        if (!expiredOrders.isEmpty()) {
+            log.info("Cancelling {} expired scheduled check-ins", expiredOrders.size());
+        }
         for (UUID orderId : expiredOrders) {
-            System.out.println("[Scheduler] Cancelling expired scheduled check-in order: " + orderId);
             orderRepository.cancelExpiredScheduledCheckIn(orderId);
         }
     }

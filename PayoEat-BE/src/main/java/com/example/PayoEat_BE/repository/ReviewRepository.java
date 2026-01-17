@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,49 +24,39 @@ public class ReviewRepository {
     private final JdbcClient jdbcClient;
 
     public Integer addReview(AddReviewRequest review, String imageUrl, String customerName) {
-        try {
-            String sql = """
-                            INSERT INTO review (
-                                review_content, customer_name, created_at, updated_at,
-                                is_active, restaurant_id, rating, review_image_url, order_id, customer_id
-                            ) VALUES (
-                                :reviewContent, :customerName, :createdAt, :updatedAt,
-                                :isActive, :restaurantId, :rating, :reviewImageUrl, :orderId, :customerId
-                            )
-                        """;
+        String sql = """
+                        INSERT INTO review (
+                            review_content, customer_name, created_at, updated_at,
+                            is_active, restaurant_id, rating, review_image_url, order_id, customer_id
+                        ) VALUES (
+                            :reviewContent, :customerName, :createdAt, :updatedAt,
+                            :isActive, :restaurantId, :rating, :reviewImageUrl, :orderId, :customerId
+                        )
+                    """;
 
-            return jdbcClient.sql(sql)
-                    .param("reviewContent", review.getReviewContent())
-                    .param("customerName", customerName)
-                    .param("createdAt", LocalDateTime.now())
-                    .param("updatedAt", null)
-                    .param("isActive", true)
-                    .param("restaurantId", review.getRestaurantId())
-                    .param("rating", review.getRating())
-                    .param("reviewImageUrl", imageUrl)
-                    .param("orderId", review.getOrderId())
-                    .param("customerId", review.getCustomerId())
-                    .update();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("reviewContent", review.getReviewContent())
+                .param("customerName", customerName)
+                .param("createdAt", LocalDateTime.now())
+                .param("updatedAt", null)
+                .param("isActive", true)
+                .param("restaurantId", review.getRestaurantId())
+                .param("rating", review.getRating())
+                .param("reviewImageUrl", imageUrl)
+                .param("orderId", review.getOrderId())
+                .param("customerId", review.getCustomerId())
+                .update();
     }
 
     public List<Review> findByUserId(Long userId) {
-        try {
-            String sql = """
-                    select * from review where user_id = :user_id;
-                    """;
+        String sql = """
+                select * from review where user_id = :user_id;
+                """;
 
-            return jdbcClient.sql(sql)
-                    .param("user_id", userId)
-                    .query(Review.class)
-                    .list();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return jdbcClient.sql(sql)
+                .param("user_id", userId)
+                .query(Review.class)
+                .list();
     }
 
     public List<ReviewDto> findReviewsByRestaurantId(UUID restaurantId) {
@@ -107,40 +96,35 @@ public class ReviewRepository {
     }
 
     public RestaurantReviewStatsDto getRestaurantReviewStats(UUID restaurantId) {
-        try {
-            String sql = """
-                SELECT name AS restaurantName, rating, total_rating AS totalRating,
-                       color, restaurant_image_url AS restaurantImageUrl
-                FROM restaurant
-                WHERE id = :id AND is_active = true
-                """;
+        String sql = """
+            SELECT name AS restaurantName, rating, total_rating AS totalRating,
+                   color, restaurant_image_url AS restaurantImageUrl
+            FROM restaurant
+            WHERE id = :id AND is_active = true
+            """;
 
-            RestaurantReviewStatsDto stats = jdbcClient.sql(sql)
-                    .param("id", restaurantId)
-                    .query(RestaurantReviewStatsDto.class)
-                    .single();
+        RestaurantReviewStatsDto stats = jdbcClient.sql(sql)
+                .param("id", restaurantId)
+                .query(RestaurantReviewStatsDto.class)
+                .single();
 
-            List<RatingBreakdownDto> breakdown = getRatingBreakdown(restaurantId);
+        List<RatingBreakdownDto> breakdown = getRatingBreakdown(restaurantId);
 
-            Map<Integer, RatingBreakdownDto> map = breakdown.stream()
-                    .collect(Collectors.toMap(RatingBreakdownDto::getRating, b -> b));
+        Map<Integer, RatingBreakdownDto> map = breakdown.stream()
+                .collect(Collectors.toMap(RatingBreakdownDto::getRating, b -> b));
 
-            List<RatingBreakdownDto> full = new ArrayList<>();
+        List<RatingBreakdownDto> full = new ArrayList<>();
 
-            for (int i = 5; i >= 1; i--) {
-                RatingBreakdownDto dto = map.getOrDefault(i, new RatingBreakdownDto());
-                dto.setRating(i);
-                dto.setTotal(dto.getTotal() == null ? 0L : dto.getTotal());
-                full.add(dto);
-            }
-
-            stats.setRatingBreakdown(full);
-
-            return stats;
-
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        for (int i = 5; i >= 1; i--) {
+            RatingBreakdownDto dto = map.getOrDefault(i, new RatingBreakdownDto());
+            dto.setRating(i);
+            dto.setTotal(dto.getTotal() == null ? 0L : dto.getTotal());
+            full.add(dto);
         }
+
+        stats.setRatingBreakdown(full);
+
+        return stats;
     }
 
 

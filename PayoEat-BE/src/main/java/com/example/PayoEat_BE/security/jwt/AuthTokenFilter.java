@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 public class AuthTokenFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final AuthUserDetailsService authUserDetailsService;
@@ -38,7 +40,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JwtException e) {
-            // Add CORS headers before sending error response
+            // CORS filter doesn't run when returning early, so headers must be set manually
             response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
@@ -49,7 +51,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             response.getWriter().write("{\"error\": \"" + e.getMessage() + " : Invalid or Expired Token, you may login\"}");
             return;
         } catch (Exception e) {
+            log.error("Authentication filter error: {}", e.getMessage(), e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
         }
 
         filterChain.doFilter(request, response);

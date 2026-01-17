@@ -86,7 +86,6 @@ public class MenuService implements IMenuService{
             changed = true;
         }
 
-        // Cek setiap field satu per satu
         if (!existing.getMenuName().equals(request.getMenuName())) {
             changed = true;
         }
