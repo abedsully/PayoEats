@@ -28,13 +28,6 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 
-CREATE TABLE IF NOT EXISTS verification_token (
-    id BIGINT PRIMARY KEY,
-    token VARCHAR(255),
-    user_id BIGINT,
-    expiry_date TIMESTAMP,
-    type CHAR(1)
-);
 
 
 -- Area Insert Restaurant Category
