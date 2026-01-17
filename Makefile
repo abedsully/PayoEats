@@ -3,4 +3,7 @@ build:
 	docker-compose down -v
 	docker-compose up --build -d
 
-	@echo "Build complete!"
+	@echo "BUILD COMPLETED"
+
+logs:
+	docker-compose logs -f
