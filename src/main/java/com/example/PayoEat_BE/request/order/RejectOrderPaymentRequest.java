@@ -1,11 +1,11 @@
-package com.example.PayoEat_BE.dto;
+package com.example.PayoEat_BE.request.order;
 
 import lombok.Data;
 
 import java.util.UUID;
 
 @Data
-public class RejectOrderPaymentDto {
+public class RejectOrderPaymentRequest {
     private UUID orderId;
     private String rejectionReason;
 }

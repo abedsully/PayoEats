@@ -56,7 +56,7 @@ public class MenuController {
         User user = userService.getAuthenticatedUser();
         AddMenuRequest request = new AddMenuRequest(menuName, menuDetail, menuPrice, isActive);
         UUID id = menuService.editMenu(request, menuImageFile, user.getId(), menuCode);
-        return ResponseEntity.ok(new ApiResponse("Menu successfully added", id));
+        return ResponseEntity.ok(new ApiResponse("Menu successfully edited", id));
     }
 
 
@@ -65,7 +65,7 @@ public class MenuController {
     public ResponseEntity<ApiResponse> editAvailability(@RequestParam UUID menuCode) {
         User user = userService.getAuthenticatedUser();
         menuService.editMenuAvailability(menuCode, user.getId());
-        return ResponseEntity.ok(new ApiResponse("List Menu: ", null));
+        return ResponseEntity.ok(new ApiResponse("Menu availability updated", null));
     }
 
     @PostMapping(value = "/edit-all-availability")
@@ -73,7 +73,7 @@ public class MenuController {
     public ResponseEntity<ApiResponse> editAllAvailability(@RequestParam UUID restaurantId, @RequestParam boolean activate) {
         User user = userService.getAuthenticatedUser();
         menuService.editAllMenuAvailability(restaurantId, user.getId(), activate);
-        return ResponseEntity.ok(new ApiResponse("List Menu: ", null));
+        return ResponseEntity.ok(new ApiResponse("All menu availability updated", null));
     }
 
     @GetMapping("/get-menu-by-code")
@@ -92,7 +92,7 @@ public class MenuController {
     }
 
     @GetMapping("/get-menus-by-restaurant")
-    @Operation(summary = "Show Menus by Restaurant ID", description = "API to display menus by providing restaurant ID")
+    @Operation(summary = "Show All Menus by Restaurant ID", description = "API to display all menus (active and inactive) by providing restaurant ID")
     public ResponseEntity<ApiResponse> getAllMenusOfRestaurant(@RequestParam UUID restaurantId) {
         List<Menu> menus = menuService.getMenusByRestaurantId(restaurantId);
         List<MenuDto> convertedMenus = menuService.getConvertedMenus(menus);
@@ -114,7 +114,7 @@ public class MenuController {
     public ResponseEntity<ApiResponse> getMenuDetail(@RequestParam UUID menuCode) {
         User user = userService.getAuthenticatedUser();
         Menu result = menuService.getMenuDetail(menuCode, user.getId());
-        return ResponseEntity.ok(new ApiResponse("List of menus: ", result));
+        return ResponseEntity.ok(new ApiResponse("Menu detail: ", result));
     }
 
 }

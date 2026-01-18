@@ -7,6 +7,7 @@ import com.example.PayoEat_BE.dto.restaurants.TodayRestaurantStatusDto;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.repository.*;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
+import com.example.PayoEat_BE.request.order.RejectOrderPaymentRequest;
 import com.example.PayoEat_BE.service.UploadService;
 import com.example.PayoEat_BE.utils.QrCodeUtil;
 import com.example.PayoEat_BE.enums.OrderStatus;
@@ -104,9 +105,9 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId) {
+    public void rejectOrderPayment(RejectOrderPaymentRequest request, Long userId) {
         checkUserRestaurant(userId);
-        CheckOrderDto order = checkOrderExistance(dto.getOrderId());
+        CheckOrderDto order = checkOrderExistance(request.getOrderId());
         checkIfRestaurantExists(order.getRestaurantId());
 
 
@@ -127,7 +128,7 @@ public class OrderService implements IOrderService {
             return;
         }
 
-        orderRepository.rejectOrderPayment(order.getId(), dto.getRejectionReason(), countPaymentImageRejection);
+        orderRepository.rejectOrderPayment(order.getId(), request.getRejectionReason(), countPaymentImageRejection);
     }
 
     @Override
@@ -265,7 +266,10 @@ public class OrderService implements IOrderService {
     }
 
     @Override
-    public OrderDetailResponseDto getOrderByIdCustomer(UUID orderId) {
+    public OrderDetailResponseDto getOrderByIdCustomer(UUID orderId, String customerId) {
+        if (!orderRepository.verifyOrderOwnership(orderId, customerId)) {
+            throw new ForbiddenException("You are not authorized to view this order");
+        }
         return orderRepository.getOrderDetails(orderId);
     }
 

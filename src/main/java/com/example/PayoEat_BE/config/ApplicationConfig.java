@@ -27,17 +27,28 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled = true)
 public class ApplicationConfig {
     private final AuthUserDetailsService authUserDetailsService;
     private final JwtUtils jwtUtils;
     private final JwtAuthEntryPoint authEntryPoint;
+
+    @Value("${cors.allowed-origins:}")
+    private String additionalOrigins;
+
+    public ApplicationConfig(AuthUserDetailsService authUserDetailsService, JwtUtils jwtUtils, JwtAuthEntryPoint authEntryPoint) {
+        this.authUserDetailsService = authUserDetailsService;
+        this.jwtUtils = jwtUtils;
+        this.authEntryPoint = authEntryPoint;
+    }
 
     @Bean
     public ModelMapper modelMapper() {
@@ -71,11 +82,16 @@ public class ApplicationConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of(
+        List<String> origins = new ArrayList<>(List.of(
                 "https://m8t547vr-5173.asse.devtunnels.ms",
-                "http://localhost:5173",
-                "https://*.ngrok-free.dev"
+                "http://localhost:5173"
         ));
+
+        if (additionalOrigins != null && !additionalOrigins.isBlank()) {
+            origins.addAll(Arrays.asList(additionalOrigins.split(",")));
+        }
+
+        configuration.setAllowedOriginPatterns(origins);
 
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
@@ -104,13 +120,12 @@ public class ApplicationConfig {
                         .requestMatchers("/api/restaurant/register-restaurant", "/api/restaurant/check-restaurant-name").permitAll()
                         .requestMatchers("/api/restaurant-category/all", "/api/restaurant-category/get-by-id").permitAll()
                         .requestMatchers("/api/menu/get-menus", "/api/menu/get-menus-by-restaurant", "/api/menu/get-menu-by-code").permitAll()
-                        .requestMatchers("/api/review/get", "/api/review/get-restaurant-review-stats", "/api/review/add").permitAll()
+                        .requestMatchers("/api/review/get", "/api/review/get-restaurant-review-stats").permitAll()
                         .requestMatchers("/api/order/place", "/api/order/add-payment-proof").permitAll()
-                        .requestMatchers("/api/order/details-order-by-customer", "/api/order/progress").permitAll()
+                        .requestMatchers("/api/order/progress").permitAll()
                         .requestMatchers("/api/order/check-payment", "/api/order/payment-modal-data", "/api/order/qr").permitAll()
                         .requestMatchers("/api/order/confirm-redirect", "/api/order/confirm2").permitAll()
-                        .requestMatchers("/api/order/history/customer", "/api/order/reviewable").permitAll()
-                        .requestMatchers("/api/search/**").permitAll()
+                                                .requestMatchers("/api/search/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()

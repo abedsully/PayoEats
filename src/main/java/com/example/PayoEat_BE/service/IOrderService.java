@@ -7,6 +7,7 @@ import com.example.PayoEat_BE.model.Order;
 import com.example.PayoEat_BE.model.OrderItem;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
+import com.example.PayoEat_BE.request.order.RejectOrderPaymentRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
@@ -19,10 +20,10 @@ public interface IOrderService {
     void addPaymentProof(UUID orderId, MultipartFile file);
     void confirmOrder(UUID orderId, Long userId);
     void confirmOrderPayment(UUID orderId, Long userId);
-    void rejectOrderPayment(RejectOrderPaymentDto dto, Long userId);
+    void rejectOrderPayment(RejectOrderPaymentRequest request, Long userId);
     String finishOrder(UUID orderId, Long userId);
     String markOrderReady(UUID orderId, Long userId);
-    OrderDetailResponseDto getOrderByIdCustomer(UUID orderId);
+    OrderDetailResponseDto getOrderByIdCustomer(UUID orderId, String customerId);
     List<IncomingOrderDto> getIncomingOrder(UUID restaurantId);
     List<ConfirmedOrderDto> getConfirmedOrder(UUID restaurantId);
     List<ActiveOrderDto> getActiveOrder(UUID restaurantId);

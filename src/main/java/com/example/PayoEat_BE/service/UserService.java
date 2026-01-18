@@ -1,6 +1,7 @@
 package com.example.PayoEat_BE.service;
 
 
+import com.example.PayoEat_BE.enums.TokenType;
 import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Restaurant;
@@ -23,8 +24,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 @Service
@@ -36,9 +35,6 @@ public class UserService implements IUserService{
     private final EmailService emailService;
     private final RestaurantRepository restaurantRepository;
 
-    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@(.+)$";
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
-
     @Override
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
@@ -48,11 +44,6 @@ public class UserService implements IUserService{
     @Override
     @Transactional
     public User createUser(CreateUserRequest request) {
-
-        if (!isValidEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email not valid");
-        }
-
         return Optional.of(request)
                 .map(req -> {
                     User user = new User();
@@ -71,7 +62,7 @@ public class UserService implements IUserService{
                     verificationToken.setToken(token);
                     verificationToken.setUserId(userId);
                     verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
-                    verificationToken.setType('1');
+                    verificationToken.setType(TokenType.EMAIL_CONFIRMATION.getValue());
                     tokenRepository.add(verificationToken);
 
                     emailService.sendConfirmationEmail(request.getEmail(), token);
@@ -82,8 +73,8 @@ public class UserService implements IUserService{
     }
 
     public String confirmToken(String token) {
-        VerificationToken optionalToken = tokenRepository.findByTokenAndType(token, '1')
-                .orElseThrow(() -> new NotFoundException("test"));
+        VerificationToken optionalToken = tokenRepository.findByTokenAndType(token, TokenType.EMAIL_CONFIRMATION)
+                .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
 
         if (optionalToken.getToken().isEmpty()) {
             return "Invalid token.";
@@ -131,7 +122,7 @@ public class UserService implements IUserService{
         verificationToken.setToken(token);
         verificationToken.setUserId(user.getId());
         verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
-        verificationToken.setType('1');
+        verificationToken.setType(TokenType.PASSWORD_RESET.getValue());
 
         tokenRepository.add(verificationToken);
 
@@ -142,7 +133,7 @@ public class UserService implements IUserService{
 
     @Override
     public String resetPassword(String token, String password) {
-        VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, '2')
+        VerificationToken verificationToken = tokenRepository.findByTokenAndType(token, TokenType.PASSWORD_RESET)
                 .orElseThrow(() -> new NotFoundException("Token not found or invalid"));
 
         if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
@@ -159,11 +150,6 @@ public class UserService implements IUserService{
 
         return "Your password is changed successfully";
 
-    }
-
-    private boolean isValidEmail(String email) {
-        Matcher matcher = EMAIL_PATTERN.matcher(email);
-        return matcher.matches();
     }
 
     @Override

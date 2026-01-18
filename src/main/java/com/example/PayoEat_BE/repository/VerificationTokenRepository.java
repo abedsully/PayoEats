@@ -1,5 +1,6 @@
 package com.example.PayoEat_BE.repository;
 
+import com.example.PayoEat_BE.enums.TokenType;
 import com.example.PayoEat_BE.model.VerificationToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -12,14 +13,14 @@ import java.util.Optional;
 public class VerificationTokenRepository {
     private final JdbcClient jdbcClient;
 
-    public Optional<VerificationToken> findByTokenAndType(String token, Character type) {
+    public Optional<VerificationToken> findByTokenAndType(String token, TokenType type) {
         String sql = """
                 select * from verification_token where token = :token and type = :type;
                 """;
 
         return jdbcClient.sql(sql)
                 .param("token", token)
-                .param("type", type)
+                .param("type", type.getValue())
                 .query(VerificationToken.class)
                 .optional();
     }

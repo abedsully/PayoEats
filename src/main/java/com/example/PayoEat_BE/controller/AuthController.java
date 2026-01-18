@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.controller;
 
 
 import com.example.PayoEat_BE.model.User;
+import com.example.PayoEat_BE.request.auth.ResetPasswordRequest;
 import com.example.PayoEat_BE.request.menu.CreateUserRequest;
 import com.example.PayoEat_BE.request.menu.LoginRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
@@ -37,7 +38,7 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "User registration", description = "Endpoint for registering user")
-    public ResponseEntity<ApiResponse> register(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<ApiResponse> register(@Valid @RequestBody CreateUserRequest request) {
         User user = userService.createUser(request);
         return ResponseEntity.ok(new ApiResponse("Create User Success!", user));
     }
@@ -102,9 +103,9 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    @Operation(summary = "Reset password user", description = "Endpoint for reseting password")
-    public ResponseEntity<ApiResponse> resetPassword(@RequestParam String password, @RequestParam String token) {
-        String message = userService.resetPassword(token, password);
+    @Operation(summary = "Reset password user", description = "Endpoint for resetting password")
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        String message = userService.resetPassword(request.getToken(), request.getPassword());
         return ResponseEntity.ok(new ApiResponse(message, null));
     }
 

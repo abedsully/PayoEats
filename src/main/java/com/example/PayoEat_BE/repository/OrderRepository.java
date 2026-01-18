@@ -321,6 +321,21 @@ public class OrderRepository {
         return dto;
     }
 
+    public boolean verifyOrderOwnership(UUID orderId, String customerId) {
+        String sql = """
+            SELECT COUNT(*) FROM orders
+            WHERE id = :orderId AND customer_id = :customerId
+        """;
+
+        Integer count = jdbcClient.sql(sql)
+                .param("orderId", orderId)
+                .param("customerId", customerId)
+                .query(Integer.class)
+                .single();
+
+        return count != null && count > 0;
+    }
+
     public TodayRestaurantStatusDto getTodayRestaurantStatus(UUID restaurantId, LocalDate date, List<OrderStatus> orderStatuses, Boolean isActive) {
         String sql = """
                 select

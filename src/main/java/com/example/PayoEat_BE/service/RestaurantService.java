@@ -2,6 +2,7 @@ package com.example.PayoEat_BE.service;
 
 import com.example.PayoEat_BE.dto.RestaurantManagementData;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
+import com.example.PayoEat_BE.enums.TokenType;
 import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.AlreadyExistException;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
@@ -113,7 +114,7 @@ public class RestaurantService implements IRestaurantService {
         verificationToken.setToken(token);
         verificationToken.setUserId(userId);
         verificationToken.setExpiryDate(LocalDateTime.now().plusDays(1));
-        verificationToken.setType('1');
+        verificationToken.setType(TokenType.EMAIL_CONFIRMATION.getValue());
         verificationTokenRepository.add(verificationToken);
 
         emailService.sendConfirmationEmail(request.getEmail(), token);
@@ -133,7 +134,6 @@ public class RestaurantService implements IRestaurantService {
     @Override
     public List<Restaurant> getAllRestaurants() {
         try {
-            LOGGER.info("Masuk request untuk get all restaurant");
             return restaurantRepository.getAllRestaurant();
         } catch (Exception e) {
             throw new RuntimeException(e);

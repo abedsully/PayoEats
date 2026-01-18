@@ -40,15 +40,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (JwtException e) {
-            // CORS filter doesn't run when returning early, so headers must be set manually
-            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "*");
-
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"" + e.getMessage() + " : Invalid or Expired Token, you may login\"}");
+            response.getWriter().write("{\"error\": \"Invalid or Expired Token, please login again\"}");
             return;
         } catch (Exception e) {
             log.error("Authentication filter error: {}", e.getMessage(), e);

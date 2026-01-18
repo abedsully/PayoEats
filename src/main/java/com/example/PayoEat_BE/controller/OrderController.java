@@ -7,6 +7,7 @@ import com.example.PayoEat_BE.model.User;
 import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.request.order.AddOrderRequest;
 import com.example.PayoEat_BE.request.order.CancelOrderRequest;
+import com.example.PayoEat_BE.request.order.RejectOrderPaymentRequest;
 import com.example.PayoEat_BE.response.ApiResponse;
 import com.example.PayoEat_BE.service.IOrderService;
 import com.example.PayoEat_BE.service.RestaurantService;
@@ -64,9 +65,11 @@ public class OrderController {
 
 
     @GetMapping("/details-order-by-customer")
-    @Operation(summary = "Getting order details", description = "Returning details of an order")
+    @Operation(summary = "Getting order details", description = "Returning details of an order for authenticated customer")
     public ResponseEntity<ApiResponse> getOrderByIdCustomer(@RequestParam UUID orderId) {
-        OrderDetailResponseDto order = orderService.getOrderByIdCustomer(orderId);
+        User user = userService.getAuthenticatedUser();
+        String customerId = String.valueOf(user.getId());
+        OrderDetailResponseDto order = orderService.getOrderByIdCustomer(orderId, customerId);
         return ResponseEntity.ok(new ApiResponse("Found: ", order));
     }
 
@@ -94,7 +97,7 @@ public class OrderController {
     }
 
     @GetMapping("/get-confirmed-order")
-    @Operation(summary = "Getting the list of incoming orders", description = "Returning list of incoming orders")
+    @Operation(summary = "Getting the list of confirmed orders", description = "Returning list of confirmed orders")
     @PreAuthorize("hasAnyAuthority('RESTAURANT')")
     public ResponseEntity<ApiResponse> getConfirmedOrders(@RequestParam UUID restaurantId) {
         User user = userService.getAuthenticatedUser();
@@ -128,7 +131,7 @@ public class OrderController {
     }
 
     @PostMapping("/reject")
-    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
+    @Operation(summary = "Rejecting an order", description = "Rejecting order request from user")
     public ResponseEntity<ApiResponse> rejectOrder(@RequestBody CancelOrderRequest request) {
         User user = userService.getAuthenticatedUser();
         String result = orderService.cancelOrderByRestaurant(request, user.getId());
@@ -136,8 +139,8 @@ public class OrderController {
     }
 
     @PostMapping("/reject-payment")
-    @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
-    public ResponseEntity<ApiResponse> rejectOrderPayment(@RequestBody RejectOrderPaymentDto request) {
+    @Operation(summary = "Rejecting order payment", description = "Rejecting order payment from user")
+    public ResponseEntity<ApiResponse> rejectOrderPayment(@RequestBody RejectOrderPaymentRequest request) {
         User user = userService.getAuthenticatedUser();
         orderService.rejectOrderPayment(request, user.getId());
         return ResponseEntity.ok(new ApiResponse("Order payment is rejected", "Order payment is rejected"));
@@ -181,7 +184,6 @@ public class OrderController {
                 .body(html);
     }
 
-    @CrossOrigin(origins = "*")
     @PostMapping("/confirm2")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
     public ResponseEntity<String> confirmOrder2(@RequestParam UUID orderId) {
@@ -211,14 +213,14 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("Failed to confirm order {}: {}", orderId, e.getMessage());
-            String errorHtml = String.format("""
+            String errorHtml = """
     <html>
       <body>
         <h1>Error processing order</h1>
-        <p>%s</p>
+        <p>An error occurred while processing your order. Please try again or contact support.</p>
       </body>
     </html>
-    """, e.getMessage());
+    """;
 
             return ResponseEntity.status(INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.TEXT_HTML)
@@ -230,7 +232,7 @@ public class OrderController {
     @Operation(summary = "Getting order QR", description = "Getting order QR code")
     public ResponseEntity<ApiResponse> getOrderQR(@RequestParam UUID orderId) {
         String result = orderService.generateOrderIdQrCode(orderId);
-        return ResponseEntity.ok(new ApiResponse("Nice job, order id: ", result));
+        return ResponseEntity.ok(new ApiResponse("Order QR code generated", result));
     }
 
     @GetMapping("/check-payment")
@@ -293,7 +295,7 @@ public class OrderController {
 
     @GetMapping("/incoming")
     @PreAuthorize("hasAnyAuthority('RESTAURANT')")
-    @Operation(summary = "Checking order payment", description = "Checking order payment")
+    @Operation(summary = "Getting incoming orders", description = "Returning list of incoming orders")
     public ResponseEntity<ApiResponse> incoming(@RequestParam UUID restaurantId) {
         List<IncomingOrderDto> result = orderService.getIncomingOrder(restaurantId);
         return ResponseEntity.ok(new ApiResponse("Order payment result: ", result));
@@ -387,11 +389,13 @@ public class OrderController {
     @GetMapping("/history/customer")
     @Operation(summary = "Get customer order history", description = "Retrieve order history for authenticated customer")
     public ResponseEntity<ApiResponse> getCustomerOrderHistory(
-            @RequestParam String customerId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String status
     ) {
+        User user = userService.getAuthenticatedUser();
+        String customerId = String.valueOf(user.getId());
+
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
@@ -430,9 +434,11 @@ public class OrderController {
     @GetMapping("/reviewable")
     @Operation(summary = "Get reviewable orders", description = "Retrieve finished orders that haven't been reviewed yet for a specific restaurant")
     public ResponseEntity<ApiResponse> getReviewableOrders(
-            @RequestParam String customerId,
             @RequestParam UUID restaurantId
     ) {
+        User user = userService.getAuthenticatedUser();
+        String customerId = String.valueOf(user.getId());
+
         List<OrderHistoryDto> orders = orderService.getReviewableOrders(customerId, restaurantId);
         return ResponseEntity.ok(new ApiResponse("Reviewable orders retrieved successfully", orders));
     }
