@@ -59,6 +59,15 @@ public class MenuController {
         return ResponseEntity.ok(new ApiResponse("Menu successfully edited", id));
     }
 
+    @PostMapping(value = "/delete")
+    @Operation(summary = "Delete Menu in Restaurant", description = "API for delete menu in restaurant")
+    @PreAuthorize("hasAnyAuthority('RESTAURANT')")
+    public ResponseEntity<ApiResponse> editMenu(@RequestParam("menuCode") UUID menuCode) {
+        User user = userService.getAuthenticatedUser();
+        menuService.deleteMenu(menuCode, user.getId());
+        return ResponseEntity.ok(new ApiResponse("Menu successfully deleted", null));
+    }
+
 
     @PostMapping(value = "/edit-availability")
     @PreAuthorize("hasAnyAuthority('RESTAURANT')")

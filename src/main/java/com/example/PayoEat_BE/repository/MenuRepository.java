@@ -98,7 +98,7 @@ public class MenuRepository {
                r.id AS restaurant_id, r.name AS restaurant_name
         FROM menu m
         JOIN restaurant r ON m.restaurant_id = r.id
-        WHERE m.menu_code IN (:menuCodes)
+        WHERE m.menu_code IN (:menuCodes) and m.is_active = true
     """;
 
         return jdbcClient.sql(sql)
@@ -286,5 +286,13 @@ public class MenuRepository {
                 .param("menu_code", menuCode)
                 .query(Menu.class)
                 .single();
+    }
+
+    public int deleteMenu(UUID menuCode) {
+        String sql = "DELETE FROM menu where menu_code = :menu_code";
+
+        return jdbcClient.sql(sql)
+                .param("menu_code", menuCode)
+                .update();
     }
 }

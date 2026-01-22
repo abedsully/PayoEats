@@ -61,7 +61,10 @@ public class OrderService implements IOrderService {
     private void validateMenuCodes(List<OrderItemRequest> orderItems, UUID restaurantId) {
         orderItems.forEach(item ->
                 menuRepository.findByMenuCodeAndRestaurantId(item.getMenuCode(), restaurantId)
-                        .orElseThrow(() -> new NotFoundException("Menu not found or inactive for code: " + item.getMenuCode() + " in restaurant: " + restaurantId))
+                        .orElseThrow(() -> new NotFoundException(
+                                "Some menu items are currently unavailable. Please check your order again and refresh the page."
+                        ))
+
         );
     }
 
@@ -171,19 +174,17 @@ public class OrderService implements IOrderService {
         CheckOrderDto order = checkOrderExistance(orderId);
         checkIfRestaurantExists(order.getRestaurantId());
 
-        if (!order.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+        if (order.getOrderStatus().equals(OrderStatus.CONFIRMED) || order.getOrderStatus().equals(OrderStatus.READY)) {
+            orderRepository.processOrderToActive(order.getId());
+        } else {
             throw new IllegalArgumentException("Unable to process order, order has not been confirmed yet");
         }
-
-        orderRepository.processOrderToActive(order.getId());
-
         return "Order is processed";
     }
 
     private CheckUserRestaurantDto checkUserRestaurant(Long userId) {
         CheckUserRestaurantDto result = restaurantRepository.checkUserRestaurant(userId)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
-
 
         return result;
     }

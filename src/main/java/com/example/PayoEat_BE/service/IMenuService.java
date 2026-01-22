@@ -24,4 +24,5 @@ public interface IMenuService {
     void editMenuAvailability(UUID menuCode, Long userId);
     void editAllMenuAvailability(UUID restaurantId, Long userId, Boolean activate);
     Menu getMenuDetail(UUID menuCode, Long userId);
+    void deleteMenu(UUID menuCode, Long userId);
 }

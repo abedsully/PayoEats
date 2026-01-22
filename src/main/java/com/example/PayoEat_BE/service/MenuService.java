@@ -6,6 +6,7 @@ import com.example.PayoEat_BE.dto.TopMenusDto;
 import com.example.PayoEat_BE.dto.restaurants.CheckUserRestaurantDto;
 import com.example.PayoEat_BE.enums.UploadType;
 import com.example.PayoEat_BE.exceptions.ForbiddenException;
+import com.example.PayoEat_BE.exceptions.InvalidException;
 import com.example.PayoEat_BE.exceptions.NotFoundException;
 import com.example.PayoEat_BE.model.Menu;
 import com.example.PayoEat_BE.repository.MenuRepository;
@@ -164,6 +165,17 @@ public class MenuService implements IMenuService{
         CheckUserRestaurantDto user = checkUserRestaurant(userId);
 
         return menuRepository.getMenuDetail(menuCode);
+    }
+
+    @Override
+    public void deleteMenu(UUID menuCode, Long userId) {
+        CheckUserRestaurantDto user = checkUserRestaurant(userId);
+
+        int result = menuRepository.deleteMenu(menuCode);
+
+        if (result != 1) {
+            throw new InvalidException("Failed to delete this menu, please try again");
+        }
     }
 
 

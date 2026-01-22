@@ -122,6 +122,8 @@ public class ApplicationConfig {
                         .requestMatchers("/api/menu/get-menus", "/api/menu/get-menus-by-restaurant", "/api/menu/get-menu-by-code").permitAll()
                         .requestMatchers("/api/review/get", "/api/review/get-restaurant-review-stats").permitAll()
                         .requestMatchers("/api/order/place", "/api/order/add-payment-proof").permitAll()
+                        .requestMatchers("/api/order/history/customer", "/api/order/reviewable").permitAll()
+                        .requestMatchers("/api/review/add").permitAll()
                         .requestMatchers("/api/order/progress").permitAll()
                         .requestMatchers("/api/order/check-payment", "/api/order/payment-modal-data", "/api/order/qr").permitAll()
                         .requestMatchers("/api/order/confirm-redirect", "/api/order/confirm2").permitAll()

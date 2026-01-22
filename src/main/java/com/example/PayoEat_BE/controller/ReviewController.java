@@ -28,13 +28,13 @@ public class ReviewController {
 
     @PostMapping("/add")
     @Operation(summary = "Add Review", description = "Add a review to a restaurant")
-    public ResponseEntity<ApiResponse> addReview(@RequestParam("reviewContent") String reviewContent,
+    public ResponseEntity<ApiResponse> addReview(
+                                                @RequestParam("reviewContent") String reviewContent,
                                                  @RequestParam("restaurantId") UUID restaurantId,
                                                  @RequestParam("rating") Double rating,
                                                  @RequestParam("orderId") UUID orderId,
-                                                 @RequestParam(value = "reviewImageUrl", required = false) MultipartFile file) {
-        User user = userService.getAuthenticatedUser();
-        String customerId = String.valueOf(user.getId());
+                                                 @RequestParam("customerId") String customerId,
+                                                 @RequestParam(value = "reviewImageUrl") MultipartFile file) {
         AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId, customerId);
         reviewService.addReview(request, file);
         return ResponseEntity.ok(new ApiResponse("Review added successfully", null));

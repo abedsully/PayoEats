@@ -62,8 +62,6 @@ public class OrderController {
     @Value("${backend.url}")
     private String backendUrl;
 
-
-
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order for authenticated customer")
     public ResponseEntity<ApiResponse> getOrderByIdCustomer(@RequestParam UUID orderId) {
@@ -184,6 +182,7 @@ public class OrderController {
                 .body(html);
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping("/confirm2")
     @Operation(summary = "Confirming an order made by user", description = "Confirming order request from user")
     public ResponseEntity<String> confirmOrder2(@RequestParam UUID orderId) {
@@ -389,13 +388,11 @@ public class OrderController {
     @GetMapping("/history/customer")
     @Operation(summary = "Get customer order history", description = "Retrieve order history for authenticated customer")
     public ResponseEntity<ApiResponse> getCustomerOrderHistory(
+            @RequestParam String customerId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String status
     ) {
-        User user = userService.getAuthenticatedUser();
-        String customerId = String.valueOf(user.getId());
-
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : null;
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : null;
 
@@ -434,11 +431,8 @@ public class OrderController {
     @GetMapping("/reviewable")
     @Operation(summary = "Get reviewable orders", description = "Retrieve finished orders that haven't been reviewed yet for a specific restaurant")
     public ResponseEntity<ApiResponse> getReviewableOrders(
-            @RequestParam UUID restaurantId
+            @RequestParam String customerId, @RequestParam UUID restaurantId
     ) {
-        User user = userService.getAuthenticatedUser();
-        String customerId = String.valueOf(user.getId());
-
         List<OrderHistoryDto> orders = orderService.getReviewableOrders(customerId, restaurantId);
         return ResponseEntity.ok(new ApiResponse("Reviewable orders retrieved successfully", orders));
     }
