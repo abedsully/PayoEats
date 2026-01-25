@@ -27,6 +27,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.example.PayoEat_BE.utils.QrCodeUtil.generateCustomerId;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService implements IOrderService {
@@ -456,6 +458,13 @@ public class OrderService implements IOrderService {
 
         double totalPrice = subTotalPrice;
 
+        String customerId = "";
+        if (!request.getCustomerId().isEmpty()) {
+            customerId = request.getCustomerId();
+        } else {
+            customerId = generateCustomerId();
+        }
+
         newRestaurantOrder.setOrderTime(LocalDateTime.now());
         newRestaurantOrder.setIsActive(true);
         newRestaurantOrder.setSubTotal(subTotalPrice);
@@ -464,7 +473,7 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setDineInTime(null);
         newRestaurantOrder.setCreatedDate(LocalDate.now());
         newRestaurantOrder.setCustomerName(request.getCustomerName());
-        newRestaurantOrder.setCustomerId(request.getCustomerId());
+        newRestaurantOrder.setCustomerId(customerId);
         newRestaurantOrder.setScheduledCheckInTime(request.getScheduledCheckInTime());
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
@@ -477,7 +486,7 @@ public class OrderService implements IOrderService {
 
         PlaceOrderDto result = new PlaceOrderDto();
         result.setOrderId(savedOrder);
-        result.setCustomerId(request.getCustomerId());
+        result.setCustomerId(customerId);
 
         return result;
     }

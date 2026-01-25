@@ -41,9 +41,6 @@ public class ApplicationConfig {
     private final JwtUtils jwtUtils;
     private final JwtAuthEntryPoint authEntryPoint;
 
-    @Value("${cors.allowed-origins:}")
-    private String additionalOrigins;
-
     public ApplicationConfig(AuthUserDetailsService authUserDetailsService, JwtUtils jwtUtils, JwtAuthEntryPoint authEntryPoint) {
         this.authUserDetailsService = authUserDetailsService;
         this.jwtUtils = jwtUtils;
@@ -84,12 +81,9 @@ public class ApplicationConfig {
 
         List<String> origins = new ArrayList<>(List.of(
                 "https://m8t547vr-5173.asse.devtunnels.ms",
-                "http://localhost:5173"
+                "http://localhost:5173",
+                "https://*.ngrok-free.dev"
         ));
-
-        if (additionalOrigins != null && !additionalOrigins.isBlank()) {
-            origins.addAll(Arrays.asList(additionalOrigins.split(",")));
-        }
 
         configuration.setAllowedOriginPatterns(origins);
 
@@ -123,11 +117,12 @@ public class ApplicationConfig {
                         .requestMatchers("/api/review/get", "/api/review/get-restaurant-review-stats").permitAll()
                         .requestMatchers("/api/order/place", "/api/order/add-payment-proof").permitAll()
                         .requestMatchers("/api/order/history/customer", "/api/order/reviewable").permitAll()
+                        .requestMatchers("/api/order/details-order-by-customer").permitAll()
                         .requestMatchers("/api/review/add").permitAll()
                         .requestMatchers("/api/order/progress").permitAll()
                         .requestMatchers("/api/order/check-payment", "/api/order/payment-modal-data", "/api/order/qr").permitAll()
                         .requestMatchers("/api/order/confirm-redirect", "/api/order/confirm2").permitAll()
-                                                .requestMatchers("/api/search/**").permitAll()
+                        .requestMatchers("/api/search/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()

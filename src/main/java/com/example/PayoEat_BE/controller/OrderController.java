@@ -64,9 +64,9 @@ public class OrderController {
 
     @GetMapping("/details-order-by-customer")
     @Operation(summary = "Getting order details", description = "Returning details of an order for authenticated customer")
-    public ResponseEntity<ApiResponse> getOrderByIdCustomer(@RequestParam UUID orderId) {
-        User user = userService.getAuthenticatedUser();
-        String customerId = String.valueOf(user.getId());
+    public ResponseEntity<ApiResponse> getOrderByIdCustomer(@RequestParam UUID orderId, @RequestParam String customerId) {
+//        User user = userService.getAuthenticatedUser();
+//        String customerId = String.valueOf(user.getId());
         OrderDetailResponseDto order = orderService.getOrderByIdCustomer(orderId, customerId);
         return ResponseEntity.ok(new ApiResponse("Found: ", order));
     }
@@ -175,7 +175,6 @@ public class OrderController {
   </body>
 </html>
 """.formatted(backendUrl, orderId);
-
 
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
