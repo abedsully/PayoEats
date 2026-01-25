@@ -107,14 +107,13 @@ public class OrderRepository {
             where o.restaurant_id = :restaurant_id
               and o.is_active = true
               and o.order_status = :status
-              and o.created_date = :date
             order by o.order_time asc
         """;
 
         return jdbcClient.sql(sql)
                 .param("restaurant_id", restaurantId)
                 .param("status", OrderStatus.RECEIVED.toString())
-                .param("date", queryDate)
+//                .param("date", queryDate)
                 .query(IncomingOrderRow.class)
                 .list();
     }
@@ -144,14 +143,13 @@ public class OrderRepository {
             where o.restaurant_id = :restaurant_id
               and o.is_active = true
               and o.order_status = :status
-              and o.created_date = :date
             order by o.payment_begin_at asc
         """;
 
         return jdbcClient.sql(sql)
                 .param("restaurant_id", restaurantId)
                 .param("status", OrderStatus.PAYMENT.toString())
-                .param("date", LocalDate.now())
+//                .param("date", LocalDate.now())
                 .query(ConfirmedOrderRow.class)
                 .list();
     }
@@ -180,7 +178,6 @@ public class OrderRepository {
             where o.restaurant_id = :restaurant_id
               and o.is_active = true
               and o.order_status in (:statuses)
-              and o.created_date = :date
             order by o.order_time asc
         """;
 
@@ -191,7 +188,7 @@ public class OrderRepository {
                         OrderStatus.ACTIVE.toString(),
                         OrderStatus.READY.toString()
                 ))
-                .param("date", LocalDate.now())
+//                .param("date", LocalDate.now())
                 .query(ActiveOrderRow.class)
                 .list();
     }
@@ -219,7 +216,6 @@ public class OrderRepository {
                 .query(RecentOrderDto.class)
                 .list();
     }
-
 
     public OrderDetailResponseDto getOrderDetails(UUID orderId) {
         String sql = """

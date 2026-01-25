@@ -153,10 +153,11 @@ public class RestaurantController {
             @RequestParam String openingHour,
             @RequestParam String closingHour,
             @RequestParam String restaurantCategoryCode,
+            @RequestParam String restaurantColor,
             @RequestParam(value = "restaurantImageUrl", required = false) MultipartFile restaurantImageUrl,
             @RequestParam(value = "qrisImageUrl", required = false) MultipartFile qrisImageUrl) {
         User user = userService.getAuthenticatedUser();
-        UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode));
+        UpdateRestaurantRequest updateRestaurantRequest = new UpdateRestaurantRequest(restaurantId, restaurantName, telephoneNumber, description, location, parseTime(openingHour), parseTime(closingHour), Long.parseLong(restaurantCategoryCode), restaurantColor);
 
         restaurantService.updateRestaurant(updateRestaurantRequest, user.getId(), restaurantImageUrl, qrisImageUrl);
         return ResponseEntity.ok(new ApiResponse("Restaurant updated successfully", null));

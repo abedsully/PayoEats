@@ -247,6 +247,14 @@ public class RestaurantRepository {
             shouldBeOpen = !now.isBefore(openingTime) || now.isBefore(closingTime);
         }
 
+        boolean isCurrentlyOpen = Boolean.TRUE.equals(restaurant.getIsOpen());
+
+        if (isCurrentlyOpen && !shouldBeOpen) {
+            if (manualOverrides.containsKey(restaurantId)) {
+                return false;
+            }
+        }
+
         if (manualOverrides.containsKey(restaurantId)) {
             LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
             LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
@@ -332,7 +340,7 @@ public class RestaurantRepository {
                 UPDATE restaurant
                 SET name = :name, telephone_number = :number, description = :description,
                 location = :location, opening_hour = :opening_hour, closing_hour = :closing_hour,
-                restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category
+                restaurant_image_url = :res_image, qris_image_url = :qris_image, restaurant_category = :category, color = :color
                 where id = :restaurant_id;
                 """;
 
@@ -347,6 +355,7 @@ public class RestaurantRepository {
                 .param("qris_image", qrisImageUrl)
                 .param("category", request.getRestaurantCategory())
                 .param("restaurant_id", request.getRestaurantId())
+                .param("color", request.getRestaurantColor())
                 .update();
     }
 }

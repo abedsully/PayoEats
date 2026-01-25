@@ -17,4 +17,5 @@ public class UpdateRestaurantRequest {
     private LocalTime openingHour;
     private LocalTime closingHour;
     private Long restaurantCategory;
+    private String restaurantColor;
 }

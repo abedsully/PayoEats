@@ -420,6 +420,9 @@ public class OrderService implements IOrderService {
     private PlaceOrderDto createOrder(AddOrderRequest request) {
         checkIfRestaurantExists(request.getRestaurantId());
 
+        Restaurant restaurant = restaurantRepository.getDetail(request.getRestaurantId(), Boolean.TRUE)
+                .orElseThrow(() -> new InvalidException("Restaurant is currently closed, please try again later"));
+
         Order newRestaurantOrder = new Order();
         newRestaurantOrder.setRestaurantId(request.getRestaurantId());
 
@@ -477,6 +480,8 @@ public class OrderService implements IOrderService {
         newRestaurantOrder.setCustomerName(request.getCustomerName());
         newRestaurantOrder.setCustomerId(customerId);
         newRestaurantOrder.setScheduledCheckInTime(request.getScheduledCheckInTime());
+
+
 
         UUID savedOrder = orderRepository.addOrder(newRestaurantOrder);
 

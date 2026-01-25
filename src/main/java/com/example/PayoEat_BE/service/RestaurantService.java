@@ -228,6 +228,15 @@ public class RestaurantService implements IRestaurantService {
             qrImageUrl = uploadService.update(qrisImageUrl, UploadType.QR, restaurant.getQrisImageUrl());
         }
 
+
+        if (resImageUrl.isEmpty()) {
+            resImageUrl = restaurant.getRestaurantImageUrl();
+        }
+
+        if (qrImageUrl.isEmpty()) {
+            qrImageUrl = restaurant.getQrisImageUrl();
+        }
+
         return restaurantRepository.updateRestaurant(request, resImageUrl, qrImageUrl);
     }
 

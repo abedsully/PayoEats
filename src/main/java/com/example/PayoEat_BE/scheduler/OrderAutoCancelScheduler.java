@@ -1,6 +1,5 @@
 package com.example.PayoEat_BE.scheduler;
 
-import com.example.PayoEat_BE.model.Restaurant;
 import com.example.PayoEat_BE.repository.OrderRepository;
 import com.example.PayoEat_BE.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +8,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
