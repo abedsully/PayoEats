@@ -243,11 +243,12 @@ public class OrderService implements IOrderService {
         checkUserRestaurant(userId);
         checkIfRestaurantExists(result.getRestaurantId());
 
-        if (!result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
+        if (result.getOrderStatus().equals(OrderStatus.ACTIVE) || result.getOrderStatus().equals(OrderStatus.READY)) {
+            orderRepository.finishOrder(result.getId());
+        } else {
             throw new IllegalArgumentException("This order can't be finished, the customer hasn't dined in yet");
         }
 
-        orderRepository.finishOrder(result.getId());
 
         return "This order has been completed";
     }
@@ -259,11 +260,12 @@ public class OrderService implements IOrderService {
         checkUserRestaurant(userId);
         checkIfRestaurantExists(result.getRestaurantId());
 
-        if (!result.getOrderStatus().equals(OrderStatus.CONFIRMED)) {
+        if (result.getOrderStatus().equals(OrderStatus.CONFIRMED) || result.getOrderStatus().equals(OrderStatus.ACTIVE)) {
+            orderRepository.markOrderReady(result.getId());
+        } else {
             throw new IllegalArgumentException("This order can't be marked as ready, it must be in CONFIRMED status");
         }
 
-        orderRepository.markOrderReady(result.getId());
 
         return "Order has been marked as ready";
     }
