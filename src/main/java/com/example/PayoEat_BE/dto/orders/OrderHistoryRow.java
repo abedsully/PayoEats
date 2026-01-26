@@ -27,4 +27,5 @@ public class OrderHistoryRow {
     private Double menuPrice;
     private String menuImageUrl;
     private Long quantity;
+    private Double menuTotalPrice;
 }

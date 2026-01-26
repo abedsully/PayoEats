@@ -557,6 +557,7 @@ public class OrderService implements IOrderService {
             menuItem.setMenuPrice(row.getMenuPrice());
             menuItem.setMenuImageUrl(row.getMenuImageUrl());
             menuItem.setQuantity(row.getQuantity());
+            menuItem.setTotalPrice(row.getMenuTotalPrice());
 
             dto.getMenuLists().add(menuItem);
         }

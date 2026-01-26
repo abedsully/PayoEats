@@ -714,6 +714,7 @@ public class OrderRepository {
                 m.menu_price,
                 m.menu_image_url,
                 oi.quantity,
+                (oi.quantity * m.menu_price) AS menu_total_price,
                 o.created_date
             FROM orders o
             JOIN restaurant r ON r.id = o.restaurant_id
