@@ -34,9 +34,9 @@ public class ReviewController {
                                                  @RequestParam("rating") Double rating,
                                                  @RequestParam("orderId") UUID orderId,
                                                  @RequestParam("customerId") String customerId,
-                                                 @RequestParam(value = "reviewImageUrl") MultipartFile file) {
+                                                 @RequestParam(value = "reviewImageUrl", required = false) MultipartFile reviewImageUrl) {
         AddReviewRequest request = new AddReviewRequest(reviewContent, restaurantId, rating, orderId, customerId);
-        reviewService.addReview(request, file);
+        reviewService.addReview(request, reviewImageUrl);
         return ResponseEntity.ok(new ApiResponse("Review added successfully", null));
     }
 

@@ -68,6 +68,8 @@ public class ReviewService implements IReviewService{
 
 
     private void createReview(AddReviewRequest request, MultipartFile file) {
+
+
         Restaurant restaurant = restaurantRepository.getDetail(request.getRestaurantId(), Boolean.TRUE)
                 .orElseThrow(() -> new NotFoundException("Restaurant not found"));
 
@@ -88,9 +90,11 @@ public class ReviewService implements IReviewService{
         Double currentRestaurantRating = restaurant.getRating();
         Long totalRating = restaurant.getTotalRating() + 1;
 
+        String reviewImageUrl = "";
+
         String imageUrl = (file != null && !file.isEmpty())
-            ? uploadService.upload(file, UploadType.REVIEW)
-            : null;
+            ? reviewImageUrl = uploadService.upload(file, UploadType.REVIEW)
+            : "";
 
         Double ratingRestaurant = ((currentRestaurantRating * (totalRating - 1)) + request.getRating()) / totalRating;
 
@@ -103,7 +107,7 @@ public class ReviewService implements IReviewService{
 
         Integer resultAddReview = 0;
 
-        if (reviewRepository.addReview(review, imageUrl, order.getCustomerName()) == 0) {
+        if (reviewRepository.addReview(review, reviewImageUrl, order.getCustomerName()) == 0) {
             throw new InvalidException("Error while adding review, please check your input");
         };
 

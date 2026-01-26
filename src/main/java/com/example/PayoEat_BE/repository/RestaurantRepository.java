@@ -248,16 +248,15 @@ public class RestaurantRepository {
         }
 
         boolean isCurrentlyOpen = Boolean.TRUE.equals(restaurant.getIsOpen());
+        boolean hasManualOverride = manualOverrides.containsKey(restaurantId);
 
-        if (isCurrentlyOpen && !shouldBeOpen) {
-            if (manualOverrides.containsKey(restaurantId)) {
-                return false;
-            }
+        if (hasManualOverride && isCurrentlyOpen && !shouldBeOpen) {
+            return false;
         }
 
-        if (manualOverrides.containsKey(restaurantId)) {
-            LocalDateTime manualOverrideTime = manualOverrides.get(restaurantId);
-            LocalDateTime nextScheduledChange = calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
+        if (hasManualOverride) {
+            LocalDateTime nextScheduledChange =
+                    calculateNextScheduledChange(openingTime, closingTime, shouldBeOpen);
 
             if (LocalDateTime.now().isBefore(nextScheduledChange)) {
                 return false;
